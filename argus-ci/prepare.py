@@ -97,7 +97,7 @@ class InstancePreparer(object):
 
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
                     'where -Property Name -contains {0}).FullName"'
-                    .format(CONF.cbinit.default_user))
+                    .format(CONF.cbinit.created_user))
         return self._run_cmd_until_condition(
             wait_cmd,
             lambda stdout: stdout.strip() == CONF.cbinit.default_ci_username)
