@@ -100,7 +100,7 @@ class InstancePreparer(object):
         LOG.info("Waiting for boot completion")
 
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
-                    'where -Property Name -contains {0}).FullName"'
+                    'where -Property Name -contains {0}).Name"'
                     .format(CONF.cbinit.created_user))
         return self._run_cmd_until_condition(
             wait_cmd,
