@@ -216,7 +216,7 @@ class BaseArgusScenario(manager.ScenarioTest):
             try:
                 self.servers_client.remove_security_group(
                     self.instance['id'], sec_group['name'])
-            except Exception as ex:
+            except Exception:
                 LOG.exception("Failed removing security groups.")
 
         super(BaseArgusScenario, self).tearDown()
