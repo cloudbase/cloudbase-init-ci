@@ -63,7 +63,7 @@ class TestServices(BaseTest):
                'where -Property DeviceID -Match C:").Size')
 
         std_out = self.run_verbose_wsman(cmd)
-        self.assertGreaterThan(int(std_out), image_size)
+        self.assertGreater(int(std_out), image_size)
 
     def test_username_created(self):
         cmd = ('powershell "Get-WmiObject Win32_Account | '
