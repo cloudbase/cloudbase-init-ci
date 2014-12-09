@@ -76,21 +76,25 @@ class InstancePreparer(object):
         while True:
             try:
                 std_out, std_err = self._execute(cmd)
-                if std_err:
-                    count += 1
-                    time.sleep(retry_count_interval)
-                elif cond(std_out):
-                    break
             except Exception:
                 LOG.exception("Command {!r} failed while waiting for condition"
                               .format(cmd))
-
                 count += 1
                 if retry_count and count >= retry_count:
                     raise exceptions.CloudbaseTimeoutError(
                         "Command {!r} failed too many times."
                         .format(cmd))
                 time.sleep(retry_count_interval)
+            else:
+                if std_err:
+                    raise exceptions.CloudbaseCLIError(
+                        "Executing command {!r} failed with {!r}"
+                        .format(cmd, std_err))
+                elif cond(std_out):
+                    break
+                else:
+                    time.sleep(retry_count_interval)
+
 
     def wait_for_boot_completion(self):
         LOG.info("Waiting for boot completion")

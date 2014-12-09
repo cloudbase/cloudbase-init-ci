@@ -20,3 +20,7 @@ class CloudbaseCIError(Exception):
 
 class CloudbaseTimeoutError(CloudbaseCIError):
     pass
+
+
+class CloudbaseCLIError(CloudbaseCIError):
+    pass
