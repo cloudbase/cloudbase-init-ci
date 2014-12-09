@@ -26,6 +26,7 @@ class WinRemoteClient(remote_client.WinRemoteClient):
         LOG.info("The command returned the output %s", stdout)
         LOG.info("The stderr of the command was %s", stderr)
         LOG.info("The exit code of the command was %s", exit_code)
+        return stdout
 
 
 def decrypt_password(private_key, password):
