@@ -56,3 +56,15 @@ def run_once(func, state={}):
             state[func] = result = func(*args, **kwargs)
             return result
     return wrapper
+
+
+def trap_failure(func):
+    """Call pdb.set_trace when an exception occurs."""
+    @six.wraps(func)
+    def wrapper(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except BaseException:
+            import pdb
+            pdb.set_trace()
+    return wrapper

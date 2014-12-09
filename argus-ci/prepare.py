@@ -20,6 +20,7 @@ from tempest import config
 from tempest.openstack.common import log as logging
 
 from argus import exceptions
+from argus import util
 
 CONF = config.CONF
 LOG = logging.getLogger('cbinit')
@@ -156,6 +157,7 @@ class InstancePreparer(object):
             server_id=self._instance_id,
             status='ACTIVE')
 
+    @util.trap_failure
     def prepare(self):
         """Prepare the underlying instance.
 
