@@ -15,6 +15,7 @@
 
 import base64
 import subprocess
+import sys
 
 import six
 from tempest.openstack.common import log as logging
@@ -83,6 +84,10 @@ def trap_failure(func):
         try:
             return func(*args, **kwargs)
         except BaseException:
+            # TODO(cpopa): Save the original exception, since pdb will happily
+            # overwrite it. This makes flake8 scream, though.
+            exc = sys.exc_info()  # pylint: disable=unused-variable
+            LOG.exception("Exception occurred for func %s", func)
             import pdb
             pdb.set_trace()
     return wrapper
