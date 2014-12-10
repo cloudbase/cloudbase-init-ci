@@ -21,7 +21,7 @@ __all__ = (
     'WinRemoteClient',
 )
 
-WSMAN_URL = "https://{hostname}:5986/wsman"
+WSMAN_URL = "http://{hostname}:5985/wsman"
 
 class WinRemoteClient(object):
 
