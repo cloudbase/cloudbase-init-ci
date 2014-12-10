@@ -105,7 +105,7 @@ class InstancePreparer(object):
                     .format(CONF.cbinit.created_user))
         return self._run_cmd_until_condition(
             wait_cmd,
-            lambda stdout: stdout.strip() == CONF.cbinit.created_user)
+            lambda stdout: stdout.strip() == CONF.cbinit.default_ci_username)
 
     def get_installation_script(self):
         """Get an insallation script for CloudbaseInit."""
