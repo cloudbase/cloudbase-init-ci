@@ -25,7 +25,7 @@ CBINIT_GROUP = cfg.OptGroup(name='cbinit',
                             title="Cloudbase-init Options")
 OPTS = [
     cfg.BoolOpt('replace_code',
-                default=False,
+                default=0,
                 help="replace cbinit code, or use the one added by the "
                      "installer"),
     cfg.StrOpt('service_type',
