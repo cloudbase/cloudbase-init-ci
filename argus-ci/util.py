@@ -1,10 +1,26 @@
+# Copyright 2014 Cloudbase-init
+# All Rights Reserved.
+#
+#    Licensed under the Apache License, Version 2.0 (the "License"); you may
+#    not use this file except in compliance with the License. You may obtain
+#    a copy of the License at
+#
+#         http://www.apache.org/licenses/LICENSE-2.0
+#
+#    Unless required by applicable law or agreed to in writing, software
+#    distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#    License for the specific language governing permissions and limitations
+#    under the License.
+
 import base64
 import subprocess
 
 import six
+from tempest.openstack.common import log as logging
 
 from argus import remote_client
-from tempest.openstack.common import log as logging
+
 
 __all__ = (
     'WinRemoteClient',
@@ -45,6 +61,7 @@ def decrypt_password(private_key, password):
         raise Exception("Failed calling openssl with error: {!r}"
                         .format(err))
     return out
+
 
 # pylint: disable=dangerous-default-value
 def run_once(func, state={}):
