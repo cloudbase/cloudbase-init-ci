@@ -50,6 +50,11 @@ OPTS = [
                        'installCBinit.ps1',
                help="An URL representing the script which will install "
                     "CloudbaseInit."),
+    cfg.BoolOpt('debug',
+                 default=False,
+                 help="Switch to a debug behaviour. This includes "
+                      "logging of command output directly to stdout "
+                      "and failure hooks, using pdb."),
 
 ]
 config.register_opt_group(CONF, CBINIT_GROUP, OPTS)

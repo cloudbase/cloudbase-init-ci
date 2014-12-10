@@ -156,7 +156,6 @@ class InstancePreparer(object):
             server_id=self._instance_id,
             status='ACTIVE')
 
-    @util.trap_failure
     def prepare(self):
         """Prepare the underlying instance.
 
@@ -174,3 +173,6 @@ class InstancePreparer(object):
         self.wait_reboot()
         self.wait_cbinit_finalization()
         LOG.info("Finished preparing instance %s", self._instance_id)
+
+    if CONF.debug:
+        prepare = util.trap_failure(prepare)
