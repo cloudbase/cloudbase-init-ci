@@ -54,6 +54,10 @@ OPTS = [
                  help="Switch to a debug behaviour. This includes "
                       "logging of command output directly to stdout "
                       "and failure hooks, using pdb."),
+    cfg.IntOpt('expected_plugins_count',
+               default=10,
+               help="The number of plugins expected to exist after "
+                    "cloudbase-init ran."),
 
 ]
 config.register_opt_group(CONF, CBINIT_GROUP, OPTS)
