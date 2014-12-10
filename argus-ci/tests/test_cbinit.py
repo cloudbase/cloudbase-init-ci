@@ -16,10 +16,10 @@
 
 import re
 
-from tempest import config
 from tempest.common.utils import data_utils
 
-from argus import BaseTest
+from argus import config
+from argus import scenario
 from argus import util
 
 CONF = config.CONF
@@ -36,12 +36,12 @@ def _get_dhcp_value(dnsmasq_neutron_path, key):
                 return line[match.end():].strip('\n')
 
 
-class TestServices(BaseTest):
+class TestServices(scenario.BaseScenario):
 
     def test_service_keys(self):
         key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` Solutions\\'
                'Cloudbase-init\\{0}\\Plugins'
-               .format(self.instance['id']))               
+               .format(self.instance['id']))
         cmd = 'powershell (Get-Item %s).ValueCount' % key
         std_out = self.run_verbose_wsman(cmd)
 
@@ -56,7 +56,7 @@ class TestServices(BaseTest):
 
     def test_disk_expanded(self):
         # TODO(cpopa): after added image to instance creation,
-        # added here as well        
+        # added here as well
         image = self.get_image_ref()
         image_size = image[1]['OS-EXT-IMG-SIZE:size']
         cmd = ('powershell (Get-WmiObject "win32_logicaldisk | '
@@ -68,16 +68,16 @@ class TestServices(BaseTest):
     def test_username_created(self):
         cmd = ('powershell "Get-WmiObject Win32_Account | '
                'where -Property Name -contains {0}"'
-               .format(CONF.cbinit.created_user))
+               .format(CONF.created_user))
 
         std_out = self.run_verbose_wsman(cmd)
         self.assertIsNotNone(std_out)
 
     def test_hostname_set(self):
         cmd = 'powershell (Get-WmiObject "Win32_ComputerSystem").Name'
-        std_out = self.run_verbose_wsman(cmd)        
+        std_out = self.run_verbose_wsman(cmd)
         server = self.instance_server()[1]
-        
+
         self.assertEqual(str(std_out).lower(),
                          str(server['name'][:15]).lower() + '\r\n')
 
@@ -85,29 +85,30 @@ class TestServices(BaseTest):
         cmd = ('powershell (Get-Service "| where -Property Name '
                '-match W32Time").Status')
         std_out = self.run_verbose_wsman(cmd)
-        
+
         self.assertEqual("Running\r\n", str(std_out))
 
-    def test_password_set(self):        
+    def test_password_set(self):
         folder_name = data_utils.rand_name("folder")
         cmd = 'mkdir C:\\%s' % folder_name
-        cmd2 = 'powershell "get-childitem c:\ | select-string %s"' % folder_name
+        cmd2 = ('powershell "get-childitem c:\ | select-string %s"'
+                % folder_name)
         remote_client = util.WinRemoteClient(
             self.floating_ip['ip'],
-            CONF.cbinit.created_user,
+            CONF.created_user,
             self.password())
         remote_client.run_verbose_wsman(cmd)
         stdout = remote_client.run_verbose_wsman(cmd2)
 
         self.assertEqual(folder_name, str(stdout.strip("\r\n")))
 
-    def test_sshpublickeys_set(self):        
+    def test_sshpublickeys_set(self):
         cmd = 'echo %cd%'
         remote_client = util.WinRemoteClient(
             self.floating_ip['ip'],
-            CONF.cbinit.created_user,
+            CONF.created_user,
             self.password())
-        stdout = remote_client.run_verbose_wsman(cmd)        
+        stdout = remote_client.run_verbose_wsman(cmd)
         path = stdout.strip("\r\n") + '\\.ssh\\authorized_keys'
 
         cmd2 = 'powershell "cat %s"' % path
@@ -116,10 +117,10 @@ class TestServices(BaseTest):
         self.assertEqual(self.keypair['public_key'],
                          stdout.replace('\r\n', '\n'))
 
-    def test_userdata(self):        
+    def test_userdata(self):
         remote_client = util.WinRemoteClient(
             self.floating_ip['ip'],
-            CONF.cbinit.created_user,
+            CONF.created_user,
             self.password())
 
         cmd = 'powershell "(Get-ChildItem -Path  C:\ *.txt).Count'
@@ -128,8 +129,8 @@ class TestServices(BaseTest):
         self.assertEqual("4", stdout.strip("\r\n"))
 
     def test_mtu(self):
-        # TODO: get value to compare with
-        # net Win32_NetworkAdapterConfiguration        
+        # TODO(cpopa): Get value to compare with.
+        # net Win32_NetworkAdapterConfiguration
         cmd = ('powershell "(Get-NetIpConfiguration -Detailed).'
                'NetIPv4Interface.NlMTU"')
         stdout = self.run_verbose_wsman(cmd)

@@ -16,9 +16,9 @@
 
 import time
 
-from tempest import config
 from tempest.openstack.common import log as logging
 
+from argus import config
 from argus import exceptions
 from argus import util
 
@@ -96,16 +96,15 @@ class InstancePreparer(object):
                 else:
                     time.sleep(retry_count_interval)
 
-
     def wait_for_boot_completion(self):
         LOG.info("Waiting for boot completion")
 
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
                     'where -Property Name -contains {0}).Name"'
-                    .format(CONF.cbinit.default_ci_username))
+                    .format(CONF.default_ci_username))
         return self._run_cmd_until_condition(
             wait_cmd,
-            lambda stdout: stdout.strip() == CONF.cbinit.default_ci_username)
+            lambda stdout: stdout.strip() == CONF.default_ci_username)
 
     def get_installation_script(self):
         """Get an insallation script for CloudbaseInit."""
@@ -113,7 +112,7 @@ class InstancePreparer(object):
 
         cmd = ("powershell Invoke-webrequest -uri "
                "{!r}-outfile 'C:\\\\installcbinit.ps1'"
-               .format(CONF.cbinit.install_script_url))
+               .format(CONF.install_script_url))
         self._execute(cmd)
 
     def install_cbinit(self):
@@ -121,8 +120,8 @@ class InstancePreparer(object):
         LOG.info("Run the downloaded installation script")
 
         cmd = ('powershell "C:\\\\installcbinit.ps1 -newCode %s '
-               '-serviceType %s"' % (CONF.cbinit.replace_code,
-                                     CONF.cbinit.service_type))
+               '-serviceType %s"' % (CONF.replace_code,
+                                     CONF.service_type))
         self._execute(cmd)
 
     def wait_cbinit_finalization(self):
@@ -139,7 +138,7 @@ class InstancePreparer(object):
 
         self._run_cmd_until_condition(
             wait_cmd,
-            lambda out: int(out) >= int(CONF.cb_init.expected_plugins_count))
+            lambda out: int(out) >= int(CONF.expected_plugins_count))
 
     def wait_reboot(self):
         """Do a reboot and wait until the instance is up."""
