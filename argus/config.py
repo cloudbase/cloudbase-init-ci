@@ -20,9 +20,8 @@ from tempest import config
 TEMPEST_CONF = config.CONF
 CONF = cfg.CONF
 
-# Register the CloudbaseInit options from tempest.conf.
-CBINIT_GROUP = cfg.OptGroup(name='cbinit',
-                            title="Cloudbase-init Options")
+CBINIT_GROUP = cfg.OptGroup(name='argus',
+                            title="Argus Options")
 OPTS = [
     cfg.BoolOpt('replace_code',
                 default=0,
