@@ -31,9 +31,6 @@ OPTS = [
                default='http',
                help="service_type should take value 'http', 'ec2', "
                     "or 'configdrive'"),
-    cfg.StrOpt('userdata_path',
-               default='',
-               help="path to userdata to be used"),
     cfg.StrOpt('default_ci_username',
                default='CiAdmin',
                help="The default CI user for the instances."),

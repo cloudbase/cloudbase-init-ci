@@ -1,0 +1,58 @@
+Content-Type: multipart/mixed; boundary="===============1598784645116016685=="
+MIME-Version: 1.0
+
+--===============1598784645116016685==
+Content-Type: text/cloud-config; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="cloud-config"
+
+# cloudconfig not supported
+# text/part-handler ??
+
+--===============1598784645116016685==
+Content-Type: text/x-cfninitdata; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="cfn-userdata"
+
+#ps1_sysnative
+
+function Create-File ($path) {
+    $file_path = $path + "\heat_file.txt"
+    New-Item $file_path -type file
+}
+
+Create-File -path $env:SystemDrive
+
+--===============1598784645116016685==
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="create_file.ps1"
+
+#ps1_sysnative
+New-Item $env:SystemDrive\powershell_multipart.txt -type file
+
+--===============1598784645116016685==
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="create_file.py"
+
+#!/usr/bin/env python
+import os
+home = os.getenv("SystemDrive")
+print home
+f = open(home+'\python.txt', 'w')
+f.close()
+
+--===============1598784645116016685==
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="create_file.cmd"
+
+rem cmd
+type NUL > %systemdrive%\cmd.txt
+
