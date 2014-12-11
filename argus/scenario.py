@@ -172,6 +172,47 @@ class BaseArgusScenario(manager.ScenarioTest):
         super(BaseArgusScenario, self).tearDown()
 
     # Utilities used by setUp.
+
+    def _create_security_group(self):
+        security_group = super(self.__class__, self)._create_security_group()
+        self._add_security_group_exceptions(security_group['id'])
+        return security_group
+
+    def _add_security_group_exceptions(self, secgroup_id):
+        # TODO(cpopa): this is almost a verbatim copy of
+        # _create_loginable_secgroup_rule. Unfortunately, we can't provide
+        # custom rules otherwise.
+        _client = self.security_groups_client
+        rulesets = [
+            {
+                # http RDP
+                'ip_proto': 'tcp',
+                'from_port': 3389,
+                'to_port': 3389,
+                'cidr': '0.0.0.0/0',
+            },
+            {
+                # http winrm
+                'ip_proto': 'tcp',
+                'from_port': 5985,
+                'to_port': 5985,
+                'cidr': '0.0.0.0/0',
+            },
+            {
+                # https winrm
+                'ip_proto': 'tcp',
+                'from_port': 5986,
+                'to_port': 5986,
+                'cidr': '0.0.0.0/0',
+            },
+        ]
+        for ruleset in rulesets:
+            _, sg_rule = _client.create_security_group_rule(secgroup_id,
+                                                            **ruleset)
+            self.addCleanup(self.delete_wrapper,
+                            _client.delete_security_group_rule,
+                            sg_rule['id'])
+
     def change_security_group(self, server_id):
         security_group = self._create_security_group()
         self.security_groups.append(security_group)
