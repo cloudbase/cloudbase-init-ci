@@ -41,9 +41,8 @@ OPTS = [
                default='Admin',
                help='The user created by the CloudbaseInit plugins.'),
     cfg.StrOpt('install_script_url',
-               default='https://raw.githubusercontent.com/trobert2/'
-                       'windows-openstack-imaging-tools/master/'
-                       'installCBinit.ps1',
+               default='https://raw.githubusercontent.com/PCManticore/'
+                       'argus-ci/master/argus/resources/installCBinit.ps1',
                help="An URL representing the script which will install "
                     "CloudbaseInit."),
     cfg.BoolOpt('debug',
