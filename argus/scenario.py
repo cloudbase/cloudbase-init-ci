@@ -110,7 +110,7 @@ class BaseArgusScenario(manager.ScenarioTest):
         metadata = {'network_config': str({'content_path':
                                            'random_value_test_random'})}
 
-        with open(CONF.userdata_path, 'r') as h:
+        with open(CONF.argus.userdata_path, 'r') as h:
             data = h.read()
             encoded_data = base64.encodestring(data)
 
@@ -157,8 +157,8 @@ class BaseArgusScenario(manager.ScenarioTest):
 
         self.remote_client = util.WinRemoteClient(
             self.floating_ip['ip'],
-            CONF.default_ci_username,
-            CONF.default_ci_password)
+            CONF.argus.default_ci_username,
+            CONF.argus.default_ci_password)
         self.prepare_instance()
 
     def tearDown(self):

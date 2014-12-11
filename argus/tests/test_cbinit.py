@@ -68,7 +68,7 @@ class TestServices(scenario.BaseScenario):
     def test_username_created(self):
         cmd = ('powershell "Get-WmiObject Win32_Account | '
                'where -Property Name -contains {0}"'
-               .format(CONF.created_user))
+               .format(CONF.argus.created_user))
 
         std_out = self.run_verbose_wsman(cmd)
         self.assertIsNotNone(std_out)
@@ -95,7 +95,7 @@ class TestServices(scenario.BaseScenario):
                 % folder_name)
         remote_client = util.WinRemoteClient(
             self.floating_ip['ip'],
-            CONF.created_user,
+            CONF.argus.created_user,
             self.password())
         remote_client.run_verbose_wsman(cmd)
         stdout = remote_client.run_verbose_wsman(cmd2)
@@ -106,7 +106,7 @@ class TestServices(scenario.BaseScenario):
         cmd = 'echo %cd%'
         remote_client = util.WinRemoteClient(
             self.floating_ip['ip'],
-            CONF.created_user,
+            CONF.argus.created_user,
             self.password())
         stdout = remote_client.run_verbose_wsman(cmd)
         path = stdout.strip("\r\n") + '\\.ssh\\authorized_keys'
@@ -120,7 +120,7 @@ class TestServices(scenario.BaseScenario):
     def test_userdata(self):
         remote_client = util.WinRemoteClient(
             self.floating_ip['ip'],
-            CONF.created_user,
+            CONF.argus.created_user,
             self.password())
 
         cmd = 'powershell "(Get-ChildItem -Path  C:\ *.txt).Count'

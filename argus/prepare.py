@@ -101,10 +101,10 @@ class InstancePreparer(object):
 
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
                     'where -Property Name -contains {0}).Name"'
-                    .format(CONF.default_ci_username))
+                    .format(CONF.argus.default_ci_username))
         return self._run_cmd_until_condition(
             wait_cmd,
-            lambda stdout: stdout.strip() == CONF.default_ci_username)
+            lambda stdout: stdout.strip() == CONF.argus.default_ci_username)
 
     def get_installation_script(self):
         """Get an insallation script for CloudbaseInit."""
@@ -112,7 +112,7 @@ class InstancePreparer(object):
 
         cmd = ("powershell Invoke-webrequest -uri "
                "{!r}-outfile 'C:\\\\installcbinit.ps1'"
-               .format(CONF.install_script_url))
+               .format(CONF.argus.install_script_url))
         self._execute(cmd)
 
     def install_cbinit(self):
@@ -120,8 +120,8 @@ class InstancePreparer(object):
         LOG.info("Run the downloaded installation script")
 
         cmd = ('powershell "C:\\\\installcbinit.ps1 -newCode %s '
-               '-serviceType %s"' % (CONF.replace_code,
-                                     CONF.service_type))
+               '-serviceType %s"' % (CONF.argus.replace_code,
+                                     CONF.argus.service_type))
         self._execute(cmd)
 
     def wait_cbinit_finalization(self):
@@ -138,7 +138,7 @@ class InstancePreparer(object):
 
         self._run_cmd_until_condition(
             wait_cmd,
-            lambda out: int(out) >= int(CONF.expected_plugins_count))
+            lambda out: int(out) >= int(CONF.argus.expected_plugins_count))
 
     def wait_reboot(self):
         """Do a reboot and wait until the instance is up."""
@@ -174,5 +174,5 @@ class InstancePreparer(object):
         self.wait_cbinit_finalization()
         LOG.info("Finished preparing instance %s", self._instance_id)
 
-    if CONF.debug:
+    if CONF.argus.debug:
         prepare = util.trap_failure(prepare)
