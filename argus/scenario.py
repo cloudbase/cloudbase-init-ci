@@ -178,7 +178,7 @@ class BaseArgusScenario(manager.ScenarioTest):
     # Utilities used by setUp.
 
     def _create_security_group(self):
-        security_group = super(self.__class__, self)._create_security_group()
+        security_group = super(BaseArgusScenario, self)._create_security_group()
         self._add_security_group_exceptions(security_group['id'])
         return security_group
 
