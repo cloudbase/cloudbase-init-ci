@@ -220,14 +220,6 @@ class BaseArgusScenario(manager.ScenarioTest):
     def change_security_group(self, server_id):
         security_group = self._create_security_group()
         self.security_groups.append(security_group)
-
-        for sec_group in self.instance['security_groups']:
-            try:
-                self.servers_client.remove_security_group(server_id,
-                                                          sec_group['name'])
-            except Exception:
-                LOG.exception("Error removing security group.")
-
         self.servers_client.add_security_group(server_id,
                                                security_group['name'])
 
