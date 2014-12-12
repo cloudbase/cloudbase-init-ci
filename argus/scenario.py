@@ -141,7 +141,6 @@ class BaseArgusScenario(manager.ScenarioTest):
         # Unfortunately, we don't have access there to
         # methods required to do this.
         self.change_security_group(self.server['id'])
-        self.private_network = self.get_private_network()
 
         self.remote_client = util.WinRemoteClient(
             self.floating_ip['ip'],
@@ -203,12 +202,6 @@ class BaseArgusScenario(manager.ScenarioTest):
         self.security_group = self._create_security_group()
         self.servers_client.add_security_group(server_id,
                                                self.security_group['name'])
-
-    def get_private_network(self):
-        networks = self.networks_client.list_networks()[1]
-        for network in networks:
-            if network['label'] == 'private_cbinit':
-                return network
 
     def password(self):
         _, encoded_password = self.servers_client.get_password(
