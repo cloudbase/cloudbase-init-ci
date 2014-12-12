@@ -196,6 +196,11 @@ class TestServices(scenario.BaseScenario):
         self.assertEqual('True', stdout.strip())
 
         # Next, check that every script we registered was called.
-        command = 'powershell "Test-Path C:\\shell.txt"'
+        command = 'powershell "Test-Path C:\\Scripts\\shell.output"'
         stdout = self.remote_client.run_verbose_wsman(command)
         self.assertEqual('True', stdout.strip())
+
+        command = 'powershell "Test-Path C:\\Scripts\\powershell.output"'
+        stdout = self.remote_client.run_verbose_wsman(command)
+        self.assertEqual('True', stdout.strip())
+

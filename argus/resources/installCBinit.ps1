@@ -25,7 +25,8 @@ function setLocalScripts([string]$programFiels) {
 
     # Create the scripts.
     mkdir $scripts
-    echo "echo 1 > %HOMEDRIVE%\shell.txt" > $scripts\shell.cmd
+    echo "echo 1 > %HOMEDRIVE%\Scripts\shell.output" > $scripts\shell.cmd
+    echo "Test-Path $scripts > $scripts\powershell.output"  > $scripts\powersh.ps1
 }
 
 
