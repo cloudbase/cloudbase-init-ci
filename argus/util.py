@@ -14,6 +14,7 @@
 #    under the License.
 
 import base64
+import pkgutil
 import subprocess
 import sys
 
@@ -27,6 +28,7 @@ __all__ = (
     'WinRemoteClient',
     'decrypt_password',
     'run_once',
+    'get_resource',
 )
 
 
@@ -91,3 +93,8 @@ def trap_failure(func):
             import pdb
             pdb.set_trace()
     return wrapper
+
+
+def get_resource(resource):
+    """Get the given resource from the list of known resources."""
+    return pkgutil.get_data('argus.resources', resource)

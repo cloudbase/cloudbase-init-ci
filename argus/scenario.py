@@ -15,7 +15,6 @@
 
 import base64
 import os
-import pkgutil
 
 from tempest.common.utils import data_utils
 from tempest.openstack.common import log as logging
@@ -30,11 +29,6 @@ LOG = logging.getLogger("cbinit")
 
 CONF = config.CONF
 TEMPEST_CONF = config.TEMPEST_CONF
-
-
-def _get_userdata():
-    data = pkgutil.get_data('argus.resources', 'multipart_metadata')
-    return base64.encodestring(data)
 
 
 class BaseArgusScenario(manager.ScenarioTest):
@@ -94,7 +88,8 @@ class BaseArgusScenario(manager.ScenarioTest):
         metadata = {'network_config': str({'content_path':
                                            'random_value_test_random'})}
 
-        encoded_data = _get_userdata()
+        encoded_data = base64.encodestring(
+            util.get_resource('multipart_metadata'))
 
         cls.create_test_server(wait_until='ACTIVE',
                                key_name=cls.keypair['name'],
