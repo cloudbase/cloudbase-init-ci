@@ -68,12 +68,13 @@ class WinRemoteClient(object):
     def _run_commands(self, commands):
         protocol = self.get_protocol()
         shell_id = protocol.open_shell()
-
+        result = []
         try:
             for command in commands:
-                yield self._run_command(protocol, shell_id, command)
+                result.append(self._run_command(protocol, shell_id, command))
         finally:
             protocol.close_shell(shell_id)
+        return result    
 
     def get_protocol(self):
         protocol.Protocol.DEFAULT_TIMEOUT = "PT3600S"
@@ -89,7 +90,7 @@ class WinRemoteClient(object):
         It will return a tuple of three elements, stdout, stderr
         and the return code of the command.
         """
-        return next(self._run_commands([cmd]))
+        return self._run_commands([cmd])[0]
 
     def copy_file(self, filepath, remote_destination):
         """Copy the given filepath in the remote destination.
