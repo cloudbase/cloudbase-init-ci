@@ -74,7 +74,7 @@ class WinRemoteClient(object):
                 result.append(self._run_command(protocol, shell_id, command))
         finally:
             protocol.close_shell(shell_id)
-        return result    
+        return result
 
     def get_protocol(self):
         protocol.Protocol.DEFAULT_TIMEOUT = "PT3600S"
