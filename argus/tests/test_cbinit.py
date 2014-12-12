@@ -186,3 +186,16 @@ class TestServices(scenario.BaseScenario):
             stdout = self.remote_client.run_verbose_wsman(
                 "powershell " + remote_script)
             self.assertEqual('', stdout.strip())
+
+    def test_local_scripts_executed(self):
+        # Check that the local scripts plugin was executed.
+
+        # First, check if the Scripts folder was created.
+        command = 'powershell "Test-Path C:\\Scripts"'
+        stdout = self.remote_client.run_verbose_wsman(command)
+        self.assertEqual('True', stdout.strip())
+
+        # Next, check that every script we registered was called.
+        command = 'powershell "Test-Path C:\\shell.txt"'
+        stdout = self.remote_client.run_verbose_wsman(command)
+        self.assertEqual('True', stdout.strip())

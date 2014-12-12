@@ -13,6 +13,22 @@ function replaceCloudbaseInitCode([string]$programFiles) {
     # copy code over either via git command or samba share
 }
 
+
+function setLocalScripts([string]$programFiels) {
+    $path = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
+
+    # Write the locations of the scripts in the cloudbase-init configuration file.
+    $home_drive = ${ENV:HOMEDRIVE}
+    $scripts = $home_drive + '\Scripts'
+    $value = "`nlocal_scripts_path=$scripts"
+    ((Get-Content $path) + $value) | Set-Content $path
+
+    # Create the scripts.
+    mkdir $scripts
+    echo "echo 1 > %HOMEDRIVE%\shell.txt" > $scripts\shell.cmd
+}
+
+
 function setService([string]$programFiles) {
     $path = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
 
@@ -57,6 +73,8 @@ try
     {
         throw "Installing $CloudbaseInitMsiPath failed. Log: $CloudbaseInitMsiLog"
     }
+
+    setLocalScripts $programFilesDir
 
     if ($newCode)
     {
