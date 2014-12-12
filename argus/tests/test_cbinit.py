@@ -41,7 +41,7 @@ class TestServices(scenario.BaseScenario):
     def test_service_keys(self):
         key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` Solutions\\'
                'Cloudbase-init\\{0}\\Plugins'
-               .format(self.instance['id']))
+               .format(self.server['id']))
         cmd = 'powershell (Get-Item %s).ValueCount' % key
         std_out = self.run_verbose_wsman(cmd)
 

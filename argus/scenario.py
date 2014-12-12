@@ -42,48 +42,26 @@ class BaseArgusScenario(manager.ScenarioTest):
     # Various classmethod utilities used in setUpClass and tearDownClass
 
     @classmethod
-    def _wait_until(cls, servers, kwargs):
-        for server in servers:
-            try:
-                cls.servers_client.wait_for_server_status(
-                    server['id'], kwargs['wait_until'])
-                cls.instance = server
-            except Exception as ex:
-                if ('preserve_server_on_error' not in kwargs
-                        or kwargs['preserve_server_on_error'] is False):
-                    for server in servers:
-                        try:
-                            cls.servers_client.delete_server(server['id'])
-                        except Exception:
-                            LOG.exception("Failed deleting server %s",
-                                          server['id'])
-                raise ex
+    def _wait_until(cls, server, wait_until):
+        try:
+            cls.servers_client.wait_for_server_status(
+                server['id'], wait_until)
+        except Exception:
+            LOG.exception("Error occurred while waiting for server %s", server)
 
     @classmethod
-    def create_test_server(cls, **kwargs):
+    def create_test_server(cls, wait_until='ACTIVE', **kwargs):
         """Wrapper utility that returns a test server."""
         # TODO(cpopa): add image_ref so it can be run for different images
-        if 'name' in kwargs:
-            name = kwargs.pop('name')
-        else:
-            name = data_utils.rand_name(cls.__name__ + "-instance")
+        name = data_utils.rand_name(cls.__name__ + "-instance")
         flavor = TEMPEST_CONF.compute.flavor_ref
         image_id = TEMPEST_CONF.compute.image_ref
 
-        _, body = cls.servers_client.create_server(
+        _, server = cls.servers_client.create_server(
             name, image_id, flavor, **kwargs)
 
-        # handle the case of multiple servers
-        servers = [body]
-        if 'min_count' in kwargs or 'max_count' in kwargs:
-            # Get servers created which name match with name param.
-            _, b = cls.servers_client.list_servers()
-            servers = [s for s in b['servers'] if s['name'].startswith(name)]
-
-        if 'wait_until' in kwargs:
-            cls._wait_until(servers, kwargs)
-
-        cls.servers.extend(servers)
+        cls._wait_until(server, wait_until)
+        cls.server = server
 
     @classmethod
     def create_keypair(cls):
@@ -98,7 +76,7 @@ class BaseArgusScenario(manager.ScenarioTest):
         _, cls.floating_ip = cls.floating_ips_client.create_floating_ip()
 
         cls.floating_ips_client.associate_floating_ip_to_server(
-            cls.floating_ip['ip'], cls.instance['id'])
+            cls.floating_ip['ip'], cls.server['id'])
 
     # Instance creation and termination.
 
@@ -106,9 +84,9 @@ class BaseArgusScenario(manager.ScenarioTest):
     def setUpClass(cls):
         super(BaseArgusScenario, cls).setUpClass()
 
+        cls.server = None
         cls.security_groups = []
         cls.subnets = []
-        cls.servers = []
         cls.routers = []
         cls.floating_ips = {}
 
@@ -127,8 +105,8 @@ class BaseArgusScenario(manager.ScenarioTest):
 
     @classmethod
     def tearDownClass(cls):
-        cls.servers_client.delete_server(cls.instance['id'])
-        cls.servers_client.wait_for_server_termination(cls.instance['id'])
+        cls.servers_client.delete_server(cls.server['id'])
+        cls.servers_client.wait_for_server_termination(cls.server['id'])
         cls.floating_ips_client.delete_floating_ip(cls.floating_ip['id'])
         cls.keypairs_client.delete_keypair(cls.keypair['name'])
 
@@ -156,7 +134,7 @@ class BaseArgusScenario(manager.ScenarioTest):
                     image=self.image_ref, flavor=self.flavor_ref
                 )
             )
-        self.change_security_group(self.instance['id'])
+        self.change_security_group(self.server['id'])
         self.private_network = self.get_private_network()
 
         self.remote_client = util.WinRemoteClient(
@@ -169,7 +147,7 @@ class BaseArgusScenario(manager.ScenarioTest):
         for sec_group in self.security_groups:
             try:
                 self.servers_client.remove_security_group(
-                    self.instance['id'], sec_group['name'])
+                    self.server['id'], sec_group['name'])
             except Exception:
                 LOG.exception("Failed removing security groups.")
 
@@ -231,7 +209,7 @@ class BaseArgusScenario(manager.ScenarioTest):
 
     def password(self):
         _, encoded_password = self.servers_client.get_password(
-            self.instance['id'])
+            self.server['id'])
         return util.decrypt_password(
             private_key=TEMPEST_CONF.compute.path_to_private_key,
             password=encoded_password['password'])
@@ -239,7 +217,7 @@ class BaseArgusScenario(manager.ScenarioTest):
     @util.run_once
     def prepare_instance(self):
         prepare.InstancePreparer(
-            self.instance['id'],
+            self.server['id'],
             self.servers_client,
             self.remote_client).prepare()
 
@@ -257,4 +235,4 @@ class BaseScenario(BaseArgusScenario):
         return self.images_client.get_image(TEMPEST_CONF.compute.image_ref)
 
     def instance_server(self):
-        return self.servers_client.get_server(self.instance['id'])
+        return self.servers_client.get_server(self.server['id'])
