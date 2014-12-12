@@ -10,7 +10,7 @@ else
    $programFilesDir = $ENV:ProgramFiles
 }
 
-Select-string -Path $programFilesDir'\Cloudbase Solutions\Cloudbase-Init\log\cloudbase-init.log' -Pattern 'Traceback\s+\(most\s+recent\s+call\s+last\)' -AllMatches
+Select-string -Path $programFilesDir'\Cloudbase Solutions\Cloudbase-Init\log\cloudbase-init.log' -Pattern 'Traceback\s+\(most\s+recent\s+call\s+last\)' -AllMatches -Context 10
 
 
 
