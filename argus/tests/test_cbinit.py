@@ -13,8 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 """Tests for CloudbaseInit services."""
-
+import contextlib
+import os
 import re
+import tempfile
+import shutil
 
 from tempest.common.utils import data_utils
 
@@ -34,6 +37,41 @@ def _get_dhcp_value(dnsmasq_neutron_path, key):
             match = regexp.search(line)
             if match is not None:
                 return line[match.end():].strip('\n')
+
+
+@contextlib.contextmanager
+def create_tempdir():
+    """Create a temporary directory.
+
+    This is a context manager, which creates a new temporary
+    directory and removes it when exiting from the context manager
+    block.
+    """
+    tempdir = tempfile.mkdtemp(prefix="cloudbaseinit-ci-tests")
+    try:
+        yield tempdir
+    finally:
+        shutil.rmtree(tempdir)
+
+
+@contextlib.contextmanager
+def create_tempfile(content=None):
+    """Create a temporary file.
+
+    This is a context manager, which uses `create_tempdir` to obtain a
+    temporary directory, where the file will be placed.
+
+    :param content:
+        Additionally, a string which will be written
+        in the new file.
+    """
+    with create_tempdir() as temp:
+        fd, path = tempfile.mkstemp(dir=temp)
+        os.close(fd)
+        if content:
+            with open(path, 'w') as stream:
+                stream.write(content)
+        yield path
 
 
 class TestServices(scenario.BaseScenario):
@@ -137,3 +175,14 @@ class TestServices(scenario.BaseScenario):
         expected_mtu = _get_dhcp_value(DNSMASQ_NEUTRON, '26')
 
         self.assertEqual(stdout.strip('\r\n'), expected_mtu)
+
+    def test_any_exception_occurred(self):
+        # Check that any exception occurred during execution
+        # of the CloudbaseInit service.
+        code = util.get_resource('get_traceback.ps1')
+        remote_script = "C:\\{}.ps1".format(data_utils.rand_name())
+        with create_tempfile(content=code) as tmp:
+            self.remote_client.copy_file(tmp, remote_script)
+            stdout = self.remote_client.run_verbose_wsman(
+                "powershell " + remote_script)
+            self.assertEqual('', stdout.strip())
