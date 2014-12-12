@@ -134,6 +134,12 @@ class BaseArgusScenario(manager.ScenarioTest):
                     image=self.image_ref, flavor=self.flavor_ref
                 )
             )
+
+        # Since we create the server in setUpClass, it would have
+        # been nice to create  the security groups there, too,
+        # in order to build them only once.
+        # Unfortunately, we don't have access there to
+        # methods required to do this.
         self.change_security_group(self.server['id'])
         self.private_network = self.get_private_network()
 
@@ -144,13 +150,11 @@ class BaseArgusScenario(manager.ScenarioTest):
         self.prepare_instance()
 
     def tearDown(self):
-        for sec_group in self.security_groups:
-            try:
-                self.servers_client.remove_security_group(
-                    self.server['id'], sec_group['name'])
-            except Exception:
-                LOG.exception("Failed removing security groups.")
-
+        try:
+            self.servers_client.remove_security_group(
+                self.server['id'], self.security_group['name'])
+        except Exception:
+            LOG.exception("Failed removing security group.")
         super(BaseArgusScenario, self).tearDown()
 
     # Utilities used by setUp.
@@ -196,10 +200,9 @@ class BaseArgusScenario(manager.ScenarioTest):
                             sg_rule['id'])
 
     def change_security_group(self, server_id):
-        security_group = self._create_security_group()
-        self.security_groups.append(security_group)
+        self.security_group = self._create_security_group()
         self.servers_client.add_security_group(server_id,
-                                               security_group['name'])
+                                               self.security_group['name'])
 
     def get_private_network(self):
         networks = self.networks_client.list_networks()[1]
