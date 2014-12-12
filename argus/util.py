@@ -38,7 +38,7 @@ class WinRemoteClient(remote_client.WinRemoteClient):
         """Run the given command and log anything it returns."""
 
         LOG.info("Running command %s", cmd)
-        stdout, stderr, exit_code = self.run_wsman_cmd(cmd)
+        stdout, stderr, exit_code = self.run_remote_cmd(cmd)
 
         LOG.info("The command returned the output %s", stdout)
         LOG.info("The stderr of the command was %s", stderr)

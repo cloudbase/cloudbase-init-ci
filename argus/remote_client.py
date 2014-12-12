@@ -82,7 +82,7 @@ class WinRemoteClient(object):
                               username=self.username,
                               password=self.password)
 
-    def run_wsman_cmd(self, cmd):
+    def run_remote_cmd(self, cmd):
         """Run the given remote command.
 
         The command will be executed on the remote underlying server.

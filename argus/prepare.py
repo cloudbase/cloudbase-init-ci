@@ -47,7 +47,7 @@ class InstancePreparer(object):
 
     def _execute(self, cmd):
         """Execute the given command and fail when the command fails."""
-        stdout, stderr, return_code = self._remote_client.run_wsman_cmd(cmd)
+        stdout, stderr, return_code = self._remote_client.run_remote_cmd(cmd)
         if return_code:
             raise exceptions.CloudbaseCIError(
                 "Command {command!r} failed with "
