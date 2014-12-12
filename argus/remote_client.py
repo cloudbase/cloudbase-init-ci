@@ -54,9 +54,9 @@ class WinRemoteClient(object):
             stdout, stderr, exit_code = protocol.get_command_output(
                 shell_id, command_id)
             if exit_code:
-                raise exceptions.CloudbaseCIError(
+                raise exceptions.CloudbaseCLIError(
                     "Executing command {command!r} failed with "
-                    "exit code {exit_code!r} and {output}"
+                    "exit code {exit_code!r} and output {output!r}"
                     .format(command=command,
                             exit_code=exit_code,
                             output=stdout))
