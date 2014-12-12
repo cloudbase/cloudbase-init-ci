@@ -142,27 +142,18 @@ class TestServices(scenario.BaseScenario):
 
     def test_sshpublickeys_set(self):
         cmd = 'echo %cd%'
-        remote_client = util.WinRemoteClient(
-            self.floating_ip['ip'],
-            CONF.argus.created_user,
-            self.password())
-        stdout = remote_client.run_verbose_wsman(cmd)
+        stdout = self.remote_client.run_verbose_wsman(cmd)
         path = stdout.strip("\r\n") + '\\.ssh\\authorized_keys'
 
         cmd2 = 'powershell "cat %s"' % path
-        stdout = remote_client.run_verbose_wsman(cmd2)
+        stdout = self.remote_client.run_verbose_wsman(cmd2)
 
         self.assertEqual(self.keypair['public_key'],
                          stdout.replace('\r\n', '\n'))
 
     def test_userdata(self):
-        remote_client = util.WinRemoteClient(
-            self.floating_ip['ip'],
-            CONF.argus.created_user,
-            self.password())
-
         cmd = 'powershell "(Get-ChildItem -Path  C:\ *.txt).Count'
-        stdout = remote_client.run_verbose_wsman(cmd)
+        stdout = self.remote_client.run_verbose_wsman(cmd)
 
         self.assertEqual("4", stdout.strip("\r\n"))
 
