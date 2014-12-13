@@ -74,8 +74,22 @@ def create_tempfile(content=None):
         yield path
 
 
+def group_members(client, group):
+    """Get a list of members, belonging to the given group."""
+    cmd = "net localgroup {}".format(group)
+    std_out = client.run_verbose_wsman(cmd)
+    member_search = re.search(
+        "Members\s+-+\s+(.*?)The\s+command",
+        std_out, re.MULTILINE | re.DOTALL)
+    if not member_search:
+        raise ValueError('Unable to get members.')
+
+    return list(filter(None, member_search.group(1).split()))
+
+
 class TestServices(scenario.BaseScenario):
 
+    # The actual tests.
     def test_service_keys(self):
         key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` Solutions\\'
                'Cloudbase-init\\{0}\\Plugins'
@@ -195,3 +209,7 @@ class TestServices(scenario.BaseScenario):
         stdout = self.remote_client.run_verbose_wsman(command)
         self.assertEqual('True', stdout.strip())
 
+    def test_user_belongs_to_group(self):
+        # Check that the created user belongs to the specified local gorups
+        members = group_members(self.remote_client, CONF.argus.group)
+        self.assertIn(CONF.argus.created_user, members)

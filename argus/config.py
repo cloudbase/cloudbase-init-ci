@@ -54,6 +54,10 @@ OPTS = [
                default=10,
                help="The number of plugins expected to exist after "
                     "cloudbase-init ran."),
+    cfg.StrOpt('group',
+               default='Administrators',
+               help="The group in which the created user "
+                    "is expected to be part of."),
 
 ]
 config.register_opt_group(CONF, CBINIT_GROUP, OPTS)
