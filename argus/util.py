@@ -36,7 +36,7 @@ LOG = logging.getLogger('cbinit')
 
 
 class WinRemoteClient(remote_client.WinRemoteClient):
-    def run_verbose_wsman(self, cmd):
+    def run_command_verbose(self, cmd):
         """Run the given command and log anything it returns."""
 
         LOG.info("Running command %s", cmd)

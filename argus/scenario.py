@@ -219,8 +219,8 @@ class BaseScenario(BaseArgusScenario):
     # Various helpful APIs
 
     @property
-    def run_verbose_wsman(self):
-        return self.remote_client.run_verbose_wsman
+    def run_command_verbose(self):
+        return self.remote_client.run_command_verbose
 
     def get_image_ref(self):
         return self.images_client.get_image(TEMPEST_CONF.compute.image_ref)

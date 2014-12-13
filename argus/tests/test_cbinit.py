@@ -77,7 +77,7 @@ def create_tempfile(content=None):
 def group_members(client, group):
     """Get a list of members, belonging to the given group."""
     cmd = "net localgroup {}".format(group)
-    std_out = client.run_verbose_wsman(cmd)
+    std_out = client.run_command_verbose(cmd)
     member_search = re.search(
         "Members\s+-+\s+(.*?)The\s+command",
         std_out, re.MULTILINE | re.DOTALL)
@@ -95,7 +95,7 @@ class TestServices(scenario.BaseScenario):
                'Cloudbase-init\\{0}\\Plugins'
                .format(self.server['id']))
         cmd = 'powershell (Get-Item %s).ValueCount' % key
-        std_out = self.run_verbose_wsman(cmd)
+        std_out = self.run_command_verbose(cmd)
 
         self.assertEqual(13, int(std_out))
 
@@ -103,7 +103,7 @@ class TestServices(scenario.BaseScenario):
         cmd = ('powershell (Get-Service "| where -Property Name '
                '-match cloudbase-init").DisplayName')
 
-        std_out = self.run_verbose_wsman(cmd)
+        std_out = self.run_command_verbose(cmd)
         self.assertEqual("Cloud Initialization Service\r\n", str(std_out))
 
     def test_disk_expanded(self):
@@ -114,7 +114,7 @@ class TestServices(scenario.BaseScenario):
         cmd = ('powershell (Get-WmiObject "win32_logicaldisk | '
                'where -Property DeviceID -Match C:").Size')
 
-        std_out = self.run_verbose_wsman(cmd)
+        std_out = self.run_command_verbose(cmd)
         self.assertGreater(int(std_out), image_size)
 
     def test_username_created(self):
@@ -122,12 +122,12 @@ class TestServices(scenario.BaseScenario):
                'where -Property Name -contains {0}"'
                .format(CONF.argus.created_user))
 
-        std_out = self.run_verbose_wsman(cmd)
+        std_out = self.run_command_verbose(cmd)
         self.assertIsNotNone(std_out)
 
     def test_hostname_set(self):
         cmd = 'powershell (Get-WmiObject "Win32_ComputerSystem").Name'
-        std_out = self.run_verbose_wsman(cmd)
+        std_out = self.run_command_verbose(cmd)
         server = self.instance_server()[1]
 
         self.assertEqual(str(std_out).lower(),
@@ -136,7 +136,7 @@ class TestServices(scenario.BaseScenario):
     def test_ntp_service_running(self):
         cmd = ('powershell (Get-Service "| where -Property Name '
                '-match W32Time").Status')
-        std_out = self.run_verbose_wsman(cmd)
+        std_out = self.run_command_verbose(cmd)
 
         self.assertEqual("Running\r\n", str(std_out))
 
@@ -149,25 +149,25 @@ class TestServices(scenario.BaseScenario):
             self.floating_ip['ip'],
             CONF.argus.created_user,
             self.password())
-        remote_client.run_verbose_wsman(cmd)
-        stdout = remote_client.run_verbose_wsman(cmd2)
+        remote_client.run_command_verbose(cmd)
+        stdout = remote_client.run_command_verbose(cmd2)
 
         self.assertEqual(folder_name, str(stdout.strip("\r\n")))
 
     def test_sshpublickeys_set(self):
         cmd = 'echo %cd%'
-        stdout = self.remote_client.run_verbose_wsman(cmd)
+        stdout = self.remote_client.run_command_verbose(cmd)
         path = stdout.strip("\r\n") + '\\.ssh\\authorized_keys'
 
         cmd2 = 'powershell "cat %s"' % path
-        stdout = self.remote_client.run_verbose_wsman(cmd2)
+        stdout = self.remote_client.run_command_verbose(cmd2)
 
         self.assertEqual(self.keypair['public_key'],
                          stdout.replace('\r\n', '\n'))
 
     def test_userdata(self):
         cmd = 'powershell "(Get-ChildItem -Path  C:\ *.txt).Count'
-        stdout = self.remote_client.run_verbose_wsman(cmd)
+        stdout = self.remote_client.run_command_verbose(cmd)
 
         self.assertEqual("4", stdout.strip("\r\n"))
 
@@ -176,7 +176,7 @@ class TestServices(scenario.BaseScenario):
         # net Win32_NetworkAdapterConfiguration
         cmd = ('powershell "(Get-NetIpConfiguration -Detailed).'
                'NetIPv4Interface.NlMTU"')
-        stdout = self.run_verbose_wsman(cmd)
+        stdout = self.run_command_verbose(cmd)
         expected_mtu = _get_dhcp_value(DNSMASQ_NEUTRON, '26')
 
         self.assertEqual(stdout.strip('\r\n'), expected_mtu)
@@ -188,7 +188,7 @@ class TestServices(scenario.BaseScenario):
         remote_script = "C:\\{}.ps1".format(data_utils.rand_name())
         with create_tempfile(content=code) as tmp:
             self.remote_client.copy_file(tmp, remote_script)
-            stdout = self.remote_client.run_verbose_wsman(
+            stdout = self.remote_client.run_command_verbose(
                 "powershell " + remote_script)
             self.assertEqual('', stdout.strip())
 
@@ -197,16 +197,16 @@ class TestServices(scenario.BaseScenario):
 
         # First, check if the Scripts folder was created.
         command = 'powershell "Test-Path C:\\Scripts"'
-        stdout = self.remote_client.run_verbose_wsman(command)
+        stdout = self.remote_client.run_command_verbose(command)
         self.assertEqual('True', stdout.strip())
 
         # Next, check that every script we registered was called.
         command = 'powershell "Test-Path C:\\Scripts\\shell.output"'
-        stdout = self.remote_client.run_verbose_wsman(command)
+        stdout = self.remote_client.run_command_verbose(command)
         self.assertEqual('True', stdout.strip())
 
         command = 'powershell "Test-Path C:\\Scripts\\powershell.output"'
-        stdout = self.remote_client.run_verbose_wsman(command)
+        stdout = self.remote_client.run_command_verbose(command)
         self.assertEqual('True', stdout.strip())
 
     def test_user_belongs_to_group(self):
