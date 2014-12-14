@@ -82,7 +82,7 @@ def _group_members(client, group):
 def _get_ntp_peers(output):
     peers = []
     for line in output.splitlines():
-        if not line.startswith("Peer:"):
+        if not line.startswith("Peer: "):
             continue
         _, _, entry_peers = line.partition(":")
         peers.extend(entry_peers.split(","))
