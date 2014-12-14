@@ -41,13 +41,7 @@ def _get_dhcp_value(dnsmasq_neutron_path, key):
 
 
 @contextlib.contextmanager
-def create_tempdir():
-    """Create a temporary directory.
-
-    This is a context manager, which creates a new temporary
-    directory and removes it when exiting from the context manager
-    block.
-    """
+def _create_tempdir():
     tempdir = tempfile.mkdtemp(prefix="cloudbaseinit-ci-tests")
     try:
         yield tempdir
@@ -56,17 +50,8 @@ def create_tempdir():
 
 
 @contextlib.contextmanager
-def create_tempfile(content=None):
-    """Create a temporary file.
-
-    This is a context manager, which uses `create_tempdir` to obtain a
-    temporary directory, where the file will be placed.
-
-    :param content:
-        Additionally, a string which will be written
-        in the new file.
-    """
-    with create_tempdir() as temp:
+def _create_tempfile(content=None):
+    with _create_tempdir() as temp:
         fd, path = tempfile.mkstemp(dir=temp)
         os.close(fd)
         if content:
@@ -75,7 +60,7 @@ def create_tempfile(content=None):
         yield path
 
 
-def group_members(client, group):
+def _group_members(client, group):
     """Get a list of members, belonging to the given group."""
     cmd = "net localgroup {}".format(group)
     std_out = client.run_command_verbose(cmd)
@@ -90,58 +75,63 @@ def group_members(client, group):
 
 class TestServices(scenario.BaseScenario):
 
-    # The actual tests.
-    def test_service_keys(self):
+    def test_plugins_count(self):
+        # Test the number of expected plugins.
         key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` Solutions\\'
                'Cloudbase-init\\{0}\\Plugins'
                .format(self.server['id']))
         cmd = 'powershell (Get-Item %s).ValueCount' % key
-        std_out = self.run_command_verbose(cmd)
+        stdout = self.run_command_verbose(cmd)
 
-        self.assertEqual(13, int(std_out))
+        self.assertEqual(CONF.argus.expected_plugins_count,
+                         int(stdout))
 
-    def test_service(self):
+    def test_service_display_name(self):
         cmd = ('powershell (Get-Service "| where -Property Name '
                '-match cloudbase-init").DisplayName')
 
-        std_out = self.run_command_verbose(cmd)
-        self.assertEqual("Cloud Initialization Service\r\n", str(std_out))
+        stdout = self.run_command_verbose(cmd)
+        self.assertEqual("Cloud Initialization Service\r\n", str(stdout))
 
     def test_disk_expanded(self):
-        # TODO(cpopa): after added image to instance creation,
-        # added here as well
+        # Test the disk expanded properly.
         image = self.get_image_ref()
         image_size = image[1]['OS-EXT-IMG-SIZE:size']
         cmd = ('powershell (Get-WmiObject "win32_logicaldisk | '
                'where -Property DeviceID -Match C:").Size')
 
-        std_out = self.run_command_verbose(cmd)
-        self.assertGreater(int(std_out), image_size)
+        stdout = self.run_command_verbose(cmd)
+        self.assertGreater(int(stdout), image_size)
 
     def test_username_created(self):
+        # Test that the user expected to be created by
+        # CreateUserPlugin exists.
         cmd = ('powershell "Get-WmiObject Win32_Account | '
                'where -Property Name -contains {0}"'
                .format(CONF.argus.created_user))
 
-        std_out = self.run_command_verbose(cmd)
-        self.assertIsNotNone(std_out)
+        stdout = self.run_command_verbose(cmd)
+        self.assertIsNotNone(stdout)
 
     def test_hostname_set(self):
+        # Test that the hostname was properly set.
         cmd = 'powershell (Get-WmiObject "Win32_ComputerSystem").Name'
-        std_out = self.run_command_verbose(cmd)
+        stdout = self.run_command_verbose(cmd)
         server = self.instance_server()[1]
 
-        self.assertEqual(str(std_out).lower(),
-                         str(server['name'][:15]).lower() + '\r\n')
+        self.assertEqual(str(stdout).lower().strip(),
+                         str(server['name'][:15]).lower())
 
     def test_ntp_service_running(self):
+        # Test that the NTP service is started.
         cmd = ('powershell (Get-Service "| where -Property Name '
                '-match W32Time").Status')
-        std_out = self.run_command_verbose(cmd)
+        stdout = self.run_command_verbose(cmd)
 
-        self.assertEqual("Running\r\n", str(std_out))
+        self.assertEqual("Running\r\n", str(stdout))
 
     def test_password_set(self):
+        # Test that the proper password was set.<F2>
         folder_name = data_utils.rand_name("folder")
         cmd = 'mkdir C:\\%s' % folder_name
         cmd2 = ('powershell "get-childitem c:\ | select-string %s"'
@@ -153,9 +143,10 @@ class TestServices(scenario.BaseScenario):
         remote_client.run_command_verbose(cmd)
         stdout = remote_client.run_command_verbose(cmd2)
 
-        self.assertEqual(folder_name, str(stdout.strip("\r\n")))
+        self.assertEqual(folder_name, stdout.strip("\r\n"))
 
     def test_sshpublickeys_set(self):
+        # Test that the SSH public keys were set.
         cmd = 'echo %cd%'
         stdout = self.remote_client.run_command_verbose(cmd)
         homedir, _, _ = stdout.rpartition(ntpath.sep)
@@ -172,6 +163,7 @@ class TestServices(scenario.BaseScenario):
                          stdout.replace('\r\n', '\n'))
 
     def test_userdata(self):
+        # Test that the userdata plugin executed properly the scripts.
         cmd = 'powershell "(Get-ChildItem -Path  C:\ *.txt).Count'
         stdout = self.remote_client.run_command_verbose(cmd)
 
@@ -192,7 +184,7 @@ class TestServices(scenario.BaseScenario):
         # of the CloudbaseInit service.
         code = util.get_resource('get_traceback.ps1')
         remote_script = "C:\\{}.ps1".format(data_utils.rand_name())
-        with create_tempfile(content=code) as tmp:
+        with _create_tempfile(content=code) as tmp:
             self.remote_client.copy_file(tmp, remote_script)
             stdout = self.remote_client.run_command_verbose(
                 "powershell " + remote_script)
@@ -217,5 +209,5 @@ class TestServices(scenario.BaseScenario):
 
     def test_user_belongs_to_group(self):
         # Check that the created user belongs to the specified local gorups
-        members = group_members(self.remote_client, CONF.argus.group)
+        members = _group_members(self.remote_client, CONF.argus.group)
         self.assertIn(CONF.argus.created_user, members)

@@ -51,7 +51,7 @@ OPTS = [
                       "logging of command output directly to stdout "
                       "and failure hooks, using pdb."),
     cfg.IntOpt('expected_plugins_count',
-               default=10,
+               default=13,
                help="The number of plugins expected to exist after "
                     "cloudbase-init ran."),
     cfg.StrOpt('group',
