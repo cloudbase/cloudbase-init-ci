@@ -15,6 +15,7 @@
 """Tests for CloudbaseInit services."""
 import contextlib
 import os
+import ntpath
 import re
 import tempfile
 import shutil
@@ -157,9 +158,14 @@ class TestServices(scenario.BaseScenario):
     def test_sshpublickeys_set(self):
         cmd = 'echo %cd%'
         stdout = self.remote_client.run_command_verbose(cmd)
-        path = stdout.strip("\r\n") + '\\.ssh\\authorized_keys'
+        homedir, _, _ = stdout.rpartition(ntpath.sep)
+        keys_path = ntpath.join(
+            homedir,
+            CONF.argus.created_user,
+            ".ssh",
+            "authorized_keys")
 
-        cmd2 = 'powershell "cat %s"' % path
+        cmd2 = 'powershell "cat %s"' % keys_path
         stdout = self.remote_client.run_command_verbose(cmd2)
 
         self.assertEqual(self.keypair['public_key'],
