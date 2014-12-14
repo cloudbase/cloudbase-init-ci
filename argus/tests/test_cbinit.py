@@ -93,7 +93,7 @@ def _dnsmasq_configured():
             if not line.startswith('dnsmasq_config_file'):
                 continue
             _, _, dnsmasq_file = line.partition("=")
-            if  dnsmasq_file.strip() == DNSMASQ_NEUTRON:
+            if dnsmasq_file.strip() == DNSMASQ_NEUTRON:
                 return True
     return False
 
@@ -147,6 +147,10 @@ class TestServices(scenario.BaseScenario):
         self.assertEqual(str(stdout).lower().strip(),
                          str(server['name'][:15]).lower())
 
+    @unittest.skipUnless(_dnsmasq_configured(),
+                         "Test will fail if the `dhcp-option-force` option "
+                         "was not configured by the `dnsmasq_config_file` "
+                         "from neutron/dhcp-agent.ini.")
     def test_ntp_service_running(self):
         # Test that the NTP service is started.
         cmd = ('powershell (Get-Service "| where -Property Name '
