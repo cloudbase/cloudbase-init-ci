@@ -29,7 +29,7 @@ from argus import util
 
 CONF = config.CONF
 DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
-DHCP_AGENT = '/etc/neutron/dhcp-agent.ini'
+DHCP_AGENT = '/etc/neutron/dhcp_agent.ini'
 
 def _get_dhcp_value(key):
     """Get the value of an override from the dnsmasq-config file.
@@ -91,11 +91,11 @@ def _dnsmasq_configured():
     with open(DHCP_AGENT) as stream:
         for line in stream:
             if not line.startswith('dnsmasq_config_file'):
-                return False
+                continue
             _, _, dnsmasq_file = line.partition("=")
-            if  dnsmasq_file.strip() != DNSMASQ_NEUTRON:
-                return False
-    return True
+            if  dnsmasq_file.strip() == DNSMASQ_NEUTRON:
+                return True
+    return False
 
 
 class TestServices(scenario.BaseScenario):
