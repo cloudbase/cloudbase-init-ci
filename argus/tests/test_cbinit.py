@@ -89,6 +89,24 @@ def _get_ntp_peers(output):
     return list(filter(None, peers))
 
 
+def _parse_licenses(output):
+    """Parse the licenses information.
+
+    It will return a dictionary of products and their
+    license status.
+    """
+    licenses = {}
+    # We are starting from 2, since the first line is the
+    # list of fields and the second one is a separator.
+    # We can't use csv to parse this, unfortunately.
+    for line in output.strip().splitlines()[2:]:
+        product, _, status = line.rpartition(" ")
+        product = product.strip()
+        licenses[product] = status
+    return licenses
+
+
+
 @util.run_once
 def _dnsmasq_configured():
     """Verify that the dnsmasq_config_file was set and it exists.
@@ -266,3 +284,15 @@ class TestServices(scenario.BaseScenario):
         # Check that the created user belongs to the specified local gorups
         members = _group_members(self.remote_client, CONF.argus.group)
         self.assertIn(CONF.argus.created_user, members)
+
+    def test_licensing(self):
+        # Check that the instance OS was licensed properly.
+        command = ("Get-WmiObject SoftwareLicensingProduct | "
+                   "where PartialProductKey | Select Name, LicenseStatus")
+        stdout = self.remote_client.run_verbose_command(command)
+        licenses = _parse_licenses(stdout)
+        if len(licenses) > 1:
+            self.fail("Too many expected products in licensing output.")
+
+        license_status = list(licenses.values())[0]
+        self.assertEqual(1, int(license_status))
