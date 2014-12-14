@@ -107,6 +107,13 @@ def _dnsmasq_configured():
                 return True
     return False
 
+def skip_unless_dnsmasq_configured(func):
+     msg = (
+         "Test will fail if the `dhcp-option-force` option "
+         "was not configured by the `dnsmasq_config_file` "
+         "from neutron/dhcp-agent.ini.")
+     return unittest.skipUnless(_dnsmasq_configured(), msg)(func)
+
 
 class TestServices(scenario.BaseScenario):
 
@@ -157,10 +164,7 @@ class TestServices(scenario.BaseScenario):
         self.assertEqual(str(stdout).lower().strip(),
                          str(server['name'][:15]).lower())
 
-    @unittest.skipUnless(_dnsmasq_configured(),
-                         "Test will fail if the `dhcp-option-force` option "
-                         "was not configured by the `dnsmasq_config_file` "
-                         "from neutron/dhcp-agent.ini.")
+    @skip_unless_dnsmasq_configured
     def test_ntp_service_running(self):
         # Test that the NTP service is started.
         cmd = ('powershell (Get-Service "| where -Property Name '
@@ -169,10 +173,7 @@ class TestServices(scenario.BaseScenario):
 
         self.assertEqual("Running\r\n", str(stdout))
 
-    @unittest.skipUnless(_dnsmasq_configured(),
-                         "Test will fail if the `dhcp-option-force` option "
-                         "was not configured by the `dnsmasq_config_file` "
-                         "from neutron/dhcp-agent.ini.")
+    @skip_unless_dnsmasq_configured
     def test_ntp_properly_configured(self):
         # Test that NTP server is properly configured
         command = 'w32tm /query /peers'
@@ -224,10 +225,7 @@ class TestServices(scenario.BaseScenario):
 
         self.assertEqual("4", stdout.strip("\r\n"))
 
-    @unittest.skipUnless(_dnsmasq_configured(),
-                         "Test will fail if the `dhcp-option-force` option "
-                         "was not configured by the `dnsmasq_config_file` "
-                         "from neutron/dhcp-agent.ini.")
+    @skip_unless_dnsmasq_configured
     def test_mtu(self):
         cmd = ('powershell "(Get-NetIpConfiguration -Detailed).'
                'NetIPv4Interface.NlMTU"')
