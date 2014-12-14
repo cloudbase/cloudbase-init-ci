@@ -79,6 +79,16 @@ def _group_members(client, group):
     return list(filter(None, member_search.group(1).split()))
 
 
+def _get_ntp_peers(output):
+    peers = []
+    for line in output.splitlines():
+        if not line.startswith("Peer:"):
+            continue
+        _, _, entry_peers = line.partition(":")
+        peers.extend(entry_peers.split(","))
+    return list(filter(None, peers))
+
+
 @util.run_once
 def _dnsmasq_configured():
     """Verify that the dnsmasq_config_file was set and it exists.
@@ -158,6 +168,22 @@ class TestServices(scenario.BaseScenario):
         stdout = self.run_command_verbose(cmd)
 
         self.assertEqual("Running\r\n", str(stdout))
+
+    @unittest.skipUnless(_dnsmasq_configured(),
+                         "Test will fail if the `dhcp-option-force` option "
+                         "was not configured by the `dnsmasq_config_file` "
+                         "from neutron/dhcp-agent.ini.")
+    def test_ntp_properly_configured(self):
+        # Test that NTP server is properly configured
+        command = 'w32tm /query /peers'
+        stdout = self.run_command_verbose(command)
+        peers = _get_ntp_peers(stdout)
+
+        expected_peer = _get_dhcp_value('42')
+        if expected_peer is None:
+            self.fail('DHCP NTP option was not configured.')
+
+        self.assertEqual([expected_peer], peers)
 
     def test_password_set(self):
         # Test that the proper password was set.<F2>
