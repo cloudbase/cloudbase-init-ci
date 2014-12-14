@@ -86,7 +86,7 @@ def _get_ntp_peers(output):
             continue
         _, _, entry_peers = line.partition(":")
         peers.extend(entry_peers.split(","))
-    return list(filter(None, peers))
+    return list(filter(None, map(str.strip, peers)))
 
 
 def _parse_licenses(output):
