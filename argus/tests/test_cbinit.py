@@ -287,8 +287,8 @@ class TestServices(scenario.BaseScenario):
 
     def test_licensing(self):
         # Check that the instance OS was licensed properly.
-        command = ("Get-WmiObject SoftwareLicensingProduct | "
-                   "where PartialProductKey | Select Name, LicenseStatus")
+        command = ('powershell "Get-WmiObject SoftwareLicensingProduct | '
+                   'where PartialProductKey | Select Name, LicenseStatus"')
         stdout = self.remote_client.run_command_verbose(command)
         licenses = _parse_licenses(stdout)
         if len(licenses) > 1:
