@@ -1,0 +1,4 @@
+# Cnfigure the MTU
+dhcp-option-force=26,1454
+# Configure the NTP server.
+dhcp-option-force=42,188.214.141.10
