@@ -289,7 +289,7 @@ class TestServices(scenario.BaseScenario):
         # Check that the instance OS was licensed properly.
         command = ("Get-WmiObject SoftwareLicensingProduct | "
                    "where PartialProductKey | Select Name, LicenseStatus")
-        stdout = self.remote_client.run_verbose_command(command)
+        stdout = self.remote_client.run_command_verbose(command)
         licenses = _parse_licenses(stdout)
         if len(licenses) > 1:
             self.fail("Too many expected products in licensing output.")
