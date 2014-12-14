@@ -19,6 +19,7 @@ import ntpath
 import re
 import tempfile
 import shutil
+import unittest
 
 from tempest.common.utils import data_utils
 
@@ -28,16 +29,21 @@ from argus import util
 
 CONF = config.CONF
 DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
+DHCP_AGENT = '/etc/neutron/dhcp-agent.ini'
 
+def _get_dhcp_value(key):
+    """Get the value of an override from the dnsmasq-config file.
 
-def _get_dhcp_value(dnsmasq_neutron_path, key):
-    regexp = re.compile(r'dhcp-option-forceregex match substring in '
-                        'string python.{0},'.format(key))
-    with open(dnsmasq_neutron_path) as f:
-        for line in f:
-            match = regexp.search(line)
-            if match is not None:
-                return line[match.end():].strip('\n')
+    An override will be have the format 'dhcp-option-force=key,value'.
+    """
+    lookup = "dhcp-option-force={}".format(key)
+    with open(DNSMASQ_NEUTRON) as stream:
+        for line in stream:
+            if not line.startswith(lookup):
+                continue
+            _, _, option_value = line.strip().partition("=")
+            _, _, value = option_value.partition(",")
+            return value.strip()
 
 
 @contextlib.contextmanager
@@ -71,6 +77,25 @@ def _group_members(client, group):
         raise ValueError('Unable to get members.')
 
     return list(filter(None, member_search.group(1).split()))
+
+
+@util.run_once
+def _dnsmasq_configured():
+    """Verify that the dnsmasq_config_file was set and it exists.
+
+    Without it, tests for MTU or NTP will fail, since their plugins
+    are relying on DHCP to provide this information.
+    """
+    if not os.path.exists(DHCP_AGENT):
+        return False
+    with open(DHCP_AGENT) as stream:
+        for line in stream:
+            if not line.startswith('dnsmasq_config_file'):
+                return False
+            _, _, dnsmasq_file = line.partition("=")
+            if  dnsmasq_file.strip() != DNSMASQ_NEUTRON:
+                return False
+    return True
 
 
 class TestServices(scenario.BaseScenario):
@@ -169,15 +194,17 @@ class TestServices(scenario.BaseScenario):
 
         self.assertEqual("4", stdout.strip("\r\n"))
 
+    @unittest.skipUnless(_dnsmasq_configured(),
+                         "Test will fail if the `dhcp-option-force` option "
+                         "was not configured by the `dnsmasq_config_file` "
+                         "from neutron/dhcp-agent.ini.")
     def test_mtu(self):
-        # TODO(cpopa): Get value to compare with.
-        # net Win32_NetworkAdapterConfiguration
         cmd = ('powershell "(Get-NetIpConfiguration -Detailed).'
                'NetIPv4Interface.NlMTU"')
         stdout = self.run_command_verbose(cmd)
-        expected_mtu = _get_dhcp_value(DNSMASQ_NEUTRON, '26')
+        expected_mtu = _get_dhcp_value('26')
 
-        self.assertEqual(stdout.strip('\r\n'), expected_mtu)
+        self.assertEqual(expected_mtu, stdout.strip('\r\n'))
 
     def test_any_exception_occurred(self):
         # Check that any exception occurred during execution
