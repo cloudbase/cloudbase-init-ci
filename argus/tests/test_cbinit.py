@@ -133,7 +133,7 @@ def skip_unless_dnsmasq_configured(func):
      return unittest.skipUnless(_dnsmasq_configured(), msg)(func)
 
 
-class TestServices(scenario.BaseScenario):
+class TestServices(scenario.BaseWindowsScenario):
 
     def test_plugins_count(self):
         # Test the number of expected plugins.

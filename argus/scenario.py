@@ -13,9 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import abc
 import base64
 import os
 
+import six
 from tempest.common.utils import data_utils
 from tempest.openstack.common import log as logging
 from tempest.scenario import manager
@@ -31,6 +33,7 @@ CONF = config.CONF
 TEMPEST_CONF = config.TEMPEST_CONF
 
 
+@six.add_metaclass(abc.ABCMeta)
 class BaseArgusScenario(manager.ScenarioTest):
 
     # Various classmethod utilities used in setUpClass and tearDownClass
@@ -130,17 +133,7 @@ class BaseArgusScenario(manager.ScenarioTest):
                 )
             )
 
-        # Since we create the server in setUpClass, it would have
-        # been nice to create  the security groups there, too,
-        # in order to build them only once.
-        # Unfortunately, we don't have access there to
-        # methods required to do this.
         self.change_security_group(self.server['id'])
-
-        self.remote_client = util.WinRemoteClient(
-            self.floating_ip['ip'],
-            CONF.argus.default_ci_username,
-            CONF.argus.default_ci_password)
         self.prepare_instance()
 
     def tearDown(self):
@@ -153,10 +146,48 @@ class BaseArgusScenario(manager.ScenarioTest):
 
     # Utilities used by setUp.
 
+    def _add_security_group_exceptions(self, secgroup):
+        """Override this to add custom security group exceptions."""
+
     def _create_security_group(self):
         security_group = super(BaseArgusScenario, self)._create_security_group()
         self._add_security_group_exceptions(security_group['id'])
         return security_group
+
+    def change_security_group(self, server_id):
+        self.security_group = self._create_security_group()
+        self.servers_client.add_security_group(server_id,
+                                               self.security_group['name'])
+
+    def password(self):
+        _, encoded_password = self.servers_client.get_password(
+            self.server['id'])
+        return util.decrypt_password(
+            private_key=TEMPEST_CONF.compute.path_to_private_key,
+            password=encoded_password['password'])
+
+    @abc.abstractmethod
+    def prepare_instance(self):
+        """Generic function for preparing an instance before doing tests."""
+
+    @abc.abstractmethod
+    @property
+    def remote_client(self):
+        """Get a client to the underlying instance."""
+
+    @property
+    def run_command_verbose(self):
+        return self.remote_client.run_command_verbose
+
+    def get_image_ref(self):
+        return self.images_client.get_image(TEMPEST_CONF.compute.image_ref)
+
+    def instance_server(self):
+        return self.servers_client.get_server(self.server['id'])
+
+
+class BaseWindowsScenario(BaseArgusScenario):
+    """Base class for Windows-based tests."""
 
     def _add_security_group_exceptions(self, secgroup_id):
         # TODO(cpopa): this is almost a verbatim copy of
@@ -193,37 +224,26 @@ class BaseArgusScenario(manager.ScenarioTest):
                             _client.delete_security_group_rule,
                             sg_rule['id'])
 
-    def change_security_group(self, server_id):
-        self.security_group = self._create_security_group()
-        self.servers_client.add_security_group(server_id,
-                                               self.security_group['name'])
-
-    def password(self):
-        _, encoded_password = self.servers_client.get_password(
-            self.server['id'])
-        return util.decrypt_password(
-            private_key=TEMPEST_CONF.compute.path_to_private_key,
-            password=encoded_password['password'])
-
     @util.run_once
-    def prepare_instance(self):
-        prepare.InstancePreparer(
+    def _prepare_instance_for_test(self):
+        prepare.WindowsInstancePreparer(
             self.server['id'],
             self.servers_client,
             self.remote_client).prepare()
 
+    def prepare_instance(self):
+        # Since we create the server in setUpClass, it would have
+        # been nice to create  the security groups there, too,
+        # in order to build them only once.
+        # Unfortunately, we don't have access there to
+        # methods required to do this.
+        self.change_security_group(self.server['id'])
+        self._prepare_instance_for_test()
 
-class BaseScenario(BaseArgusScenario):
-    """The base scenario class which should be used by tests."""
+    def get_remote_client(self, *args, **kwargs):
+        return util.WinRemoteClient(
+            self.floating_ip['ip'],
+            CONF.argus.default_ci_username,
+            CONF.argus.default_ci_password)
 
-    # Various helpful APIs
-
-    @property
-    def run_command_verbose(self):
-        return self.remote_client.run_command_verbose
-
-    def get_image_ref(self):
-        return self.images_client.get_image(TEMPEST_CONF.compute.image_ref)
-
-    def instance_server(self):
-        return self.servers_client.get_server(self.server['id'])
+    remote_client = util.cached_property(get_remote_client)

@@ -14,8 +14,10 @@
 #    under the License.
 """Instance preparing utilities."""
 
+import abc
 import time
 
+import six
 from tempest.openstack.common import log as logging
 
 from argus import config
@@ -25,9 +27,13 @@ from argus import util
 CONF = config.CONF
 LOG = logging.getLogger('cbinit')
 
-__all__ = ('InstancePreparer', )
+__all__ = (
+    'InstancePreparer',
+    'WindowsInstancePreparer',
+)
 
 
+@six.add_metaclass(abc.ABCMeta)
 class InstancePreparer(object):
     """Handle instance preparing.
 
@@ -96,6 +102,51 @@ class InstancePreparer(object):
                 else:
                     time.sleep(retry_count_interval)
 
+    @abc.abstractmethod
+    def wait_for_boot_completion(self):
+        """Wait for the instance to finish up booting."""
+
+    @abc.abstractmethod
+    def get_installation_script(self):
+        """Get the installation script for cloudbaseinit."""
+
+    @abc.abstractmethod
+    def install_cbinit(self):
+        """Install the cloudbaseinit code."""
+
+    @abc.abstractmethod
+    def wait_cbinit_finalization(self):
+        """Wait for the finalization of cloudbaseinit."""
+
+    @abc.abstractmethod
+    def wait_reboot(self):
+        """Do a reboot and wait for the instance to be up."""
+
+    def prepare(self):
+        """Prepare the underlying instance.
+
+        The following operations will be executed:
+
+        * wait for boot completion
+        * get an installation script for CloudbaseInit
+        * install CloudbaseInit by running the previously downloaded file.
+        * wait until the instance is up and running.
+        """
+        LOG.info("Preparing instance %s", self._instance_id)
+        self.wait_for_boot_completion()
+        self.get_installation_script()
+        self.install_cbinit()
+        self.wait_reboot()
+        self.wait_cbinit_finalization()
+        LOG.info("Finished preparing instance %s", self._instance_id)
+
+    if CONF.argus.debug:
+        prepare = util.trap_failure(prepare)
+
+
+class WindowsInstancePreparer(InstancePreparer):
+    """Instance preparer for Windows machines."""
+
     def wait_for_boot_completion(self):
         LOG.info("Waiting for boot completion")
 
@@ -156,23 +207,3 @@ class InstancePreparer(object):
             server_id=self._instance_id,
             status='ACTIVE')
 
-    def prepare(self):
-        """Prepare the underlying instance.
-
-        The following operations will be executed:
-
-        * wait for boot completion
-        * get an installation script for CloudbaseInit
-        * install CloudbaseInit by running the previously downloaded file.
-        * wait until the instance is up and running.
-        """
-        LOG.info("Preparing instance %s", self._instance_id)
-        self.wait_for_boot_completion()
-        self.get_installation_script()
-        self.install_cbinit()
-        self.wait_reboot()
-        self.wait_cbinit_finalization()
-        LOG.info("Finished preparing instance %s", self._instance_id)
-
-    if CONF.argus.debug:
-        prepare = util.trap_failure(prepare)

@@ -29,6 +29,7 @@ __all__ = (
     'decrypt_password',
     'run_once',
     'get_resource',
+    'cached_property',
 )
 
 
@@ -98,3 +99,14 @@ def trap_failure(func):
 def get_resource(resource):
     """Get the given resource from the list of known resources."""
     return pkgutil.get_data('argus.resources', resource)
+
+
+class cached_property(object):
+    """A property which caches the result on access."""
+
+    def __init__(self, func):
+        self.func = func
+
+    def __get__(self, instance, klass=None):
+        instance.__dict__[self.func.__name__] = result = self.func(instance)
+        return result
