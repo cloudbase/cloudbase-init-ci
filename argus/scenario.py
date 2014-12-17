@@ -175,6 +175,18 @@ class BaseArgusScenario(manager.ScenarioTest):
     def remote_client(self):
         """Get a client to the underlying instance."""
 
+    @abc.abstractmethod
+    def get_remote_client(self, username, password=None):
+        """Get a remote client to the underlying instance.
+
+        This is different than :attr:`remote_client`, because that
+        will always return a client with predefined credentials,
+        while this method allows for a fine-grained control
+        over this aspect.
+        `password` can be omitted if authentication by
+        SSH key is used.
+        """
+
     @property
     def run_command_verbose(self):
         return self.remote_client.run_command_verbose
@@ -240,10 +252,13 @@ class BaseWindowsScenario(BaseArgusScenario):
         self.change_security_group(self.server['id'])
         self._prepare_instance_for_test()
 
-    def get_remote_client(self, *args, **kwargs):
-        return util.WinRemoteClient(
-            self.floating_ip['ip'],
-            CONF.argus.default_ci_username,
-            CONF.argus.default_ci_password)
+    def get_remote_client(self, username=None, password=None):
+        if username is None:
+            username = CONF.argus.default_ci_password
+        if password is None:
+            password = CONF.argus.default_ci_password
+        return util.WinRemoteClient(self.floating_ip['ip'],
+                                    username,
+                                    password)
 
     remote_client = util.cached_property(get_remote_client)

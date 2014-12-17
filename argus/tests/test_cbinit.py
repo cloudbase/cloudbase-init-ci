@@ -19,31 +19,15 @@ import ntpath
 import re
 import tempfile
 import shutil
-import unittest
 
 from tempest.common.utils import data_utils
 
 from argus import config
+from argus.tests import generic_tests
 from argus import scenario
 from argus import util
 
 CONF = config.CONF
-DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
-DHCP_AGENT = '/etc/neutron/dhcp_agent.ini'
-
-def _get_dhcp_value(key):
-    """Get the value of an override from the dnsmasq-config file.
-
-    An override will be have the format 'dhcp-option-force=key,value'.
-    """
-    lookup = "dhcp-option-force={}".format(key)
-    with open(DNSMASQ_NEUTRON) as stream:
-        for line in stream:
-            if not line.startswith(lookup):
-                continue
-            _, _, option_value = line.strip().partition("=")
-            _, _, value = option_value.partition(",")
-            return value.strip()
 
 
 @contextlib.contextmanager
@@ -64,19 +48,6 @@ def _create_tempfile(content=None):
             with open(path, 'w') as stream:
                 stream.write(content)
         yield path
-
-
-def _group_members(client, group):
-    """Get a list of members, belonging to the given group."""
-    cmd = "net localgroup {}".format(group)
-    std_out = client.run_command_verbose(cmd)
-    member_search = re.search(
-        "Members\s+-+\s+(.*?)The\s+command",
-        std_out, re.MULTILINE | re.DOTALL)
-    if not member_search:
-        raise ValueError('Unable to get members.')
-
-    return list(filter(None, member_search.group(1).split()))
 
 
 def _get_ntp_peers(output):
@@ -106,45 +77,94 @@ def _parse_licenses(output):
     return licenses
 
 
-
-@util.run_once
-def _dnsmasq_configured():
-    """Verify that the dnsmasq_config_file was set and it exists.
-
-    Without it, tests for MTU or NTP will fail, since their plugins
-    are relying on DHCP to provide this information.
-    """
-    if not os.path.exists(DHCP_AGENT):
-        return False
-    with open(DHCP_AGENT) as stream:
-        for line in stream:
-            if not line.startswith('dnsmasq_config_file'):
-                continue
-            _, _, dnsmasq_file = line.partition("=")
-            if dnsmasq_file.strip() == DNSMASQ_NEUTRON:
-                return True
-    return False
-
-def skip_unless_dnsmasq_configured(func):
-     msg = (
-         "Test will fail if the `dhcp-option-force` option "
-         "was not configured by the `dnsmasq_config_file` "
-         "from neutron/dhcp-agent.ini.")
-     return unittest.skipUnless(_dnsmasq_configured(), msg)(func)
-
-
-class TestServices(scenario.BaseWindowsScenario):
-
-    def test_plugins_count(self):
-        # Test the number of expected plugins.
+class WindowsUtils(generic_tests.GenericInstanceUtils):
+    # TODO: instantiate with the test class
+    def get_plugins_count(self):
         key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` Solutions\\'
                'Cloudbase-init\\{0}\\Plugins'
                .format(self.server['id']))
         cmd = 'powershell (Get-Item %s).ValueCount' % key
         stdout = self.run_command_verbose(cmd)
+        return int(stdout)
 
-        self.assertEqual(CONF.argus.expected_plugins_count,
-                         int(stdout))
+    def get_disk_size(self):
+        cmd = ('powershell (Get-WmiObject "win32_logicaldisk | '
+               'where -Property DeviceID -Match C:").Size')
+        return int(self.run_command_verbose(cmd))
+
+    def username_exists(self, username):
+        cmd = ('powershell "Get-WmiObject Win32_Account | '
+               'where -Property Name -contains {0}"'
+               .format(username))
+
+        stdout = self.run_command_verbose(cmd)
+        return bool(stdout)
+
+    def get_instance_hostname(self):
+        cmd = 'powershell (Get-WmiObject "Win32_ComputerSystem").Name'
+        stdout = self.run_command_verbose(cmd)
+        return stdout.lower().strip()
+
+    def get_instance_ntp_peers(self):
+        command = 'w32tm /query /peers'
+        stdout = self.run_command_verbose(command)
+        return _get_ntp_peers(stdout)
+
+    def get_instance_keys_path(self):
+        cmd = 'echo %cd%'
+        stdout = self.remote_client.run_command_verbose(cmd)
+        homedir, _, _ = stdout.rpartition(ntpath.sep)
+        return ntpath.join(
+            homedir,
+            CONF.argus.created_user,
+            ".ssh",
+            "authorized_keys")
+
+    def get_instance_file_content(self, filepath):
+        cmd = 'powershell "cat %s"' % filepath
+        return self.remote_client.run_command_verbose(cmd)
+
+    def get_userdata_executed_plugins(self):
+        cmd = 'powershell "(Get-ChildItem -Path  C:\ *.txt).Count'
+        stdout = self.remote_client.run_command_verbose(cmd)
+        return int(stdout)
+
+    def get_instance_mtu(self):
+        cmd = ('powershell "(Get-NetIpConfiguration -Detailed).'
+               'NetIPv4Interface.NlMTU"')
+        stdout = self.run_command_verbose(cmd)
+        return stdout.strip('\r\n')
+
+    def get_cloudbaseinit_traceback(self):
+        code = util.get_resource('get_traceback.ps1')
+        remote_script = "C:\\{}.ps1".format(data_utils.rand_name())
+        with _create_tempfile(content=code) as tmp:
+            self.remote_client.copy_file(tmp, remote_script)
+            stdout = self.remote_client.run_command_verbose(
+                "powershell " + remote_script)
+            return stdout.strip()
+
+    def instance_shell_script_executed(self):
+        command = 'powershell "Test-Path C:\\Scripts\\shell.output"'
+        stdout = self.remote_client.run_command_verbose(command)
+        return stdout.strip() == 'True'
+
+    def get_group_members(self, group):
+        cmd = "net localgroup {}".format(group)
+        std_out = self.remote_client.run_command_verbose(cmd)
+        member_search = re.search(
+            "Members\s+-+\s+(.*?)The\s+command",
+            std_out, re.MULTILINE | re.DOTALL)
+        if not member_search:
+            raise ValueError('Unable to get members.')
+
+        return list(filter(None, member_search.group(1).split()))
+
+
+class TestWindowsServices(scenario.BaseWindowsScenario,
+                          generic_tests.GenericTests):
+
+    instance_utils_class = WindowsUtils
 
     def test_service_display_name(self):
         cmd = ('powershell (Get-Service "| where -Property Name '
@@ -153,36 +173,7 @@ class TestServices(scenario.BaseWindowsScenario):
         stdout = self.run_command_verbose(cmd)
         self.assertEqual("Cloud Initialization Service\r\n", str(stdout))
 
-    def test_disk_expanded(self):
-        # Test the disk expanded properly.
-        image = self.get_image_ref()
-        image_size = image[1]['OS-EXT-IMG-SIZE:size']
-        cmd = ('powershell (Get-WmiObject "win32_logicaldisk | '
-               'where -Property DeviceID -Match C:").Size')
-
-        stdout = self.run_command_verbose(cmd)
-        self.assertGreater(int(stdout), image_size)
-
-    def test_username_created(self):
-        # Test that the user expected to be created by
-        # CreateUserPlugin exists.
-        cmd = ('powershell "Get-WmiObject Win32_Account | '
-               'where -Property Name -contains {0}"'
-               .format(CONF.argus.created_user))
-
-        stdout = self.run_command_verbose(cmd)
-        self.assertIsNotNone(stdout)
-
-    def test_hostname_set(self):
-        # Test that the hostname was properly set.
-        cmd = 'powershell (Get-WmiObject "Win32_ComputerSystem").Name'
-        stdout = self.run_command_verbose(cmd)
-        server = self.instance_server()[1]
-
-        self.assertEqual(str(stdout).lower().strip(),
-                         str(server['name'][:15]).lower())
-
-    @skip_unless_dnsmasq_configured
+    @generic_tests.skip_unless_dnsmasq_configured
     def test_ntp_service_running(self):
         # Test that the NTP service is started.
         cmd = ('powershell (Get-Service "| where -Property Name '
@@ -191,99 +182,12 @@ class TestServices(scenario.BaseWindowsScenario):
 
         self.assertEqual("Running\r\n", str(stdout))
 
-    @skip_unless_dnsmasq_configured
-    def test_ntp_properly_configured(self):
-        # Test that NTP server is properly configured
-        command = 'w32tm /query /peers'
-        stdout = self.run_command_verbose(command)
-        peers = _get_ntp_peers(stdout)
-
-        expected_peer = _get_dhcp_value('42')
-        if expected_peer is None:
-            self.fail('DHCP NTP option was not configured.')
-
-        self.assertEqual([expected_peer], peers)
-
-    def test_password_set(self):
-        # Test that the proper password was set.<F2>
-        folder_name = data_utils.rand_name("folder")
-        cmd = 'mkdir C:\\%s' % folder_name
-        cmd2 = ('powershell "get-childitem c:\ | select-string %s"'
-                % folder_name)
-        remote_client = util.WinRemoteClient(
-            self.floating_ip['ip'],
-            CONF.argus.created_user,
-            self.password())
-        remote_client.run_command_verbose(cmd)
-        stdout = remote_client.run_command_verbose(cmd2)
-
-        self.assertEqual(folder_name, stdout.strip("\r\n"))
-
-    def test_sshpublickeys_set(self):
-        # Test that the SSH public keys were set.
-        cmd = 'echo %cd%'
-        stdout = self.remote_client.run_command_verbose(cmd)
-        homedir, _, _ = stdout.rpartition(ntpath.sep)
-        keys_path = ntpath.join(
-            homedir,
-            CONF.argus.created_user,
-            ".ssh",
-            "authorized_keys")
-
-        cmd2 = 'powershell "cat %s"' % keys_path
-        stdout = self.remote_client.run_command_verbose(cmd2)
-
-        self.assertEqual(self.keypair['public_key'],
-                         stdout.replace('\r\n', '\n'))
-
-    def test_userdata(self):
-        # Test that the userdata plugin executed properly the scripts.
-        cmd = 'powershell "(Get-ChildItem -Path  C:\ *.txt).Count'
-        stdout = self.remote_client.run_command_verbose(cmd)
-
-        self.assertEqual("4", stdout.strip("\r\n"))
-
-    @skip_unless_dnsmasq_configured
-    def test_mtu(self):
-        cmd = ('powershell "(Get-NetIpConfiguration -Detailed).'
-               'NetIPv4Interface.NlMTU"')
-        stdout = self.run_command_verbose(cmd)
-        expected_mtu = _get_dhcp_value('26')
-
-        self.assertEqual(expected_mtu, stdout.strip('\r\n'))
-
-    def test_any_exception_occurred(self):
-        # Check that any exception occurred during execution
-        # of the CloudbaseInit service.
-        code = util.get_resource('get_traceback.ps1')
-        remote_script = "C:\\{}.ps1".format(data_utils.rand_name())
-        with _create_tempfile(content=code) as tmp:
-            self.remote_client.copy_file(tmp, remote_script)
-            stdout = self.remote_client.run_command_verbose(
-                "powershell " + remote_script)
-            self.assertEqual('', stdout.strip())
-
     def test_local_scripts_executed(self):
-        # Check that the local scripts plugin was executed.
-
-        # First, check if the Scripts folder was created.
-        command = 'powershell "Test-Path C:\\Scripts"'
-        stdout = self.remote_client.run_command_verbose(command)
-        self.assertEqual('True', stdout.strip())
-
-        # Next, check that every script we registered was called.
-        command = 'powershell "Test-Path C:\\Scripts\\shell.output"'
-        stdout = self.remote_client.run_command_verbose(command)
-        self.assertEqual('True', stdout.strip())
+        super(TestWindowsServices, self).test_local_scripts_executed()
 
         command = 'powershell "Test-Path C:\\Scripts\\powershell.output"'
         stdout = self.remote_client.run_command_verbose(command)
         self.assertEqual('True', stdout.strip())
-
-    def test_user_belongs_to_group(self):
-        # Check that the created user belongs to the specified local gorups
-        members = _group_members(self.remote_client, CONF.argus.group)
-        self.assertIn(CONF.argus.created_user, members)
 
     def test_licensing(self):
         # Check that the instance OS was licensed properly.
