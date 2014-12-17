@@ -254,7 +254,7 @@ class BaseWindowsScenario(BaseArgusScenario):
 
     def get_remote_client(self, username=None, password=None):
         if username is None:
-            username = CONF.argus.default_ci_password
+            username = CONF.argus.default_ci_username
         if password is None:
             password = CONF.argus.default_ci_password
         return util.WinRemoteClient(self.floating_ip['ip'],
