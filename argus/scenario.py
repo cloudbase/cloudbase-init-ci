@@ -170,8 +170,8 @@ class BaseArgusScenario(manager.ScenarioTest):
     def prepare_instance(self):
         """Generic function for preparing an instance before doing tests."""
 
-    @abc.abstractmethod
     @property
+    @abc.abstractmethod
     def remote_client(self):
         """Get a client to the underlying instance."""
 
