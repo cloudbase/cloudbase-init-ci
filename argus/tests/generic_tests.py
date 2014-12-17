@@ -72,10 +72,9 @@ def _get_dhcp_value(key):
 class GenericInstanceUtils(object):
     """A generic utility class, which provides methods for interrogating an instance."""
 
-    def __init__(self, test_case):
-        self.remote_client = test_case
-        self.run_command_verbose = test_case.remote_client.run_command_verbose
-        self.server = test_case.server
+    def __init__(self, remote_client, instance):
+        self.remote_client = remote_client
+        self.instance = instance
 
     @abc.abstractmethod
     def get_plugins_count(self):
@@ -128,8 +127,6 @@ class GenericInstanceUtils(object):
     def get_group_members(self, group):
         """Get the members of the local group given."""
 
-    # The actual mandatory tests for each supported OS
-
 
 # pylint: disable=abstract-method
 class GenericTests(scenario.BaseArgusScenario):
@@ -144,9 +141,21 @@ class GenericTests(scenario.BaseArgusScenario):
     """
     instance_utils_class = GenericInstanceUtils
 
-    def setUp(self):
-        super(GenericTests, self).setUp()
-        self.instance_utils = self.instance_utils_class(self)
+    @classmethod
+    def setUpClass(cls):
+        # TODO(cpopa): this is a hack to skip this base implementation.
+        # These tests will be called in subclasses, leaving this aside.
+        # We have multiple choices here: either inherit from object
+        # and be done with it, but this hinders static analysis and could hide
+        # unwanted bugs or mark the class as being a base class.
+        if cls is GenericTests:
+            raise unittest.SkipTest("Skipping GenericTests, as "
+                                    "it is a base class.")
+        super(GenericTests, cls).setUpClass()
+
+    @util.cached_property
+    def instance_utils(self):
+        return self.instance_utils_class(self.remote_client, self.server['id'])
 
     def test_plugins_count(self):
         # Test that we have the expected numbers of plugins.

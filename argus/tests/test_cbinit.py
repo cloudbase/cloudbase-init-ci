@@ -78,36 +78,37 @@ def _parse_licenses(output):
 
 
 class WindowsUtils(generic_tests.GenericInstanceUtils):
-    # TODO: instantiate with the test class
+    """Utilities for interrogating Windows instances."""
+
     def get_plugins_count(self):
         key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` Solutions\\'
                'Cloudbase-init\\{0}\\Plugins'
-               .format(self.server['id']))
+               .format(self.instance))
         cmd = 'powershell (Get-Item %s).ValueCount' % key
-        stdout = self.run_command_verbose(cmd)
+        stdout = self.remote_client.run_command_verbose(cmd)
         return int(stdout)
 
     def get_disk_size(self):
         cmd = ('powershell (Get-WmiObject "win32_logicaldisk | '
                'where -Property DeviceID -Match C:").Size')
-        return int(self.run_command_verbose(cmd))
+        return int(self.remote_client.run_command_verbose(cmd))
 
     def username_exists(self, username):
         cmd = ('powershell "Get-WmiObject Win32_Account | '
                'where -Property Name -contains {0}"'
                .format(username))
 
-        stdout = self.run_command_verbose(cmd)
+        stdout = self.remote_client.run_command_verbose(cmd)
         return bool(stdout)
 
     def get_instance_hostname(self):
         cmd = 'powershell (Get-WmiObject "Win32_ComputerSystem").Name'
-        stdout = self.run_command_verbose(cmd)
+        stdout = self.remote_client.run_command_verbose(cmd)
         return stdout.lower().strip()
 
     def get_instance_ntp_peers(self):
         command = 'w32tm /query /peers'
-        stdout = self.run_command_verbose(command)
+        stdout = self.remote_client.run_command_verbose(command)
         return _get_ntp_peers(stdout)
 
     def get_instance_keys_path(self):
@@ -132,7 +133,7 @@ class WindowsUtils(generic_tests.GenericInstanceUtils):
     def get_instance_mtu(self):
         cmd = ('powershell "(Get-NetIpConfiguration -Detailed).'
                'NetIPv4Interface.NlMTU"')
-        stdout = self.run_command_verbose(cmd)
+        stdout = self.remote_client.run_command_verbose(cmd)
         return stdout.strip('\r\n')
 
     def get_cloudbaseinit_traceback(self):
@@ -161,8 +162,8 @@ class WindowsUtils(generic_tests.GenericInstanceUtils):
         return list(filter(None, member_search.group(1).split()))
 
 
-class TestWindowsServices(scenario.BaseWindowsScenario,
-                          generic_tests.GenericTests):
+class TestWindowsServices(generic_tests.GenericTests,
+                          scenario.BaseWindowsScenario):
 
     instance_utils_class = WindowsUtils
 
