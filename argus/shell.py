@@ -26,7 +26,7 @@ def main():
     logging.basicConfig(level=logging.DEBUG)
 
     loader = unittest.TestLoader().discover('argus.tests')
-    unittest.TextTestRunner(failfast=CONF.failfast).run(loader)
+    unittest.TextTestRunner(failfast=CONF.argus.failfast).run(loader)
 
 
 if __name__ == "__main__":
