@@ -57,6 +57,12 @@ OPTS = [
                default='Administrators',
                help="The group in which the created user "
                     "is expected to be part of."),
+    cfg.StrOpt('image_ref',
+               help='The id of the image argus should use.'),
+    cfg.StrOpt('flavor_ref',
+               help='The id of the flavor argus should use.'),
+    cfg.StrOpt('path_to_private_key',
+               help='Where the private key should be saved.'),
 
 ]
 config.register_opt_group(CONF, CBINIT_GROUP, OPTS)
