@@ -26,6 +26,7 @@ from argus import prepare
 from argus import util
 
 CONF = config.CONF
+TEMPEST_CONF = config.TEMPEST_CONF
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -36,8 +37,8 @@ class BaseArgusScenario(manager.ScenarioTest):
     def create_test_server(cls, wait_until='ACTIVE', **kwargs):
         _, server = cls.servers_client.create_server(
             data_utils.rand_name(cls.__name__ + "-instance"),
-            CONF.argus.image_ref,
-            CONF.argus.flavor_ref,
+            TEMPEST_CONF.compute.image_ref,
+            TEMPEST_CONF.compute.flavor_ref,
             **kwargs)
         cls.servers_client.wait_for_server_status(
             server['id'], wait_until)
@@ -47,7 +48,7 @@ class BaseArgusScenario(manager.ScenarioTest):
     def create_keypair(cls):
         _, cls.keypair = cls.keypairs_client.create_keypair(
             cls.__name__ + "-key")
-        with open(CONF.argus.path_to_private_key, 'w') as stream:
+        with open(TEMPEST_CONF.compute.path_to_private_key, 'w') as stream:
             stream.write(cls.keypair['private_key'])
 
     @classmethod
@@ -169,7 +170,7 @@ class BaseArgusScenario(manager.ScenarioTest):
         cls.servers_client.wait_for_server_termination(cls.server['id'])
         cls.floating_ips_client.delete_floating_ip(cls.floating_ip['id'])
         cls.keypairs_client.delete_keypair(cls.keypair['name'])
-        os.remove(CONF.argus.path_to_private_key)
+        os.remove(TEMPEST_CONF.compute.path_to_private_key)
 
         super(BaseArgusScenario, cls).tearDownClass()
 
@@ -177,7 +178,7 @@ class BaseArgusScenario(manager.ScenarioTest):
         _, encoded_password = self.servers_client.get_password(
             self.server['id'])
         return util.decrypt_password(
-            private_key=CONF.argus.path_to_private_key,
+            private_key=TEMPEST_CONF.compute.path_to_private_key,
             password=encoded_password['password'])
 
     @abc.abstractmethod
@@ -197,7 +198,7 @@ class BaseArgusScenario(manager.ScenarioTest):
         return self.remote_client.run_command_verbose
 
     def get_image_ref(self):
-        return self.images_client.get_image(CONF.argus.image_ref)
+        return self.images_client.get_image(TEMPEST_CONF.compute.image_ref)
 
     def instance_server(self):
         return self.servers_client.get_server(self.server['id'])
