@@ -14,12 +14,12 @@
 #    under the License.
 
 import base64
+import logging
 import pkgutil
 import subprocess
 import sys
 
 import six
-from tempest.openstack.common import log as logging
 
 from argus import remote_client
 

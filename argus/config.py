@@ -63,6 +63,9 @@ OPTS = [
                help='The id of the flavor argus should use.'),
     cfg.StrOpt('path_to_private_key',
                help='Where the private key should be saved.'),
+    cfg.BoolOpt('failfast',
+                default=True,
+                help='Stop early on failures.'),
 
 ]
 config.register_opt_group(CONF, CBINIT_GROUP, OPTS)

@@ -16,13 +16,13 @@
 
 import abc
 import contextlib
+import logging
 import os
 import time
 
 import bs4
 import six
 from six.moves import urllib
-from tempest.openstack.common import log as logging
 
 from argus import config
 from argus import exceptions

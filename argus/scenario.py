@@ -19,14 +19,12 @@ import os
 
 import six
 from tempest.common.utils import data_utils
-from tempest.openstack.common import log as logging
 from tempest.scenario import manager
 
 from argus import config
 from argus import prepare
 from argus import util
 
-LOG = logging.getLogger("cbinit")
 CONF = config.CONF
 
 
