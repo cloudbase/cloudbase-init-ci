@@ -40,11 +40,10 @@ OPTS = [
     cfg.StrOpt('created_user',
                default='Admin',
                help='The user created by the CloudbaseInit plugins.'),
-    cfg.StrOpt('install_script_url',
+    cfg.StrOpt('resources',
                default='https://raw.githubusercontent.com/PCManticore/'
-                       'argus-ci/master/argus/resources/installCBinit.ps1',
-               help="An URL representing the script which will install "
-                    "CloudbaseInit."),
+                       'argus-ci/master/argus/resources/',
+               help="An URL representing the locations of the resources."),
     cfg.BoolOpt('debug',
                  default=False,
                  help="Switch to a debug behaviour. This includes "

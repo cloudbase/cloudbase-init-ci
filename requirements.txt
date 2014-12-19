@@ -2,3 +2,4 @@ pbr
 oslo.config
 six>=1.7.0
 pywinrm
+beautifulsoup4

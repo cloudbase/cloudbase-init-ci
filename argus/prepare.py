@@ -15,9 +15,13 @@
 """Instance preparing utilities."""
 
 import abc
+import contextlib
+import os
 import time
 
+import bs4
 import six
+from six.moves import urllib
 from tempest.openstack.common import log as logging
 
 from argus import config
@@ -31,6 +35,31 @@ __all__ = (
     'InstancePreparer',
     'WindowsInstancePreparer',
 )
+
+
+def _read_url(url):
+    request = urllib.request.urlopen(url)
+    with contextlib.closing(request) as stream:
+        content = stream.read()
+        if six.PY3:
+            content = content.decode(errors='replace')
+        return content
+
+
+def _get_git_link():
+    content = _read_url("http://git-scm.com/download/win")
+    soup = bs4.BeautifulSoup(content)
+    download_div = soup.find('div', {'class': 'callout downloading'})
+    if not download_div:
+        raise exceptions.CloudbaseCIError(
+            "Could not find callout_downloading div.")
+
+    for a_object in download_div.find_all('a'):
+        href = a_object.get('href', '')
+        if not href.endswith('.exe'):
+            continue
+        return href
+    raise exceptions.CloudbaseCIError("git download link not found.")
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -122,6 +151,18 @@ class InstancePreparer(object):
     def wait_reboot(self):
         """Do a reboot and wait for the instance to be up."""
 
+    @abc.abstractmethod
+    def install_git(self):
+        """Install git in the instance."""
+
+    @abc.abstractmethod
+    def sysprep(self):
+        """Do the final steps after installing cloudbaseinit.
+
+        This requires running sysprep on Windows, but on other
+        platforms there might be no need for calling it.
+        """
+
     def prepare(self):
         """Prepare the underlying instance.
 
@@ -136,6 +177,8 @@ class InstancePreparer(object):
         self.wait_for_boot_completion()
         self.get_installation_script()
         self.install_cbinit()
+        self.install_git()
+        self.sysprep()
         self.wait_reboot()
         self.wait_cbinit_finalization()
         LOG.info("Finished preparing instance %s", self._instance_id)
@@ -162,8 +205,8 @@ class WindowsInstancePreparer(InstancePreparer):
         LOG.info("Retrieve an installation script for CloudbaseInit")
 
         cmd = ("powershell Invoke-webrequest -uri "
-               "{!r}-outfile 'C:\\\\installcbinit.ps1'"
-               .format(CONF.argus.install_script_url))
+               "{!r}/installCBInit.ps1 -outfile 'C:\\\\installcbinit.ps1'"
+               .format(CONF.argus.resources))
         self._execute(cmd)
 
     def install_cbinit(self):
@@ -174,6 +217,31 @@ class WindowsInstancePreparer(InstancePreparer):
                '-serviceType %s"' % (CONF.argus.replace_code,
                                      CONF.argus.service_type))
         self._execute(cmd)
+
+    def install_git(self):
+        """Install git in the instance."""
+        LOG.info("Installing git.")
+
+        cmd = ("powershell Invoke-webrequest -uri "
+               "{!r}/install_git.ps1 -outfile 'C:\\\\install_git.ps1'"
+               .format(CONF.argus.resources))
+        self._execute(cmd)
+
+        git_link = _get_git_link()
+        git_base = os.path.basename(git_link)
+        cmd = ('powershell "C:\\install_git.ps1 {} {}"'
+               .format(git_link, git_base))
+        self._execute(cmd)
+
+    def sysprep(self):
+        """Prepare the instance for the actual tests, by running sysprep."""
+        LOG.info("Running sysprep.")
+
+        cmd = ("powershell Invoke-webrequest -uri "
+               "{!r}/sysprep.ps1 -outfile 'C:\\\\sysprep.ps1'"
+               .format(CONF.argus.resources))
+        self._execute(cmd)
+        self._execute('powershell "C:\\\\sysprep.ps1')
 
     def wait_cbinit_finalization(self):
         """Wait for the finalization of CloudbaseInit.
