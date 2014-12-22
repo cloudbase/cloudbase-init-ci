@@ -205,7 +205,7 @@ class WindowsInstancePreparer(InstancePreparer):
         LOG.info("Retrieve an installation script for CloudbaseInit")
 
         cmd = ("powershell Invoke-webrequest -uri "
-               "{!r}/installCBInit.ps1 -outfile 'C:\\\\installcbinit.ps1'"
+               "{}/installCBInit.ps1 -outfile 'C:\\installcbinit.ps1'"
                .format(CONF.argus.resources))
         self._execute(cmd)
 
@@ -223,7 +223,7 @@ class WindowsInstancePreparer(InstancePreparer):
         LOG.info("Installing git.")
 
         cmd = ("powershell Invoke-webrequest -uri "
-               "{!r}/install_git.ps1 -outfile 'C:\\\\install_git.ps1'"
+               "{}/install_git.ps1 -outfile 'C:\\\\install_git.ps1'"
                .format(CONF.argus.resources))
         self._execute(cmd)
 
@@ -238,7 +238,7 @@ class WindowsInstancePreparer(InstancePreparer):
         LOG.info("Running sysprep.")
 
         cmd = ("powershell Invoke-webrequest -uri "
-               "{!r}/sysprep.ps1 -outfile 'C:\\\\sysprep.ps1'"
+               "{}/sysprep.ps1 -outfile 'C:\\\\sysprep.ps1'"
                .format(CONF.argus.resources))
         self._execute(cmd)
         self._execute('powershell "C:\\\\sysprep.ps1')
