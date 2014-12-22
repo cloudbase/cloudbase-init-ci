@@ -22,12 +22,11 @@ import shutil
 
 from tempest.common.utils import data_utils
 
-from argus import config
 from argus.tests import generic_tests
 from argus import scenario
 from argus import util
 
-CONF = config.CONF
+CONF = util.get_config()
 
 
 @contextlib.contextmanager

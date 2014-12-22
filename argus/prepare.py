@@ -24,11 +24,10 @@ import bs4
 import six
 from six.moves import urllib
 
-from argus import config
 from argus import exceptions
 from argus import util
 
-CONF = config.CONF
+CONF = util.get_config()
 LOG = logging.getLogger('cbinit')
 
 __all__ = (

@@ -13,20 +13,17 @@
 #    under the License.
 
 import logging
-import sys
 import unittest
 
-from argus import config
-
-CONF = config.CONF
+from argus import util
 
 
 def main():
-    CONF(sys.argv[1:])
+    opts = util.parse_cli()
     logging.basicConfig(level=logging.DEBUG)
 
     loader = unittest.TestLoader().discover('argus.tests')
-    unittest.TextTestRunner(failfast=CONF.argus.failfast).run(loader)
+    unittest.TextTestRunner(failfast=opts.failfast).run(loader)
 
 
 if __name__ == "__main__":

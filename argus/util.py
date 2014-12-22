@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import argparse
 import base64
 import logging
 import pkgutil
@@ -21,6 +22,7 @@ import sys
 
 import six
 
+from argus import config
 from argus import remote_client
 
 
@@ -110,3 +112,26 @@ class cached_property(object):
     def __get__(self, instance, klass=None):
         instance.__dict__[self.func.__name__] = result = self.func(instance)
         return result
+
+
+def parse_cli():
+    """Parse the command line and return an object with the given options."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--failfast', action='store_true',
+                        default=False,
+                        help='Fail the tests on the first failure.')
+    parser.add_argument('--conf', type=str, default=None,
+                        help="Give a path to the argus conf. "
+                             "It should be an .ini file format "
+                             "with a section called [argus].")
+    opts = parser.parse_args()
+    return opts
+
+
+def get_config():
+    """Get the argus config object."""
+    opts = parse_cli()
+    config.CONF(
+        default_config_files=[opts.conf] if opts.conf else None
+    )
+    return config.CONF

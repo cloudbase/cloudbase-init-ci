@@ -19,11 +19,10 @@ import unittest
 
 import six
 
-from argus import config
 from argus import scenario
 from argus import util
 
-CONF = config.CONF
+CONF = util.get_config()
 DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
 DHCP_AGENT = '/etc/neutron/dhcp_agent.ini'
 
