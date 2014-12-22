@@ -156,7 +156,7 @@ class BaseArgusScenario(manager.ScenarioTest):
     def resource_cleanup(cls):
         super(BaseArgusScenario, cls).resource_cleanup()
         for rule in cls.security_groups_rules:
-            cls.security_groups_client.delete_security_group_rule(rule['id'])
+            cls.security_groups_client.delete_security_group_rule(rule)
         cls.servers_client.remove_security_group(
             cls.server['id'], cls.security_group['name'])
 
