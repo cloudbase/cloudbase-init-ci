@@ -144,7 +144,7 @@ def get_logger():
     logging.basicConfig(level=logging.DEBUG)
     logger = logging.getLogger('cbinit')
     conf = get_config()
-    if conf.file_log:
+    if conf.argus.file_log:
         file_handler = logging.FileHandler(conf.argus.file_log)
         formatter = logging.Formatter(conf.argus.log_format or DEFAULT_FORMAT)
         file_handler.setFormatter(formatter)
