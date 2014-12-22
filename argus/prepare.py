@@ -257,10 +257,12 @@ class WindowsInstancePreparer(InstancePreparer):
         """Replace the code of cloudbaseinit."""
         LOG.info("Replacing cloudbaseinit's code.")
 
+        LOG.info("Getting program files location.")
         # Get the program files location.
         program_files = self.get_program_files()
 
         # Remove everything from the cloudbaseinit installation.
+        LOG.info("Removing recursively cloudbaseinit.")
         cloudbaseinit = ntpath.join(
             program_files, "Cloudbase Solutions",
             "Cloudbase-Init",
@@ -268,21 +270,31 @@ class WindowsInstancePreparer(InstancePreparer):
             "Python27",
             "Lib",
             "site-packages",
-            "CLOUDB~1")
-        self._execute("rm -Force -Recurse {}".format(cloudbaseinit))
+            "cloudbaseinit")
+        self._execute('powershell "rm -Force -Recurse \"{}\""'
+                      .format(cloudbaseinit))
 
         # Clone the repo
+        LOG.info("cloning the cloudbaseinit repo.")
         self._execute("git clone https://github.com/stackforge/"
                       "cloudbase-init C:\\cloudbaseinit")
 
         # Run the command provided at cli.
+        LOG.info("Applying cli patch.")
         opts = util.parse_cli()
-        self._execute("cd C:\\cloudbaseinit; {}".format(opts.git_command))
+
+        if not opts.git_command:
+            raise exceptions.CloudbaseCLIError(
+                "git_command not passed at command line. "
+                "Could not replace anything.")
+
+        self._execute("cd C:\\cloudbaseinit && {}".format(opts.git_command))
 
         # Replace the code, by moving the code from cloudbaseinit
         # to the installed location.
+        LOG.info("Replacing code.")
         self._execute('powershell "Copy-Item C:\\cloudbaseinit\\cloudbaseinit '
-                      '{} -Recurse"'.format(cloudbaseinit))
+                      '\'{}\' -Recurse"'.format(cloudbaseinit))
 
     def sysprep(self):
         """Prepare the instance for the actual tests, by running sysprep."""
