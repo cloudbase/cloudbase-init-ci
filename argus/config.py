@@ -42,7 +42,7 @@ OPTS = [
                help='The user created by the CloudbaseInit plugins.'),
     cfg.StrOpt('resources',
                default='https://raw.githubusercontent.com/PCManticore/'
-                       'argus-ci/master/argus/resources/',
+                       'argus-ci/master/argus/resources',
                help="An URL representing the locations of the resources."),
     cfg.BoolOpt('debug',
                  default=False,

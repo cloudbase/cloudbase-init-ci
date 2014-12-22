@@ -205,7 +205,7 @@ class WindowsInstancePreparer(InstancePreparer):
         LOG.info("Retrieve an installation script for CloudbaseInit")
 
         cmd = ("powershell Invoke-webrequest -uri "
-               "{}/installCBInit.ps1 -outfile 'C:\\installcbinit.ps1'"
+               "{}/installCBinit.ps1 -outfile C:\\installcbinit.ps1"
                .format(CONF.argus.resources))
         self._execute(cmd)
 
@@ -223,7 +223,7 @@ class WindowsInstancePreparer(InstancePreparer):
         LOG.info("Installing git.")
 
         cmd = ("powershell Invoke-webrequest -uri "
-               "{}/install_git.ps1 -outfile 'C:\\\\install_git.ps1'"
+               "{}/install_git.ps1 -outfile C:\\\\install_git.ps1"
                .format(CONF.argus.resources))
         self._execute(cmd)
 
@@ -238,10 +238,10 @@ class WindowsInstancePreparer(InstancePreparer):
         LOG.info("Running sysprep.")
 
         cmd = ("powershell Invoke-webrequest -uri "
-               "{}/sysprep.ps1 -outfile 'C:\\\\sysprep.ps1'"
+               "{}/sysprep.ps1 -outfile 'C:\\sysprep.ps1'"
                .format(CONF.argus.resources))
         self._execute(cmd)
-        self._execute('powershell "C:\\\\sysprep.ps1')
+        self._execute('powershell C:\\sysprep.ps1')
 
     def wait_cbinit_finalization(self):
         """Wait for the finalization of CloudbaseInit.
