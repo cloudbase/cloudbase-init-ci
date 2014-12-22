@@ -113,7 +113,7 @@ class InstancePreparer(object):
             try:
                 std_out, std_err = self._execute(cmd)
             except Exception:
-                LOG.error("Command %r failed while waiting for condition",
+                LOG.debug("Command %r failed while waiting for condition",
                           cmd)
                 count += 1
                 if retry_count and count >= retry_count:
