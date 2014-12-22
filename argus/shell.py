@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import logging
 import unittest
 
 from argus import util
@@ -20,8 +19,6 @@ from argus import util
 
 def main():
     opts = util.parse_cli()
-    logging.basicConfig(level=logging.DEBUG)
-
     loader = unittest.TestLoader().discover('argus.tests')
     unittest.TextTestRunner(failfast=opts.failfast).run(loader)
 

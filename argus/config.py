@@ -66,6 +66,13 @@ OPTS = [
                help='The id of the flavor argus should use.'),
     cfg.StrOpt('path_to_private_key',
                help='Where the private key should be saved.'),
+    cfg.StrOpt('file_log', default=None,
+               help='A file which will contain the logs '
+                    'from argus.'),
+    cfg.StrOpt('log_format', default=None,
+               help='The log format which will be used when logging. '
+                    'It should be a format known by the "logging" '
+                    'module.'),
 
 ]
 config.register_opt_group(CONF, CBINIT_GROUP, OPTS)

@@ -34,8 +34,7 @@ __all__ = (
     'cached_property',
 )
 
-
-LOG = logging.getLogger('cbinit')
+DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 
 class WinRemoteClient(remote_client.WinRemoteClient):
@@ -137,3 +136,19 @@ def get_config():
     else:
         config.CONF()
     return config.CONF
+
+
+@run_once
+def get_logger():
+    """Get the default logger."""
+    logging.basicConfig(level=logging.DEBUG)
+    logger = logging.getLogger('cbinit')
+    conf = get_config()
+    if conf.file_log:
+        file_handler = logging.FileHandler(conf.argus.file_log)
+        formatter = logging.Formatter(conf.argus.log_format or DEFAULT_FORMAT)
+        file_handler.setFormatter(formatter)
+        logger.addHandler(file_handler)
+    return logger
+
+LOG = get_logger()

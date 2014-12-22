@@ -28,7 +28,7 @@ from argus import exceptions
 from argus import util
 
 CONF = util.get_config()
-LOG = logging.getLogger('cbinit')
+LOG = util.get_logger()
 
 __all__ = (
     'InstancePreparer',
