@@ -43,6 +43,12 @@ function setService([string]$programFiles) {
     ((Get-Content $path) + $value) | Set-content $path
 }
 
+function activateWindows([string]$programFiles) {
+    $value = "activate_windows=True"
+    $path = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
+    ((Get-Content $path) + $value) | Set-content $path
+}
+
 try
 {
     $Host.UI.RawUI.WindowTitle = "Downloading Cloudbase-Init..."
@@ -76,6 +82,7 @@ try
     }
 
     setLocalScripts $programFilesDir
+    activateWindows $programFilesDir
 
     if ($newCode)
     {
