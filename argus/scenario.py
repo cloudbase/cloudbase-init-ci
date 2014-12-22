@@ -168,7 +168,7 @@ class BaseArgusScenario(manager.ScenarioTest):
         super(BaseArgusScenario, cls).tearDownClass()
 
     def setUp(self):
-        super(self.__class__, self).setUp()
+        super(BaseArgusScenario_, self).setUp()
         # It should be guaranteed that it's called only once,
         # so a second call is a no-op.
         self.prepare_instance()
