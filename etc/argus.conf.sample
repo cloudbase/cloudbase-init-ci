@@ -33,3 +33,6 @@ path_to_private_key = <none>
 # Activates debugging behaviour.
 # When tests fails, a console with pdb will be activated
 # instead of failing. sys.exc_info() will be available as 'exc'
+
+# A file where logging output should be redirected.
+file_log = <none>
