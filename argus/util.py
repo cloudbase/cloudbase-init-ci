@@ -128,10 +128,12 @@ def parse_cli():
     return opts
 
 
+@run_once
 def get_config():
     """Get the argus config object."""
     opts = parse_cli()
-    config.CONF(
-        default_config_files=[opts.conf] if opts.conf else None
-    )
+    if opts.conf:
+        config.CONF(args=["--config-file={}".format(opts.conf)])
+    else:
+        config.CONF()
     return config.CONF

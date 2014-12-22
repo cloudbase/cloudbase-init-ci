@@ -18,7 +18,10 @@ from tempest import config
 
 
 TEMPEST_CONF = config.CONF
-CONF = cfg.CONF
+
+# Don't use the global CONF object, since something
+# from test resets all our attributes.
+CONF = cfg.ConfigOpts()
 
 CBINIT_GROUP = cfg.OptGroup(name='argus',
                             title="Argus Options")
