@@ -27,8 +27,6 @@ __all__ = (
     'WinRemoteClient',
 )
 
-WSMAN_URL = "http://{hostname}:5985/wsman"
-
 
 def _base64_read_file(filepath, size=8192):
     with open(filepath, 'rb') as stream:
@@ -42,9 +40,21 @@ def _base64_read_file(filepath, size=8192):
 
 
 class WinRemoteClient(object):
+    """Get a remote client to a Windows instance.
 
-    def __init__(self, hostname, username, password):
-        self.hostname = WSMAN_URL.format(hostname=hostname)
+    :param hostname: The ip where the client should be connected.
+    :param username: The username of the client.
+    :param password: The password of the remote client.
+    :param transport_protocol:
+        The transport for the WinRM protocol. Only http and https makes
+        sense.
+    """
+    def __init__(self, hostname, username, password,
+                 transport_protocol='http'):
+        self.hostname = "{protocol}://{hostname}:{port}/wsman".format(
+            protocol=transport_protocol,
+            hostname=hostname,
+            port=5985 if transport_protocol == 'http' else 5986)
         self.username = username
         self.password = password
 

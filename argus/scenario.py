@@ -180,7 +180,7 @@ class BaseArgusScenario(manager.ScenarioTest):
             password=encoded_password['password'])
 
     @abc.abstractmethod
-    def get_remote_client(self, username=None, password=None):
+    def get_remote_client(self, username=None, password=None, **kwargs):
         """Get a remote client to the underlying instance.
 
         This is different than :attr:`remote_client`, because that
@@ -189,6 +189,8 @@ class BaseArgusScenario(manager.ScenarioTest):
         over this aspect.
         `password` can be omitted if authentication by
         SSH key is used.
+        The **kwargs parameter can be used for additional options
+        (currently none).
         """
 
     @abc.abstractproperty
@@ -221,12 +223,15 @@ class BaseWindowsScenario(BaseArgusScenario):
     """Base class for Windows-based tests."""
     instance_preparer = prepare.WindowsInstancePreparer
 
-    def get_remote_client(self, username=None, password=None):
+    def get_remote_client(self, username=None, password=None,
+                          protocol='http', **kwargs):
         if username is None:
             username = CONF.argus.default_ci_username
         if password is None:
             password = CONF.argus.default_ci_password
         return util.WinRemoteClient(self.floating_ip['ip'],
                                     username,
-                                    password)
+                                    password,
+                                    transport_protocol=protocol)
+
     remote_client = util.cached_property(get_remote_client)
