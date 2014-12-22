@@ -125,8 +125,8 @@ class BaseArgusScenario(manager.ScenarioTest):
     # Instance creation and termination.
 
     @classmethod
-    def setUpClass(cls):
-        super(BaseArgusScenario, cls).setUpClass()
+    def resource_setup(cls):
+        super(BaseArgusScenario, cls).resource_setup()
 
         cls.server = None
         cls.security_groups = []
@@ -153,7 +153,8 @@ class BaseArgusScenario(manager.ScenarioTest):
 
 
     @classmethod
-    def tearDownClass(cls):
+    def resource_cleanup(cls):
+        super(BaseArgusScenario, cls).resource_cleanup()
         for rule in cls.security_groups_rules:
             cls.security_groups_client.delete_security_group_rule(rule['id'])
         cls.servers_client.remove_security_group(
@@ -164,8 +165,6 @@ class BaseArgusScenario(manager.ScenarioTest):
         cls.floating_ips_client.delete_floating_ip(cls.floating_ip['id'])
         cls.keypairs_client.delete_keypair(cls.keypair['name'])
         os.remove(TEMPEST_CONF.compute.path_to_private_key)
-
-        super(BaseArgusScenario, cls).tearDownClass()
 
     def setUp(self):
         super(BaseArgusScenario, self).setUp()
