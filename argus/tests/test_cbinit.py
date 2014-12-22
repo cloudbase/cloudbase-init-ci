@@ -161,6 +161,11 @@ class WindowsUtils(generic_tests.GenericInstanceUtils):
 
         return list(filter(None, member_search.group(1).split()))
 
+    def list_location(self, location):
+        command = "dir {} /b".format(location)
+        stdout = self.remote_client.run_command_verbose(command)
+        return list(filter(None, stdout.splitlines()))
+
 
 class TestWindowsServices(generic_tests.GenericTests,
                           scenario.BaseWindowsScenario):

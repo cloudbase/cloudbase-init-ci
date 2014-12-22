@@ -7,8 +7,35 @@ MIME-Version: 1.0
 Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment; filename="cloud-config"
 
-# cloudconfig not supported
-# text/part-handler ??
+write_files:
+-   encoding: b64
+    content: CiMgVGhpcyBmaWxlIGNvbnRyb2xzIHRoZSBzdGF0ZSBvZiBTRUxpbnV4...
+    path: C:\\b64
+    permissions: '0644'
+-   encoding: base64
+    content: CiMgVGhpcyBmaWxlIGNvbnRyb2xzIHRoZSBzdGF0ZSBvZiBTRUxpbnV4...
+    path: C:\\b64_1
+    permissions: '0644'
+-   encoding: gzip
+    content: \x1f\x8b\x08\x00\x8f)\x98T\x02\xff+I-.QH\xce\x04\x00\x03\xbf\xae\xc5\x07\x00\x00\x00
+    path: C:\\gzip
+    permissions: '0644'
+-   encoding: gz
+    content: \x1f\x8b\x08\x00\x8f)\x98T\x02\xff+I-.QH\xce\x04\x00\x03\xbf\xae\xc5\x07\x00\x00\x00
+    path: C:\\gzip_1
+    permissions: '0644'
+-   encoding: gz+base64
+    content: \x1f\x8b\x08\x00\xc3)\x98T\x02\xffKq\x0f\xabJqv\xcaJ\x0c\xb4\xb5\x05\x00P\xf7A\x12\x0c\x00\x00\x00
+    path: C:\\gzip_base64
+    permissions: '0644'
+-   encoding: gzip+base64
+    content: \x1f\x8b\x08\x00\xc3)\x98T\x02\xffKq\x0f\xabJqv\xcaJ\x0c\xb4\xb5\x05\x00P\xf7A\x12\x0c\x00\x00\x00
+    path: C:\\gzip_base64_1
+    permissions: '0644'
+-   encoding: gz+b64
+    content: \x1f\x8b\x08\x00\xc3)\x98T\x02\xffKq\x0f\xabJqv\xcaJ\x0c\xb4\xb5\x05\x00P\xf7A\x12\x0c\x00\x00\x00
+    path: C:\\gzip_base64_2
+    permissions: '0644'
 
 --===============1598784645116016685==
 Content-Type: text/x-cfninitdata; charset="us-ascii"

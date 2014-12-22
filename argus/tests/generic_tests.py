@@ -127,6 +127,10 @@ class GenericInstanceUtils(object):
     def get_group_members(self, group):
         """Get the members of the local group given."""
 
+    @abc.abstractmethod
+    def list_location(self, location):
+        """Return the list of files and folder from the given location."""
+
 
 # pylint: disable=abstract-method
 class GenericTests(scenario.BaseArgusScenario):
@@ -238,3 +242,14 @@ class GenericTests(scenario.BaseArgusScenario):
         members = self.instance_utils.get_group_members(CONF.argus.group)
         self.assertIn(CONF.argus.created_user, members)
 
+    def test_cloudconfig_userdata(self):
+        # Verify that the cloudconfig part handler plugin executed correctly.
+        files = self.instance_utils.list_location("C:\\")
+        expected = {
+            'b64', 'b64_1',
+            'gzip', 'gzip_1',
+            'gzip_base64', 'gzip_base64_1', 'gzip_base64_2'
+        }
+        self.assertTrue(expected.issubset(set(files)),
+                        "The expected set is not subset of {}"
+                        .format(files))
