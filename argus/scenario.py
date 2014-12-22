@@ -192,8 +192,7 @@ class BaseArgusScenario(manager.ScenarioTest):
         SSH key is used.
         """
 
-    @abc.abstractmethod
-    @property
+    @abc.abstractproperty
     def remote_client(self):
         """An astract property which should return the default client."""
 
