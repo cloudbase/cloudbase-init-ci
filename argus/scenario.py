@@ -22,6 +22,7 @@ from tempest.common.utils import data_utils
 from tempest.scenario import manager
 
 from argus import config
+from argus import exceptions
 from argus import prepare
 from argus import util
 
@@ -149,15 +150,7 @@ class BaseArgusScenario(manager.ScenarioTest):
             meta=metadata)
         cls._assign_floating_ip()
         cls._create_security_groups()
-        cls.remote_client = cls.get_remote_client(cls)
-        cls.prepare_instance()
 
-    @classmethod
-    def prepare_instance(cls):
-        cls.instance_preparer(
-            cls.server['id'],
-            cls.servers_client,
-            cls.remote_client).prepare()
 
     @classmethod
     def tearDownClass(cls):
@@ -173,6 +166,12 @@ class BaseArgusScenario(manager.ScenarioTest):
         os.remove(TEMPEST_CONF.compute.path_to_private_key)
 
         super(BaseArgusScenario, cls).tearDownClass()
+
+    def setUp(self):
+        super(self.__class__, self).setUp()
+        # It should be guaranteed that it's called only once,
+        # so a second call is a no-op.
+        self.prepare_instance()
 
     def password(self):
         _, encoded_password = self.servers_client.get_password(
@@ -193,9 +192,25 @@ class BaseArgusScenario(manager.ScenarioTest):
         SSH key is used.
         """
 
+    @abc.abstractmethod
+    @property
+    def remote_client(self):
+        """An astract property which should return the default client."""
+
     @property
     def run_command_verbose(self):
         return self.remote_client.run_command_verbose
+
+    @util.run_once
+    def prepare_instance(self):
+        if self.instance_preparer is None:
+            raise exceptions.CloudbaseCIError('instance_preparer must be set')
+        # pylint: disable=not-callable
+        self.instance_preparer(
+            self.server['id'],
+            self.servers_client,
+            self.remote_client).prepare()
+
 
     def get_image_ref(self):
         return self.images_client.get_image(TEMPEST_CONF.compute.image_ref)
@@ -216,3 +231,4 @@ class BaseWindowsScenario(BaseArgusScenario):
         return util.WinRemoteClient(self.floating_ip['ip'],
                                     username,
                                     password)
+    remote_client = util.cached_property(get_remote_client)
