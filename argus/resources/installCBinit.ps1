@@ -1,17 +1,9 @@
 param
 (
-    [bool]$newCode = $False,
     [string]$serviceType = 'http'
 )
 
 $ErrorActionPreference = "Stop"
-
-function replaceCloudbaseInitCode([string]$programFiles) {
-    $path = "$programFiles\Cloudbase Solutions\Cloudbase-Init\Python27\Lib\site-packages\CLOUDB~1"
-
-    # rm -Force -Recurse $path
-    # copy code over either via git command or samba share
-}
 
 
 function setLocalScripts([string]$programFiels) {
@@ -83,11 +75,6 @@ try
 
     setLocalScripts $programFilesDir
     activateWindows $programFilesDir
-
-    if ($newCode)
-    {
-        replaceCloudbaseInitCode $programFilesDir
-    }
 
     if ($serviceType)
     {

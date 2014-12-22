@@ -17,6 +17,7 @@
 import abc
 import contextlib
 import logging
+import ntpath
 import os
 import time
 
@@ -162,6 +163,10 @@ class InstancePreparer(object):
         platforms there might be no need for calling it.
         """
 
+    @abc.abstractmethod
+    def replace_code(self):
+        """Do whatever is necessary to replace the code for cloudbaseinit."""
+
     def prepare(self):
         """Prepare the underlying instance.
 
@@ -177,6 +182,10 @@ class InstancePreparer(object):
         self.get_installation_script()
         self.install_cbinit()
         self.install_git()
+
+        if CONF.argus.replace_code:
+            self.replace_code()
+
         self.sysprep()
         self.wait_reboot()
         self.wait_cbinit_finalization()
@@ -188,6 +197,19 @@ class InstancePreparer(object):
 
 class WindowsInstancePreparer(InstancePreparer):
     """Instance preparer for Windows machines."""
+
+    def get_program_files(self):
+        """Get the location of program files from the instance."""
+        stdout, _ = self._execute('powershell "(Get-WmiObject  Win32_OperatingSystem).'
+                                  'OSArchitecture"')
+        architecture = stdout.strip()
+
+        # Next, get the location.
+        if architecture == '64-bit':
+            location, _ = self._execute('powershell "${ENV:ProgramFiles(x86)}"')
+        else:
+            location, _ = self._execute('powershell "$ENV:ProgramFiles"')
+        return location.strip()
 
     def wait_for_boot_completion(self):
         LOG.info("Waiting for boot completion")
@@ -212,9 +234,8 @@ class WindowsInstancePreparer(InstancePreparer):
         """Run the installation script for CloudbaseInit."""
         LOG.info("Run the downloaded installation script")
 
-        cmd = ('powershell "C:\\\\installcbinit.ps1 -newCode %s '
-               '-serviceType %s"' % (CONF.argus.replace_code,
-                                     CONF.argus.service_type))
+        cmd = ('powershell "C:\\\\installcbinit.ps1 -serviceType {}"'
+               .format(CONF.argus.service_type))
         self._execute(cmd)
 
     def install_git(self):
@@ -231,6 +252,37 @@ class WindowsInstancePreparer(InstancePreparer):
         cmd = ('powershell "C:\\install_git.ps1 {} {}"'
                .format(git_link, git_base))
         self._execute(cmd)
+
+    def replace_code(self):
+        """Replace the code of cloudbaseinit."""
+        LOG.info("Replacing cloudbaseinit's code.")
+
+        # Get the program files location.
+        program_files = self.get_program_files()
+
+        # Remove everything from the cloudbaseinit installation.
+        cloudbaseinit = ntpath.join(
+            program_files, "Cloudbase Solutions",
+            "Cloudbase-Init",
+            # TODO(cpopa): take care of this when testing Python 3.
+            "Python27",
+            "Lib",
+            "site-packages",
+            "CLOUDB~1")
+        self._execute("rm -Force -Recurse {}".format(cloudbaseinit))
+
+        # Clone the repo
+        self._execute("git clone https://github.com/stackforge/"
+                      "cloudbase-init C:\\cloudbaseinit")
+
+        # Run the command provided at cli.
+        opts = util.parse_cli()
+        self._execute("cd C:\\cloudbaseinit; {}".format(opts.git_command))
+
+        # Replace the code, by moving the code from cloudbaseinit
+        # to the installed location.
+        self._execute('powershell "Copy-Item C:\\cloudbaseinit\\cloudbaseinit '
+                      '{} -Recurse"'.format(cloudbaseinit))
 
     def sysprep(self):
         """Prepare the instance for the actual tests, by running sysprep."""
