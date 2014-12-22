@@ -201,3 +201,12 @@ class TestWindowsServices(generic_tests.GenericTests,
 
         license_status = list(licenses.values())[0]
         self.assertEqual(1, int(license_status))
+
+    def test_https_winrm_configured(self):
+        # Test that HTTPS transport protocol for WinRM is configured.
+        # By default, the test images are built only for HTTP.
+        remote_client = self.get_remote_client(CONF.argus.created_user,
+                                               self.password(),
+                                               protocol='https')
+        stdout = remote_client.run_command_verbose('echo 1')
+        self.assertEqual('1', stdout.strip())
