@@ -69,15 +69,23 @@ def decrypt_password(private_key, password):
 
 
 # pylint: disable=dangerous-default-value
-def run_once(func, state={}):
+def run_once(func, state={}, exceptions={}):
     """A memoization decorator, whose purpose is to cache calls."""
     @six.wraps(func)
     def wrapper(*args, **kwargs):
+        if func in exceptions:
+            # Deliberate use of LBYL.
+            six.reraise(*exceptions[func])
+
         try:
             return state[func]
         except KeyError:
-            state[func] = result = func(*args, **kwargs)
-            return result
+            try:
+                state[func] = result = func(*args, **kwargs)
+                return result
+            except Exception:
+                exceptions[func] = sys.exc_info()
+                raise
     return wrapper
 
 
