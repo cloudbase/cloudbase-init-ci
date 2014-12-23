@@ -133,37 +133,46 @@ class BaseArgusScenario(manager.ScenarioTest):
         cls.subnets = []
         cls.routers = []
         cls.floating_ips = {}
-
-        cls.create_keypair()
         metadata = {'network_config': str({'content_path':
                                            'random_value_test_random'})}
-
         encoded_data = base64.encodestring(
             util.get_resource('multipart_metadata'))
 
-        cls.server = cls.create_test_server(
-            wait_until='ACTIVE',
-            key_name=cls.keypair['name'],
-            disk_config='AUTO',
-            user_data=encoded_data,
-            meta=metadata)
-        cls._assign_floating_ip()
-        cls._create_security_groups()
-
+        try:
+            cls.create_keypair()
+            cls.server = cls.create_test_server(
+                wait_until='ACTIVE',
+                key_name=cls.keypair['name'],
+                disk_config='AUTO',
+                user_data=encoded_data,
+                meta=metadata)
+            cls._assign_floating_ip()
+            cls._create_security_groups()
+        except:
+            cls.resource_cleanup()
+            raise
 
     @classmethod
     def resource_cleanup(cls):
         super(BaseArgusScenario, cls).resource_cleanup()
-        for rule in cls.security_groups_rules:
-            cls.security_groups_client.delete_security_group_rule(rule)
-        cls.servers_client.remove_security_group(
-            cls.server['id'], cls.security_group['name'])
+        if cls.security_groups_rules:
+            for rule in cls.security_groups_rules:
+                cls.security_groups_client.delete_security_group_rule(rule)
 
-        cls.servers_client.delete_server(cls.server['id'])
-        cls.servers_client.wait_for_server_termination(cls.server['id'])
-        cls.floating_ips_client.delete_floating_ip(cls.floating_ip['id'])
-        cls.keypairs_client.delete_keypair(cls.keypair['name'])
-        os.remove(CONF.argus.path_to_private_key)
+        if cls.security_groups:
+            cls.servers_client.remove_security_group(
+                cls.server['id'], cls.security_group['name'])
+
+        if cls.server:
+            cls.servers_client.delete_server(cls.server['id'])
+            cls.servers_client.wait_for_server_termination(cls.server['id'])
+
+        if cls.floating_ips:
+            cls.floating_ips_client.delete_floating_ip(cls.floating_ip['id'])
+
+        if cls.keypair:
+            cls.keypairs_client.delete_keypair(cls.keypair['name'])
+            os.remove(CONF.argus.path_to_private_key)
 
     def setUp(self):
         super(BaseArgusScenario, self).setUp()
