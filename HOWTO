@@ -14,10 +14,18 @@ Installing and running argus should follow the next steps:
   It's not mandatory, but it is preferred to configure only WinRM for
   the HTTP transport, since we'll want to test that cloudbaseinit
   configures properly the HTTPS transport.
+  
+  Creating the image is as simple as:
+
+     $ sudo ./create-autounattend-floppy.sh
+     $ sudo ./create_img.sh
+
+  Then, upload the image to glance and set the new image id
+  in argus.conf.
 
 * tempest should be installed, on the node where argus is executed.
-
-  TODO what tempest version?
+  A modern version of tempest is required (must have resource_cleanup and
+  resource_setup hooks in scenario.manager.BaseScenario).
 
 * argus doesn't require any modification in tempest, except setting the
   public network id (it's not required to set the image_ref or flavor_ref,
@@ -37,6 +45,8 @@ Installing and running argus should follow the next steps:
   following command:
 
      argus --conf=<path to argus.conf> --git-command=<git command>
+
+  It's very important that --git-command should go after --conf.
 
   An example:
 
