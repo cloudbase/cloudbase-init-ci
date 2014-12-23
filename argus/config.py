@@ -73,6 +73,11 @@ OPTS = [
                help='The log format which will be used when logging. '
                     'It should be a format known by the "logging" '
                     'module.'),
+    cfg.ListOpt('dns_nameservers',
+                default=['8.8.8.8', '8.8.4.4'],
+                help="List of dns servers whichs hould be used for "
+                     "subnet creation"),
+
 
 ]
 config.register_opt_group(CONF, CBINIT_GROUP, OPTS)
