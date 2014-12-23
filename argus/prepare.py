@@ -271,8 +271,7 @@ class WindowsInstancePreparer(InstancePreparer):
             "Lib",
             "site-packages",
             "cloudbaseinit")
-        self._execute('powershell "rm -Force -Recurse \"{}\""'
-                      .format(cloudbaseinit))
+        self._execute('rmdir "{}" /S /q'.format(cloudbaseinit))
 
         # Clone the repo
         LOG.info("cloning the cloudbaseinit repo.")
