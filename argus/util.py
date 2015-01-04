@@ -165,13 +165,12 @@ def get_logger():
     if conf.argus.file_log:
         file_handler = logging.FileHandler(conf.argus.file_log)
         file_handler.setFormatter(formatter)
-        file_handler.setLevel(logging.DEBUG)
         logger.addHandler(file_handler)
 
     stdout_handler = logging.StreamHandler(sys.stdout)
     stdout_handler.setFormatter(formatter)
-    stdout_handler.setLevel(logging.INFO)
     logger.addHandler(stdout_handler)
+    logger.setLevel(logging.DEBUG)
     return logger
 
 LOG = get_logger()
