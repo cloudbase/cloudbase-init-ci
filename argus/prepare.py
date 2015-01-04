@@ -312,11 +312,16 @@ class WindowsInstancePreparer(InstancePreparer):
         """
         LOG.info("Waiting for the finalization of CloudbaseInit execution")
 
+        # Test that this instance's cloudbaseinit run exists.
         key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` '
-               'Solutions\\Cloudbase-init\\{0}\\Plugins'
+               'Solutions\\Cloudbase-init\\{0}'
                .format(self._instance_id))
-        wait_cmd = 'powershell (Get-Item %s).ValueCount' % key
+        self._run_cmd_until_condition(
+            'powershell "Test-Path {0}"'.format(key),
+            lambda out: out == 'True')
 
+        # Test the number of executed cloudbaseinit plugins.
+        wait_cmd = 'powershell (Get-Item %s\\Plugins).ValueCount' % key
         self._run_cmd_until_condition(
             wait_cmd,
             lambda out: int(out) >= int(CONF.argus.expected_plugins_count))
