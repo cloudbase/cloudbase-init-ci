@@ -317,8 +317,8 @@ class WindowsInstancePreparer(InstancePreparer):
                'Solutions\\Cloudbase-init\\{0}'
                .format(self._instance_id))
         self._run_cmd_until_condition(
-            'powershell "Test-Path {0}"'.format(key),
-            lambda out: out == 'True')
+            'powershell "Test-Path \'{0}\'"'.format(key),
+            lambda out: out.strip() == 'True')
 
         # Test the number of executed cloudbaseinit plugins.
         wait_cmd = 'powershell (Get-Item %s\\Plugins).ValueCount' % key
