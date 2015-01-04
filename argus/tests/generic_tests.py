@@ -241,9 +241,6 @@ class GenericTests(scenario.BaseArgusScenario):
         members = self.instance_utils.get_group_members(CONF.argus.group)
         self.assertIn(CONF.argus.created_user, members)
 
-    # TODO(cpopa): fix the problem with cloudconfig plugin
-    # before removing this.
-    @unittest.expectedFailure
     def test_cloudconfig_userdata(self):
         # Verify that the cloudconfig part handler plugin executed correctly.
         files = self.instance_utils.list_location("C:\\")
@@ -252,6 +249,11 @@ class GenericTests(scenario.BaseArgusScenario):
             'gzip', 'gzip_1',
             'gzip_base64', 'gzip_base64_1', 'gzip_base64_2'
         }
-        self.assertTrue(expected.issubset(set(files)),
-                        "The expected set is not subset of {}"
-                        .format(files))
+        def _test_created_files():
+            self.assertTrue(expected.issubset(set(files)),
+                            "The expected set is not subset of {}"
+                            .format(files))
+
+        self.expectFailure("cloudconfig expects a couple of patches "
+                           "to be merged before actually working.",
+                           _test_created_files)
