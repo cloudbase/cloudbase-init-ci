@@ -313,7 +313,7 @@ class WindowsInstancePreparer(InstancePreparer):
         LOG.info("Waiting for the finalization of CloudbaseInit execution")
 
         # Test that this instance's cloudbaseinit run exists.
-        key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase '
+        key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` '
                'Solutions\\Cloudbase-init\\{0}'
                .format(self._instance_id))
         self._run_cmd_until_condition(
