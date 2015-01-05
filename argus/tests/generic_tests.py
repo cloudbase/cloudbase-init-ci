@@ -253,7 +253,7 @@ class GenericTests(scenario.BaseArgusScenario):
             self.assertTrue(expected.issubset(set(files)),
                             "The expected set is not subset of {}"
                             .format(files))
-            for file in files:
+            for file in expected:
                 path = os.path.join("C:\\", file)
                 content = self.instance_utils.get_instance_file_content(path)
                 # The content of the cloudconfig files is '42', encoded
