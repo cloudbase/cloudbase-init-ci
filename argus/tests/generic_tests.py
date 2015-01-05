@@ -258,7 +258,7 @@ class GenericTests(scenario.BaseArgusScenario):
                 content = self.instance_utils.get_instance_file_content(path)
                 # The content of the cloudconfig files is '42', encoded
                 # in various forms.
-                self.assertEqual('42', content)
+                self.assertEqual('42', content.strip())
 
         self.expectFailure("cloudconfig expects a couple of patches "
                            "to be merged before actually working.",
