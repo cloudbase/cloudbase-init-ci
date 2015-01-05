@@ -196,16 +196,12 @@ class GenericTests(scenario.BaseArgusScenario):
 
         self.assertEqual([expected_peer], peers)
 
-    def _test_password_set(self):
+    def test_password_set(self):
         # Test that the proper password was set.
         remote_client = self.get_remote_client(CONF.argus.created_user,
                                                self.password())
         stdout = remote_client.run_command_verbose("echo 1")
         self.assertEqual('1', stdout)
-
-    def test_password_set(self):
-        self.expectFailure("There's a known bug with password truncation",
-                           self._test_password_set)
 
     def test_sshpublickeys_set(self):
         # Verify that we set the expected ssh keys.
@@ -252,17 +248,12 @@ class GenericTests(scenario.BaseArgusScenario):
             'gzip', 'gzip_1',
             'gzip_base64', 'gzip_base64_1', 'gzip_base64_2'
         }
-        def _test_created_files():
-            self.assertTrue(expected.issubset(set(files)),
-                            "The expected set is not subset of {}"
-                            .format(files))
-            for file in expected:
-                path = os.path.join("C:\\", file)
-                content = self.instance_utils.get_instance_file_content(path)
-                # The content of the cloudconfig files is '42', encoded
-                # in various forms.
-                self.assertEqual('42', content.strip())
-
-        self.expectFailure("cloudconfig expects a couple of patches "
-                           "to be merged before actually working.",
-                           _test_created_files)
+        self.assertTrue(expected.issubset(set(files)),
+                        "The expected set is not subset of {}"
+                        .format(files))
+        for file in expected:
+            path = os.path.join("C:\\", file)
+            content = self.instance_utils.get_instance_file_content(path)
+            # The content of the cloudconfig files is '42', encoded
+            # in various forms.
+            self.assertEqual('42', content.strip())
