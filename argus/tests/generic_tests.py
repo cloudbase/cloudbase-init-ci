@@ -201,7 +201,7 @@ class GenericTests(scenario.BaseArgusScenario):
         remote_client = self.get_remote_client(CONF.argus.created_user,
                                                self.password())
         stdout = remote_client.run_command_verbose("echo 1")
-        self.assertEqual('1', stdout)
+        self.assertEqual('1', stdout.strip())
 
     def test_sshpublickeys_set(self):
         # Verify that we set the expected ssh keys.
