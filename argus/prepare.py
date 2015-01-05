@@ -321,10 +321,11 @@ class WindowsInstancePreparer(InstancePreparer):
             lambda out: out.strip() == 'True')
 
         # Test the number of executed cloudbaseinit plugins.
-        wait_cmd = 'powershell (Get-Item %s\\Plugins).ValueCount' % key
+        wait_cmd = ('powershell (Get-Service "| where -Property Name '
+                    '-match cloudbase-init").Status')
         self._run_cmd_until_condition(
             wait_cmd,
-            lambda out: int(out) >= int(CONF.argus.expected_plugins_count))
+            lambda out: out.strip() == 'Stopped')
 
     def wait_reboot(self):
         """Do a reboot and wait until the instance is up."""
