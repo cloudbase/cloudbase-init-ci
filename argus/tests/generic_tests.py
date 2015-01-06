@@ -202,6 +202,12 @@ class GenericTests(scenario.BaseArgusScenario):
         # Test that the proper password was set.
         remote_client = self.get_remote_client(CONF.argus.created_user,
                                                self.password())
+        # Pylint emits properly this error, but it doesn't understand
+        # that this class is used as a mixin later on (and will
+        # never understand these cases). So it's okay to disable
+        # the message here.
+        # pylint: disable=no-member
+
         stdout = remote_client.run_command_verbose("echo 1")
         self.assertEqual('1', stdout.strip())
 
