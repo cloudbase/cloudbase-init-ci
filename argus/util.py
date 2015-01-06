@@ -112,7 +112,7 @@ def get_resource(resource):
     return pkgutil.get_data('argus.resources', resource)
 
 
-class cached_property(object): # pylint: disable=invalid-name
+class cached_property(object):  # pylint: disable=invalid-name
     """A property which caches the result on access."""
 
     def __init__(self, func):

@@ -22,7 +22,7 @@ import time
 
 import bs4
 import six
-from six.moves import urllib # pylint: disable=import-error
+from six.moves import urllib  # pylint: disable=import-error
 
 from argus import exceptions
 from argus import util
@@ -111,7 +111,7 @@ class InstancePreparer(object):
         while True:
             try:
                 std_out, std_err = self._execute(cmd)
-            except Exception: # pylint: disable=broad-except
+            except Exception:  # pylint: disable=broad-except
                 LOG.debug("Command %r failed while waiting for condition",
                           cmd)
                 count += 1

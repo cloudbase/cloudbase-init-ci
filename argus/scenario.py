@@ -81,7 +81,7 @@ class BaseArgusScenario(manager.ScenarioTest):
         return server
 
     @classmethod
-    def create_keypair(cls): # pylint: disable=arguments-differ
+    def create_keypair(cls):  # pylint: disable=arguments-differ
         _, cls.keypair = cls.keypairs_client.create_keypair(
             cls.__name__ + "-key")
         with open(CONF.argus.path_to_private_key, 'w') as stream:
