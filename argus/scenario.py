@@ -59,7 +59,7 @@ def _create_subnet(self, **kwargs):
     post_data = self.serialize({resource_name: kwargs})
     resp, body = self.post(uri, post_data)
     body = self.deserialize_single(body)
-    self.rest_client.expected_success(201, resp.status)
+    self.expected_success(201, resp.status)
     return rest_client.ResponseBody(resp, body)
 
 network.json.network_client.NetworkClientJSON.create_subnet = _create_subnet
