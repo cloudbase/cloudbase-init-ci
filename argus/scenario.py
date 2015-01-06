@@ -62,7 +62,7 @@ def _create_subnet(self, **kwargs):
     self.rest_client.expected_success(201, resp.status)
     return rest_client.ResponseBody(resp, body)
 
-network.network_client_base.NetworkClientBase.create_subnet = _create_subnet
+network.json.NetworkClientJSON.create_subnet = _create_subnet
 
 
 @six.add_metaclass(abc.ABCMeta)
