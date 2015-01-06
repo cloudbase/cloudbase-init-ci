@@ -16,14 +16,13 @@
 
 import abc
 import contextlib
-import logging
 import ntpath
 import os
 import time
 
 import bs4
 import six
-from six.moves import urllib
+from six.moves import urllib # pylint: disable=import-error
 
 from argus import exceptions
 from argus import util
@@ -112,7 +111,7 @@ class InstancePreparer(object):
         while True:
             try:
                 std_out, std_err = self._execute(cmd)
-            except Exception:
+            except Exception: # pylint: disable=broad-except
                 LOG.debug("Command %r failed while waiting for condition",
                           cmd)
                 count += 1
@@ -200,13 +199,15 @@ class WindowsInstancePreparer(InstancePreparer):
 
     def get_program_files(self):
         """Get the location of program files from the instance."""
-        stdout, _ = self._execute('powershell "(Get-WmiObject  Win32_OperatingSystem).'
-                                  'OSArchitecture"')
+        stdout, _ = self._execute(
+            'powershell "(Get-WmiObject  Win32_OperatingSystem).'
+            'OSArchitecture"')
         architecture = stdout.strip()
 
         # Next, get the location.
         if architecture == '64-bit':
-            location, _ = self._execute('powershell "${ENV:ProgramFiles(x86)}"')
+            location, _ = self._execute(
+                'powershell "${ENV:ProgramFiles(x86)}"')
         else:
             location, _ = self._execute('powershell "$ENV:ProgramFiles"')
         return location.strip()
@@ -342,4 +343,3 @@ class WindowsInstancePreparer(InstancePreparer):
         self._servers_client.wait_for_server_status(
             server_id=self._instance_id,
             status='ACTIVE')
-

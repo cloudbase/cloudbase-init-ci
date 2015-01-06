@@ -21,9 +21,8 @@ import six
 from tempest.common import rest_client
 from tempest.common.utils import data_utils
 from tempest.scenario import manager
-from tempest.services.network import network_client_base
+from tempest.services import network
 
-from argus import config
 from argus import exceptions
 from argus import prepare
 from argus import util
@@ -35,11 +34,12 @@ CONF = util.get_config()
 # But it solves the following problem, which can't
 # be solved easily otherwise:
 #    *  manager.ScenarioTest creates its clients in resource_setup
-#    * in order to create them, it needs credentials through a CredentialProvider
-#    * the credential provider, if the network resource is enabled, will look up
-#      in the list of known certs and will return them
-#    * if the credential provider can't find those creds at first, it retrieves
-#      them by creating the network and the subnet
+#    * in order to create them, it needs credentials
+#      through a CredentialProvider
+#    * the credential provider, if the network resource is enabled, will
+#       look up in the list of known certs and will return them
+#    * if the credential provider can't find those creds at first,
+#      it retrieves them by creating the network and the subnet
 #    * the only problem is that the parameters to these functions aren't
 #       customizable at this point
 #    * and create_subnet doesn't receive the dns_nameservers option,
@@ -62,8 +62,7 @@ def _create_subnet(self, **kwargs):
     self.rest_client.expected_success(201, resp.status)
     return rest_client.ResponseBody(resp, body)
 
-network_client_base.NetworkClientBase.create_subnet = _create_subnet
-
+network.network_client_base.NetworkClientBase.create_subnet = _create_subnet
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -82,7 +81,7 @@ class BaseArgusScenario(manager.ScenarioTest):
         return server
 
     @classmethod
-    def create_keypair(cls):
+    def create_keypair(cls): # pylint: disable=arguments-differ
         _, cls.keypair = cls.keypairs_client.create_keypair(
             cls.__name__ + "-key")
         with open(CONF.argus.path_to_private_key, 'w') as stream:
@@ -185,7 +184,7 @@ class BaseArgusScenario(manager.ScenarioTest):
                 meta=metadata)
             cls._assign_floating_ip()
             cls._create_security_groups()
-        except:
+        except BaseException:
             cls.resource_cleanup()
             raise
 
@@ -255,7 +254,6 @@ class BaseArgusScenario(manager.ScenarioTest):
             self.server['id'],
             self.servers_client,
             self.remote_client).prepare()
-
 
     def get_image_ref(self):
         return self.images_client.get_image(CONF.argus.image_ref)

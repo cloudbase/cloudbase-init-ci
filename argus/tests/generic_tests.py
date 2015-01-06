@@ -45,12 +45,14 @@ def _dnsmasq_configured():
                 return True
     return False
 
+
 def skip_unless_dnsmasq_configured(func):
     msg = (
         "Test will fail if the `dhcp-option-force` option "
         "was not configured by the `dnsmasq_config_file` "
         "from neutron/dhcp-agent.ini.")
     return unittest.skipUnless(_dnsmasq_configured(), msg)(func)
+
 
 def _get_dhcp_value(key):
     """Get the value of an override from the dnsmasq-config file.
@@ -69,7 +71,7 @@ def _get_dhcp_value(key):
 
 @six.add_metaclass(abc.ABCMeta)
 class GenericInstanceUtils(object):
-    """A generic utility class, which provides methods for interrogating an instance."""
+    """Generic utility class for interrogating an instance."""
 
     def __init__(self, remote_client, instance):
         self.remote_client = remote_client
@@ -251,8 +253,8 @@ class GenericTests(scenario.BaseArgusScenario):
         self.assertTrue(expected.issubset(set(files)),
                         "The expected set is not subset of {}"
                         .format(files))
-        for file in expected:
-            path = os.path.join("C:\\", file)
+        for basefile in expected:
+            path = os.path.join("C:\\", basefile)
             content = self.instance_utils.get_instance_file_content(path)
             # The content of the cloudconfig files is '42', encoded
             # in various forms.

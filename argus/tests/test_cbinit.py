@@ -14,16 +14,16 @@
 #    under the License.
 """Tests for CloudbaseInit services."""
 import contextlib
-import os
 import ntpath
+import os
 import re
-import tempfile
 import shutil
+import tempfile
 
 from tempest.common.utils import data_utils
 
-from argus.tests import generic_tests
 from argus import scenario
+from argus.tests import generic_tests
 from argus import util
 
 CONF = util.get_config()
@@ -41,8 +41,8 @@ def _create_tempdir():
 @contextlib.contextmanager
 def _create_tempfile(content=None):
     with _create_tempdir() as temp:
-        fd, path = tempfile.mkstemp(dir=temp)
-        os.close(fd)
+        file_desc, path = tempfile.mkstemp(dir=temp)
+        os.close(file_desc)
         if content:
             with open(path, 'w') as stream:
                 stream.write(content)
@@ -125,7 +125,7 @@ class WindowsUtils(generic_tests.GenericInstanceUtils):
         return self.remote_client.run_command_verbose(cmd)
 
     def get_userdata_executed_plugins(self):
-        cmd = 'powershell "(Get-ChildItem -Path  C:\ *.txt).Count'
+        cmd = 'powershell "(Get-ChildItem -Path  C:\\ *.txt).Count'
         stdout = self.remote_client.run_command_verbose(cmd)
         return int(stdout)
 
@@ -153,7 +153,7 @@ class WindowsUtils(generic_tests.GenericInstanceUtils):
         cmd = "net localgroup {}".format(group)
         std_out = self.remote_client.run_command_verbose(cmd)
         member_search = re.search(
-            "Members\s+-+\s+(.*?)The\s+command",
+            r"Members\s+-+\s+(.*?)The\s+command",
             std_out, re.MULTILINE | re.DOTALL)
         if not member_search:
             raise ValueError('Unable to get members.')

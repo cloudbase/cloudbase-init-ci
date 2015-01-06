@@ -58,10 +58,11 @@ class WinRemoteClient(object):
         self.username = username
         self.password = password
 
-    def _run_command(self, protocol, shell_id, command):
+    @staticmethod
+    def _run_command(protocol_client, shell_id, command):
         try:
-            command_id = protocol.run_command(shell_id, command)
-            stdout, stderr, exit_code = protocol.get_command_output(
+            command_id = protocol_client.run_command(shell_id, command)
+            stdout, stderr, exit_code = protocol_client.get_command_output(
                 shell_id, command_id)
             if exit_code:
                 raise exceptions.CloudbaseCLIError(
@@ -73,25 +74,24 @@ class WinRemoteClient(object):
 
             return stdout, stderr, exit_code
         finally:
-            protocol.cleanup_command(shell_id, command_id)
+            protocol_client.cleanup_command(shell_id, command_id)
 
     def _run_commands(self, commands):
-        protocol = self.get_protocol()
-        shell_id = protocol.open_shell()
-        result = []
+        protocol_client = self.get_protocol()
+        shell_id = protocol_client.open_shell()
         try:
-            for command in commands:
-                result.append(self._run_command(protocol, shell_id, command))
+            results = [self._run_command(protocol_client, shell_id, command)
+                       for command in commands]
         finally:
-            protocol.close_shell(shell_id)
-        return result
+            protocol_client.close_shell(shell_id)
+        return results
 
     def get_protocol(self):
         protocol.Protocol.DEFAULT_TIMEOUT = "PT3600S"
         return protocol.Protocol(endpoint=self.hostname,
-                              transport='plaintext',
-                              username=self.username,
-                              password=self.password)
+                                 transport='plaintext',
+                                 username=self.username,
+                                 password=self.password)
 
     def run_remote_cmd(self, cmd):
         """Run the given remote command.

@@ -98,7 +98,9 @@ def trap_failure(func):
         except BaseException:
             # TODO(cpopa): Save the original exception, since pdb will happily
             # overwrite it. This makes flake8 scream, though.
-            exc = sys.exc_info()  # pylint: disable=unused-variable
+            # pylint: disable=unused-variable
+            exc = sys.exc_info()  # NOQA
+
             LOG.exception("Exception occurred for func %s", func)
             import pdb
             pdb.set_trace()
@@ -110,7 +112,7 @@ def get_resource(resource):
     return pkgutil.get_data('argus.resources', resource)
 
 
-class cached_property(object):
+class cached_property(object): # pylint: disable=invalid-name
     """A property which caches the result on access."""
 
     def __init__(self, func):

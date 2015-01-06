@@ -14,6 +14,7 @@
 #    under the License.
 """Various exceptions that can be raised by the CI project."""
 
+
 class CloudbaseCIError(Exception):
     pass
 
