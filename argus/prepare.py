@@ -1,4 +1,4 @@
-# Copyright 2014 Cloudbase-init
+# Copyright 2014 Cloudbase Solutions Srl
 # All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
