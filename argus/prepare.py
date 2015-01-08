@@ -181,10 +181,7 @@ class InstancePreparer(object):
         self.get_installation_script()
         self.install_cbinit()
         self.install_git()
-
-        if CONF.argus.replace_code:
-            self.replace_code()
-
+        self.replace_code()
         self.sysprep()
         self.wait_reboot()
         self.wait_cbinit_finalization()
@@ -256,6 +253,11 @@ class WindowsInstancePreparer(InstancePreparer):
 
     def replace_code(self):
         """Replace the code of cloudbaseinit."""
+        opts = util.parse_cli()
+        if not opts.git_command:
+            # Nothing to replace.
+            return
+
         LOG.info("Replacing cloudbaseinit's code.")
 
         LOG.info("Getting program files location.")
@@ -281,13 +283,6 @@ class WindowsInstancePreparer(InstancePreparer):
 
         # Run the command provided at cli.
         LOG.info("Applying cli patch.")
-        opts = util.parse_cli()
-
-        if not opts.git_command:
-            raise exceptions.CloudbaseCLIError(
-                "git_command not passed at command line. "
-                "Could not replace anything.")
-
         self._execute("cd C:\\cloudbaseinit && {}".format(opts.git_command))
 
         # Replace the code, by moving the code from cloudbaseinit

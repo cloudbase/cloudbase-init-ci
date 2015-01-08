@@ -51,4 +51,3 @@ Installing and running argus should follow the next steps:
   ```sh
   argus --conf argus.conf --git-command "git fetch https://review.openstack.org/stackforge/cloudbase-init refs/changes/77/143277/1 && git checkout FETCH_HEAD"
   ```
-  This will work only if you set `replace_code` option in `argus.conf` to `True`.
