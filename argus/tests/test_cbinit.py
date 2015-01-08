@@ -165,6 +165,21 @@ class WindowsUtils(generic_tests.GenericInstanceUtils):
         stdout = self.remote_client.run_command_verbose(command)
         return list(filter(None, stdout.splitlines()))
 
+    def get_service_triggers(self, service):
+        """Get the triggers of the given service.
+
+        Return a tuple of two elements, where the first is the start
+        trigger and the second is the end trigger.
+        """
+        command = "sc qtriggerinfo {}".format(service)
+        stdout = self.remote_client.run_command_verbose(command)
+        match = re.search("START SERVICE\s+(.*?):.*?STOP SERVICE\s+(.*?):",
+                          stdout, re.DOTALL)
+        if not match:
+            raise ValueError("Unable to get the triggers for the "
+                             "given service.")
+        return (match.group(1).strip(), match.group(2).strip())
+
 
 class TestWindowsServices(generic_tests.GenericTests,
                           scenario.BaseWindowsScenario):
@@ -214,3 +229,10 @@ class TestWindowsServices(generic_tests.GenericTests,
                                                protocol='https')
         stdout = remote_client.run_command_verbose('echo 1')
         self.assertEqual('1', stdout.strip())
+
+    @generic_tests.skip_unless_dnsmasq_configured
+    def test_w32time_triggers(self):
+        # Test that w32time has network availability triggers, not
+        # domain joined triggers
+        start_trigger, _ = self.instance_utils.get_service_triggers('w32time')
+        self.assertEqual('IP ADDRESS AVAILABILITY', start_trigger)
