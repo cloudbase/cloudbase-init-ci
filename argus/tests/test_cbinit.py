@@ -173,7 +173,7 @@ class WindowsUtils(generic_tests.GenericInstanceUtils):
         """
         command = "sc qtriggerinfo {}".format(service)
         stdout = self.remote_client.run_command_verbose(command)
-        match = re.search("START SERVICE\s+(.*?):.*?STOP SERVICE\s+(.*?):",
+        match = re.search(r"START SERVICE\s+(.*?):.*?STOP SERVICE\s+(.*?):",
                           stdout, re.DOTALL)
         if not match:
             raise ValueError("Unable to get the triggers for the "
