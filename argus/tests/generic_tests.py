@@ -192,7 +192,7 @@ class GenericTests(scenario.BaseArgusScenario):
     def test_ntp_properly_configured(self):
         # Verify that the expected NTP peers are active.
         peers = self.instance_utils.get_instance_ntp_peers()
-        expected_peer = _get_dhcp_value('42')
+        expected_peers = _get_dhcp_value('42').split(",")
         if expected_peer is None:
             self.fail('DHCP NTP option was not configured.')
 
