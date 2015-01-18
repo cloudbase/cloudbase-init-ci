@@ -18,7 +18,7 @@ import base64
 import os
 
 import six
-from tempest.common import rest_client
+from tempest.common import service_client
 from tempest.common.utils import data_utils
 from tempest.scenario import manager
 from tempest.services import network
@@ -60,7 +60,7 @@ def _create_subnet(self, **kwargs):
     resp, body = self.post(uri, post_data)
     body = self.deserialize_single(body)
     self.expected_success(201, resp.status)
-    return rest_client.ResponseBody(resp, body)
+    return service_client.ResponseBody(resp, body)
 
 network.json.network_client.NetworkClientJSON.create_subnet = _create_subnet
 
