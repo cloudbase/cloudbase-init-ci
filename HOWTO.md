@@ -51,3 +51,13 @@ Installing and running argus should follow the next steps:
   ```sh
   argus --conf argus.conf --git-command "git fetch https://review.openstack.org/stackforge/cloudbase-init refs/changes/77/143277/1 && git checkout FETCH_HEAD"
   ```
+
+
+Troubleshooting
+---------------
+
+* If the test fails with an error 'Multiple possible networks found, use a Network ID to be more precise', that means
+  that the used network is shared. Disable this by using the following command:
+  ```sh
+  neutron net-update <network id> --shared=false
+  ```
