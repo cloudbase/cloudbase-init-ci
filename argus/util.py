@@ -142,6 +142,8 @@ def parse_cli():
                              "from the stackforge/cloudbase-init only, "
                              "but that can be changed through this "
                              "option.")
+    parser.add_argument("-p", "--pause", action="store_true",
+                        help="Pause argus before doing any test.")
     opts = parser.parse_args()
     return opts
 
