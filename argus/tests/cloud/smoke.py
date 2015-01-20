@@ -86,10 +86,10 @@ class BaseSmokeTests(scenario.BaseArgusScenario):
         # We have multiple choices here: either inherit from object
         # and be done with it, but this hinders static analysis and could hide
         # unwanted bugs or mark the class as being a base class.
-        if cls is SmokeTests:
-            raise unittest.SkipTest("Skipping SmokeTests, as "
+        if cls is BaseSmokeTests:
+            raise unittest.SkipTest("Skipping BaseSmokeTests, as "
                                     "it is a base class.")
-        super(SmokeTests, cls).setUpClass()
+        super(BaseSmokeTests, cls).setUpClass()
 
     @util.cached_property
     def introspection(self):
