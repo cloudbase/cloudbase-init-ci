@@ -68,10 +68,9 @@ def _get_dhcp_value(key):
 
 
 # pylint: disable=abstract-method
-class GenericTests(scenario.BaseArgusScenario):
-    """Various common generic tests for testing cloudbaseinit.
+class SmokeTests(scenario.BaseArgusScenario):
+    """Various smoke tests for testing cloudbaseinit.
 
-    They are generic because they don't depend on a particular OS version.
     Each OS test version must implement the abstract methods provided here,
     the methods will be called by each required test.
     The tests provided here are testing that basic behaviour of
@@ -87,10 +86,10 @@ class GenericTests(scenario.BaseArgusScenario):
         # We have multiple choices here: either inherit from object
         # and be done with it, but this hinders static analysis and could hide
         # unwanted bugs or mark the class as being a base class.
-        if cls is GenericTests:
-            raise unittest.SkipTest("Skipping GenericTests, as "
+        if cls is SmokeTests:
+            raise unittest.SkipTest("Skipping SmokeTests, as "
                                     "it is a base class.")
-        super(GenericTests, cls).setUpClass()
+        super(SmokeTests, cls).setUpClass()
 
     @util.cached_property
     def introspection(self):
