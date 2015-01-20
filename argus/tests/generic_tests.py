@@ -265,3 +265,12 @@ class GenericTests(scenario.BaseArgusScenario):
             # The content of the cloudconfig files is '42', encoded
             # in various forms.
             self.assertEqual('42', content.strip())
+
+    def test_get_console_output(self):
+        # Verify that the product emits messages to the console output.
+        resp, output = self.servers_client.get_console_output(
+            self.server['id'], 10)
+        self.assertEqual(200, resp.status)
+        self.assertTrue(output, "Console output was empty.")
+        lines = len(output.split('\n'))
+        self.assertEqual(lines, 10)
