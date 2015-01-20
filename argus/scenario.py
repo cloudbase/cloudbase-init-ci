@@ -24,7 +24,7 @@ from tempest.scenario import manager
 from tempest.services import network
 
 from argus import exceptions
-from argus import prepare
+from argus.recipees.cloud import windows as windows_recipees
 from argus import util
 
 CONF = util.get_config()
@@ -67,7 +67,7 @@ network.json.network_client.NetworkClientJSON.create_subnet = _create_subnet
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseArgusScenario(manager.ScenarioTest):
-    instance_preparer = None
+    recipee = None
 
     @classmethod
     def create_test_server(cls, wait_until='ACTIVE', **kwargs):
@@ -247,10 +247,10 @@ class BaseArgusScenario(manager.ScenarioTest):
 
     @util.run_once
     def prepare_instance(self):
-        if self.instance_preparer is None:
-            raise exceptions.CloudbaseCIError('instance_preparer must be set')
+        if self.recipee is None:
+            raise exceptions.CloudbaseCIError('recipee must be set')
         # pylint: disable=not-callable
-        self.instance_preparer(
+        self.recipee(
             self.server['id'],
             self.servers_client,
             self.remote_client).prepare()
@@ -264,7 +264,7 @@ class BaseArgusScenario(manager.ScenarioTest):
 
 class BaseWindowsScenario(BaseArgusScenario):
     """Base class for Windows-based tests."""
-    instance_preparer = prepare.WindowsInstancePreparer
+    recipee = windows_recipees.WindowsCloudbaseinitRecipee
 
     def get_remote_client(self, username=None, password=None,
                           protocol='http', **kwargs):

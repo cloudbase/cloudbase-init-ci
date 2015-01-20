@@ -12,27 +12,26 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
-"""Instance preparing utilities."""
 
-import abc
+"""Windows cloudbaseinit recipees."""
+
 import contextlib
 import ntpath
 import os
-import time
 
 import bs4
 import six
 from six.moves import urllib  # pylint: disable=import-error
 
 from argus import exceptions
+from argus.recipees.cloud import base
 from argus import util
 
 CONF = util.get_config()
 LOG = util.get_logger()
 
 __all__ = (
-    'InstancePreparer',
-    'WindowsInstancePreparer',
+    'WindowsCloudbaseinitRecipee',
 )
 
 
@@ -61,138 +60,8 @@ def _get_git_link():
     raise exceptions.CloudbaseCIError("git download link not found.")
 
 
-@six.add_metaclass(abc.ABCMeta)
-class InstancePreparer(object):
-    """Handle instance preparing.
-
-    The method :meth:`~prepare` does all the necessary work for
-    preparing a new instance. The executed steps are:
-
-    * wait for boot completion.
-    * get an install script for CloudbaseInit
-    * installs CloudbaseInit
-    * waits for the finalization of the installation.
-    """
-
-    def __init__(self, instance_id, servers_client, remote_client):
-        self._servers_client = servers_client
-        self._instance_id = instance_id
-        self._remote_client = remote_client
-
-    def _execute(self, cmd):
-        """Execute the given command and fail when the command fails."""
-        stdout, stderr, return_code = self._remote_client.run_remote_cmd(cmd)
-        if return_code:
-            raise exceptions.CloudbaseCIError(
-                "Command {command!r} failed with "
-                "return code {return_code!r}"
-                .format(command=cmd,
-                        return_code=return_code))
-        return stdout, stderr
-
-    def _run_cmd_until_condition(self, cmd, cond, retry_count=None,
-                                 retry_count_interval=5):
-        """Run the given `cmd` until a condition *cond* occurs.
-
-        :param cmd:
-            A string, representing a command which needs to
-            be executed on the underlying remote client.
-        :param cond:
-            A callable which receives the stdout returned by
-            executing the command. It should return a boolean value,
-            which tells to this function to stop execution.
-        :param retry_count:
-            The number of retries which this function has.
-            If the value is ``None``, then the function will run *forever*.
-        :param retry_count_interval:
-            The number of seconds to sleep when retrying a command.
-        """
-        count = 0
-        while True:
-            try:
-                std_out, std_err = self._execute(cmd)
-            except Exception:  # pylint: disable=broad-except
-                LOG.debug("Command %r failed while waiting for condition",
-                          cmd)
-                count += 1
-                if retry_count and count >= retry_count:
-                    raise exceptions.CloudbaseTimeoutError(
-                        "Command {!r} failed too many times."
-                        .format(cmd))
-                time.sleep(retry_count_interval)
-            else:
-                if std_err:
-                    raise exceptions.CloudbaseCLIError(
-                        "Executing command {!r} failed with {!r}"
-                        .format(cmd, std_err))
-                elif cond(std_out):
-                    break
-                else:
-                    time.sleep(retry_count_interval)
-
-    @abc.abstractmethod
-    def wait_for_boot_completion(self):
-        """Wait for the instance to finish up booting."""
-
-    @abc.abstractmethod
-    def get_installation_script(self):
-        """Get the installation script for cloudbaseinit."""
-
-    @abc.abstractmethod
-    def install_cbinit(self):
-        """Install the cloudbaseinit code."""
-
-    @abc.abstractmethod
-    def wait_cbinit_finalization(self):
-        """Wait for the finalization of cloudbaseinit."""
-
-    @abc.abstractmethod
-    def wait_reboot(self):
-        """Do a reboot and wait for the instance to be up."""
-
-    @abc.abstractmethod
-    def install_git(self):
-        """Install git in the instance."""
-
-    @abc.abstractmethod
-    def sysprep(self):
-        """Do the final steps after installing cloudbaseinit.
-
-        This requires running sysprep on Windows, but on other
-        platforms there might be no need for calling it.
-        """
-
-    @abc.abstractmethod
-    def replace_code(self):
-        """Do whatever is necessary to replace the code for cloudbaseinit."""
-
-    def prepare(self):
-        """Prepare the underlying instance.
-
-        The following operations will be executed:
-
-        * wait for boot completion
-        * get an installation script for CloudbaseInit
-        * install CloudbaseInit by running the previously downloaded file.
-        * wait until the instance is up and running.
-        """
-        LOG.info("Preparing instance %s", self._instance_id)
-        self.wait_for_boot_completion()
-        self.get_installation_script()
-        self.install_cbinit()
-        self.install_git()
-        self.replace_code()
-        self.sysprep()
-        self.wait_reboot()
-        self.wait_cbinit_finalization()
-        LOG.info("Finished preparing instance %s", self._instance_id)
-
-    if CONF.argus.debug:
-        prepare = util.trap_failure(prepare)
-
-
-class WindowsInstancePreparer(InstancePreparer):
-    """Instance preparer for Windows machines."""
+class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
+    """Recipee for preparing a Windows instance."""
 
     def get_program_files(self):
         """Get the location of program files from the instance."""
