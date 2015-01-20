@@ -41,8 +41,8 @@ def _parse_licenses(output):
     return licenses
 
 
-class TestWindowsServices(smoke.SmokeTests,
-                          scenario.BaseWindowsScenario):
+class TestWindowsSmoke(smoke.BaseSmokeTests,
+                       scenario.BaseWindowsScenario):
 
     introspection_class = introspection.WindowsInstanceIntrospection
 
@@ -63,7 +63,7 @@ class TestWindowsServices(smoke.SmokeTests,
         self.assertEqual("Running\r\n", str(stdout))
 
     def test_local_scripts_executed(self):
-        super(TestWindowsServices, self).test_local_scripts_executed()
+        super(TestWindowsSmoke, self).test_local_scripts_executed()
 
         command = 'powershell "Test-Path C:\\Scripts\\powershell.output"'
         stdout = self.remote_client.run_command_verbose(command)

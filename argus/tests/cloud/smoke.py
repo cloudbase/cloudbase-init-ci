@@ -68,7 +68,7 @@ def _get_dhcp_value(key):
 
 
 # pylint: disable=abstract-method
-class SmokeTests(scenario.BaseArgusScenario):
+class BaseSmokeTests(scenario.BaseArgusScenario):
     """Various smoke tests for testing cloudbaseinit.
 
     Each OS test version must implement the abstract methods provided here,
