@@ -29,6 +29,7 @@ from argus import exceptions
 from argus import util
 
 CONF = util.get_config()
+LOG = util.get_logger()
 
 
 # TODO(cpopa): this is really a horrible hack!
@@ -203,6 +204,7 @@ class BaseArgusScenario(object):
 
     def _setup(self):
         # pylint: disable=attribute-defined-outside-init
+        LOG.info("Creating server.")
         self._keypair = self._create_keypair()
         self._server = self._create_server(
             wait_until='ACTIVE',
@@ -215,6 +217,7 @@ class BaseArgusScenario(object):
         self._prepare_instance()
 
     def _cleanup(self):
+        LOG.info("Cleaning up.")
         self._isolated_creds.clear_isolated_creds()
 
         if self._security_groups_rules:
@@ -248,6 +251,7 @@ class BaseArgusScenario(object):
 
         # run tests
         try:
+            LOG.info("Running tests.")
             testloader = unittest.TestLoader()
             testnames = testloader.getTestCaseNames(self._test_class)
             suite = unittest.TestSuite()
@@ -260,6 +264,8 @@ class BaseArgusScenario(object):
     def _prepare_instance(self):
         if self._recipee is None:
             raise exceptions.CloudbaseCIError('recipee must be set')
+
+        LOG.info("Preparing instance.")
         # pylint: disable=not-callable
         self._recipee(
             self._server['id'],
