@@ -92,7 +92,8 @@ confidence=
 # no Warning level messages displayed, use"--disable=all --enable=classes
 # --disable=W"
 disable=missing-docstring, bad-builtin, abstract-class-little-used, star-args,
-        too-many-ancestors, too-few-public-methods, fixme
+        too-many-ancestors, too-few-public-methods, fixme, too-many-instance-attributes,
+        locally-disabled
 
 
 [BASIC]

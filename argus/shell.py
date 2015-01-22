@@ -12,16 +12,24 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import unittest
-
+from argus import runner
 from argus import util
-
+from argus import scenario
+from argus.recipees.cloud import windows
+from argus.tests.cloud import test_smoke_windows
 
 def main():
-    opts = util.parse_cli()
-    loader = unittest.TestLoader().discover('argus.tests')
-    unittest.TextTestRunner(failfast=opts.failfast).run(loader)
+    metadata = {'network_config': str({'content_path':'random_value_test_random'})}
+    userdata = util.get_resource('multipart_metadata')
 
+    scenarios = [
+        scenario.BaseWindowsScenario(
+            test_class=test_smoke_windows.TestWindowsSmoke,
+            recipee=windows.WindowsCloudbaseinitRecipee,
+            userdata=userdata,
+            metadata=metadata),
+    ]
+    runner.Runner(scenarios).run()
 
 if __name__ == "__main__":
     main()

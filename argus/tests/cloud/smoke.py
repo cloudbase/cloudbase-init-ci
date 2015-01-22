@@ -68,7 +68,7 @@ def _get_dhcp_value(key):
 
 
 # pylint: disable=abstract-method
-class BaseSmokeTests(scenario.BaseArgusScenario):
+class BaseSmokeTests(scenario.BaseArgusTest):
     """Various smoke tests for testing cloudbaseinit.
 
     Each OS test version must implement the abstract methods provided here,
@@ -79,18 +79,6 @@ class BaseSmokeTests(scenario.BaseArgusScenario):
     """
     introspection_class = None
 
-    @classmethod
-    def setUpClass(cls):
-        # TODO(cpopa): this is a hack to skip this base implementation.
-        # These tests will be called in subclasses, leaving this aside.
-        # We have multiple choices here: either inherit from object
-        # and be done with it, but this hinders static analysis and could hide
-        # unwanted bugs or mark the class as being a base class.
-        if cls is BaseSmokeTests:
-            raise unittest.SkipTest("Skipping BaseSmokeTests, as "
-                                    "it is a base class.")
-        super(BaseSmokeTests, cls).setUpClass()
-
     @util.cached_property
     def introspection(self):
         if not self.introspection_class:
@@ -98,8 +86,7 @@ class BaseSmokeTests(scenario.BaseArgusScenario):
                 'introspection_class must be set')
 
         # pylint: disable=not-callable
-        return self.introspection_class(self.remote_client,
-                                        self.server['id'])
+        return self.introspection_class(self.remote_client, self.server['id'])
 
     def test_plugins_count(self):
         # Test that we have the expected numbers of plugins.
@@ -109,7 +96,7 @@ class BaseSmokeTests(scenario.BaseArgusScenario):
 
     def test_disk_expanded(self):
         # Test the disk expanded properly.
-        image = self.get_image_ref()
+        image = self.manager.get_image_ref()
         datastore_size = image[1]['OS-EXT-IMG-SIZE:size']
         disk_size = self.introspection.get_disk_size()
         self.assertGreater(disk_size, datastore_size)
@@ -122,7 +109,7 @@ class BaseSmokeTests(scenario.BaseArgusScenario):
     def test_hostname_set(self):
         # Test that the hostname was properly set.
         instance_hostname = self.introspection.get_instance_hostname()
-        server = self.instance_server()[1]
+        server = self.manager.instance_server()[1]
 
         self.assertEqual(instance_hostname,
                          str(server['name'][:15]).lower())
@@ -139,8 +126,9 @@ class BaseSmokeTests(scenario.BaseArgusScenario):
 
     def test_password_set(self):
         # Test that the proper password was set.
-        remote_client = self.get_remote_client(CONF.argus.created_user,
-                                               self.password())
+        remote_client = self.manager.get_remote_client(
+            CONF.argus.created_user,
+            self.manager.instance_password())
         # Pylint emits properly this error, but it doesn't understand
         # that this class is used as a mixin later on (and will
         # never understand these cases). So it's okay to disable
@@ -155,7 +143,7 @@ class BaseSmokeTests(scenario.BaseArgusScenario):
         authorized_keys = self.introspection.get_instance_keys_path()
         public_key = self.introspection.get_instance_file_content(
             authorized_keys).replace('\r\n', '\n')
-        self.assertEqual(self.keypair['public_key'], public_key)
+        self.assertEqual(self.manager.public_key(), public_key)
 
     def test_userdata(self):
         # Verify that we executed the expected number of
@@ -207,8 +195,7 @@ class BaseSmokeTests(scenario.BaseArgusScenario):
 
     def test_get_console_output(self):
         # Verify that the product emits messages to the console output.
-        resp, output = self.servers_client.get_console_output(
-            self.server['id'], 10)
+        resp, output = self.manager.instance_output(10)
         self.assertEqual(200, resp.status)
         self.assertTrue(output, "Console output was empty.")
         lines = len(output.split('\n'))
