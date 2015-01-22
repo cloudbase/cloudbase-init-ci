@@ -39,7 +39,6 @@ class Runner(object):
         self._stream = _WritelnDecorator(stream or sys.stderr)
 
     def run(self):
-        results = []
         start_time = time.time()
         tests_run = 0
         expected_failures = unexpected_successes = skipped = 0
@@ -48,12 +47,11 @@ class Runner(object):
             result = scenario.run_tests()
             result.printErrors()
             tests_run += result.testsRun
-            expected_failures += result.expectedFailures
-            unexpected_successes += result.unexpectedSuccesses
-            skipped += result.skipped
+            expected_failures += len(result.expectedFailures)
+            unexpected_successes += len(result.unexpectedSuccesses)
+            skipped += len(result.skipped)
             failures += len(result.failures)
             errors += len(result.errors)
-            results.append(result)
 
         time_taken = time.time() - start_time
 
@@ -61,13 +59,6 @@ class Runner(object):
                              (tests_run,
                               tests_run != 1 and "s" or "", time_taken))
         self._stream.writeln()
-
-        infos = []
-        if any(not result.wasSuccesful()
-               for result in results):
-            self._stream.write("FAILED")
-        else:
-            self._stream.write("OK")
 
         infos = [
             "failures=%d" % failures,

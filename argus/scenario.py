@@ -217,8 +217,7 @@ class BaseArgusScenario(object):
         self._prepare_instance()
 
     def _cleanup(self):
-        LOG.info("Cleaning up.")
-        self._isolated_creds.clear_isolated_creds()
+        LOG.info("Cleaning up.")        
 
         if self._security_groups_rules:
             for rule in self._security_groups_rules:
@@ -240,6 +239,8 @@ class BaseArgusScenario(object):
         if self._keypair:
             self._keypairs_client.delete_keypair(self._keypair['name'])
             os.remove(CONF.argus.path_to_private_key)
+
+        self._isolated_creds.clear_isolated_creds()
 
     def run_tests(self):
         self._prepare_run()
