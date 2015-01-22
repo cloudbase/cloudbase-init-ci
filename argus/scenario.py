@@ -16,15 +16,16 @@
 import abc
 import base64
 import os
+import unittest
 
 import six
+from tempest import clients
+from tempest.common import credentials
 from tempest.common import service_client
 from tempest.common.utils import data_utils
-from tempest.scenario import manager
 from tempest.services import network
 
 from argus import exceptions
-from argus.recipees.cloud import windows as windows_recipees
 from argus import util
 
 CONF = util.get_config()
@@ -66,41 +67,85 @@ network.json.network_client.NetworkClientJSON.create_subnet = _create_subnet
 
 
 @six.add_metaclass(abc.ABCMeta)
-class BaseArgusScenario(manager.ScenarioTest):
-    recipee = None
+class BaseArgusScenario(object):
 
-    @classmethod
-    def create_test_server(cls, wait_until='ACTIVE', **kwargs):
-        _, server = cls.servers_client.create_server(
-            data_utils.rand_name(cls.__name__ + "-instance"),
+    def __init__(self, test_class, recipee=None,
+                 userdata=None, metadata=None):
+        self._recipee = recipee
+        self._userdata = userdata
+        self._metadata = metadata
+        self._test_class = test_class
+        # Internal created objects
+        self._server = None
+        self._keypair = None
+        self._security_group = None
+        self._security_groups_rules = []
+        self._subnets = []
+        self._routers = []
+        self._floating_ip = None
+
+    def _prepare_run(self):
+        # pylint: disable=attribute-defined-outside-init
+        self._isolated_creds = credentials.get_isolated_credentials(
+            self.__class__.__name__, network_resources={})
+        self._manager = clients.Manager(credentials=self._credentials())
+        self._admin_manager = clients.Manager(self._admin_credentials())
+
+        # Clients (in alphabetical order)
+        self._flavors_client = self._manager.flavors_client
+        self._floating_ips_client = self._manager.floating_ips_client
+        # Glance image client v1
+        self._image_client = self._manager.image_client
+        # Compute image client
+        self._images_client = self._manager.images_client
+        self._keypairs_client = self._manager.keypairs_client
+        self._networks_client = self._admin_manager.networks_client
+        # Nova security groups client
+        self._security_groups_client = self._manager.security_groups_client
+        self._servers_client = self._manager.servers_client
+        self._volumes_client = self._manager.volumes_client
+        self._snapshots_client = self._manager.snapshots_client
+        self._interface_client = self._manager.interfaces_client
+        # Neutron network client
+        self._network_client = self._manager.network_client
+        # Heat client
+        self._orchestration_client = self._manager.orchestration_client
+
+    def _credentials(self):
+        return self._isolated_creds.get_primary_creds()
+
+    def _admin_credentials(self):
+        try:
+            return self._isolated_creds.get_admin_creds()
+        except NotImplementedError:
+            raise exceptions.CloudbaseCIError(
+                'Admin Credentials are not available')
+
+    def _create_server(self, wait_until='ACTIVE', **kwargs):
+        _, server = self._servers_client.create_server(
+            data_utils.rand_name(self.__class__.__name__ + "-instance"),
             CONF.argus.image_ref,
             CONF.argus.flavor_ref,
             **kwargs)
-        cls.servers_client.wait_for_server_status(
-            server['id'], wait_until)
+        self._servers_client.wait_for_server_status(server['id'], wait_until)
         return server
 
-    @classmethod
-    def create_keypair(cls):  # pylint: disable=arguments-differ
-        _, cls.keypair = cls.keypairs_client.create_keypair(
-            cls.__name__ + "-key")
+    def _create_keypair(self):
+        _, keypair = self._keypairs_client.create_keypair(
+            self.__class__.__name__ + "-key")
         with open(CONF.argus.path_to_private_key, 'w') as stream:
-            stream.write(cls.keypair['private_key'])
+            stream.write(keypair['private_key'])
+        return keypair
 
-    @classmethod
-    def _assign_floating_ip(cls):
-        # Obtain a floating IP
-        _, cls.floating_ip = cls.floating_ips_client.create_floating_ip()
+    def _assign_floating_ip(self):
+        _, floating_ip = self._floating_ips_client.create_floating_ip()
 
-        cls.floating_ips_client.associate_floating_ip_to_server(
-            cls.floating_ip['ip'], cls.server['id'])
+        self._floating_ips_client.associate_floating_ip_to_server(
+            floating_ip['ip'], self._server['id'])
+        return floating_ip
 
-    @classmethod
-    def _add_security_group_exceptions(cls, secgroup_id):
-        # TODO(cpopa): this is almost a verbatim copy of
-        # _create_loginable_secgroup_rule. Unfortunately, we can't provide
-        # custom rules otherwise.
-        _client = cls.security_groups_client
+    def _add_security_group_exceptions(self, secgroup_id):
+        _client = self._security_groups_client
         rulesets = [
             {
                 # http RDP
@@ -143,85 +188,106 @@ class BaseArgusScenario(manager.ScenarioTest):
                                                             **ruleset)
             yield sg_rule
 
-    @classmethod
-    def _create_security_groups(cls):
-        sg_name = data_utils.rand_name(cls.__class__.__name__)
+    def _create_security_groups(self):
+        sg_name = data_utils.rand_name(self.__class__.__name__)
         sg_desc = sg_name + " description"
-        _, secgroup = cls.security_groups_client.create_security_group(
+        _, secgroup = self._security_groups_client.create_security_group(
             sg_name, sg_desc)
 
         # Add rules to the security group
-        for rule in cls._add_security_group_exceptions(secgroup['id']):
-            cls.security_groups_rules.append(rule['id'])
-        cls.servers_client.add_security_group(cls.server['id'],
-                                              secgroup['name'])
-        cls.security_group = secgroup
+        for rule in self._add_security_group_exceptions(secgroup['id']):
+            self._security_groups_rules.append(rule['id'])
+        self._servers_client.add_security_group(self._server['id'],
+                                                secgroup['name'])
+        return secgroup
 
-    # Instance creation and termination.
+    def _setup(self):
+        # pylint: disable=attribute-defined-outside-init
+        self._keypair = self._create_keypair()
+        self._server = self._create_server(
+            wait_until='ACTIVE',
+            key_name=self._keypair['name'],
+            disk_config='AUTO',
+            user_data=base64.encodestring(self._userdata),
+            meta=self._metadata)
+        self._floating_ip = self._assign_floating_ip()
+        self._security_group = self._create_security_groups()
+        self._prepare_instance()
 
-    @classmethod
-    def resource_setup(cls):
-        super(BaseArgusScenario, cls).resource_setup()
+    def _cleanup(self):
+        self._isolated_creds.clear_isolated_creds()
 
-        cls.server = None
-        cls.security_groups = []
-        cls.security_groups_rules = []
-        cls.subnets = []
-        cls.routers = []
-        cls.floating_ips = {}
-        metadata = {'network_config': str({'content_path':
-                                           'random_value_test_random'})}
-        encoded_data = base64.encodestring(
-            util.get_resource('multipart_metadata'))
+        if self._security_groups_rules:
+            for rule in self._security_groups_rules:
+                self._security_groups_client.delete_security_group_rule(rule)
 
-        try:
-            cls.create_keypair()
-            cls.server = cls.create_test_server(
-                wait_until='ACTIVE',
-                key_name=cls.keypair['name'],
-                disk_config='AUTO',
-                user_data=encoded_data,
-                meta=metadata)
-            cls._assign_floating_ip()
-            cls._create_security_groups()
-        except BaseException:
-            cls.resource_cleanup()
-            raise
+        if self._security_group:
+            self._servers_client.remove_security_group(
+                self._server['id'], self._security_group['name'])
 
-    @classmethod
-    def resource_cleanup(cls):
-        super(BaseArgusScenario, cls).resource_cleanup()
-        if cls.security_groups_rules:
-            for rule in cls.security_groups_rules:
-                cls.security_groups_client.delete_security_group_rule(rule)
+        if self._server:
+            self._servers_client.delete_server(self._server['id'])
+            self._servers_client.wait_for_server_termination(
+                self._server['id'])
 
-        if cls.security_groups:
-            cls.servers_client.remove_security_group(
-                cls.server['id'], cls.security_group['name'])
+        if self._floating_ip:
+            self._floating_ips_client.delete_floating_ip(
+                self._floating_ip['id'])
 
-        if cls.server:
-            cls.servers_client.delete_server(cls.server['id'])
-            cls.servers_client.wait_for_server_termination(cls.server['id'])
-
-        if cls.floating_ips:
-            cls.floating_ips_client.delete_floating_ip(cls.floating_ip['id'])
-
-        if cls.keypair:
-            cls.keypairs_client.delete_keypair(cls.keypair['name'])
+        if self._keypair:
+            self._keypairs_client.delete_keypair(self._keypair['name'])
             os.remove(CONF.argus.path_to_private_key)
 
-    def setUp(self):
-        super(BaseArgusScenario, self).setUp()
-        # It should be guaranteed that it's called only once,
-        # so a second call is a no-op.
-        self.prepare_instance()
+    def run_tests(self):
+        self._prepare_run()
+        try:
+            self._setup()
+        except:
+            self._cleanup()
+            raise
 
-    def password(self):
-        _, encoded_password = self.servers_client.get_password(
-            self.server['id'])
+        # run tests
+        try:
+            testloader = unittest.TestLoader()
+            testnames = testloader.getTestCaseNames(self._test_class)
+            suite = unittest.TestSuite()
+            for name in testnames:
+                suite.addTest(self._test_class(name, manager=self))
+            return suite.run(unittest.TestResult())
+        finally:
+            self._cleanup()
+
+    def _prepare_instance(self):
+        if self._recipee is None:
+            raise exceptions.CloudbaseCIError('recipee must be set')
+        # pylint: disable=not-callable
+        self._recipee(
+            self._server['id'],
+            self._servers_client,
+            self.remote_client).prepare()
+
+    def instance_password(self):
+        _, encoded_password = self._servers_client.get_password(
+            self._server['id'])
         return util.decrypt_password(
             private_key=CONF.argus.path_to_private_key,
             password=encoded_password['password'])
+
+    def instance_output(self, limit):
+        return self._servers_client.get_console_output(self._server['id'],
+                                                       limit)
+
+    def instance_server(self):
+        return self._servers_client.get_server(self._server['id'])
+
+    def public_key(self):
+        return self._keypair['public_key']
+
+    def private_key(self):
+        return self._keypair['private_key']
+
+    def get_image_ref(self):
+        return self._images_client.get_image(CONF.argus.image_ref)
 
     @abc.abstractmethod
     def get_remote_client(self, username=None, password=None, **kwargs):
@@ -241,30 +307,10 @@ class BaseArgusScenario(manager.ScenarioTest):
     def remote_client(self):
         """An astract property which should return the default client."""
 
-    @property
-    def run_command_verbose(self):
-        return self.remote_client.run_command_verbose
-
-    @util.run_once
-    def prepare_instance(self):
-        if self.recipee is None:
-            raise exceptions.CloudbaseCIError('recipee must be set')
-        # pylint: disable=not-callable
-        self.recipee(
-            self.server['id'],
-            self.servers_client,
-            self.remote_client).prepare()
-
-    def get_image_ref(self):
-        return self.images_client.get_image(CONF.argus.image_ref)
-
-    def instance_server(self):
-        return self.servers_client.get_server(self.server['id'])
 
 
 class BaseWindowsScenario(BaseArgusScenario):
     """Base class for Windows-based tests."""
-    recipee = windows_recipees.WindowsCloudbaseinitRecipee
 
     def get_remote_client(self, username=None, password=None,
                           protocol='http', **kwargs):
@@ -272,9 +318,30 @@ class BaseWindowsScenario(BaseArgusScenario):
             username = CONF.argus.default_ci_username
         if password is None:
             password = CONF.argus.default_ci_password
-        return util.WinRemoteClient(self.floating_ip['ip'],
+        return util.WinRemoteClient(self._floating_ip['ip'],
                                     username,
                                     password,
                                     transport_protocol=protocol)
 
     remote_client = util.cached_property(get_remote_client)
+
+
+class BaseArgusTest(unittest.TestCase):
+
+    def __init__(self, methodName='runTest', manager=None):
+        super(BaseArgusTest, self).__init__(methodName)
+        self.manager = manager
+
+    # Export a couple of APIs from the underlying manager.
+
+    @property
+    def server(self):
+        return self.manager._server
+
+    @property
+    def remote_client(self):
+        return self.manager.remote_client
+
+    @property
+    def run_command_verbose(self):
+        return self.manager.remote_client.run_command_verbose        

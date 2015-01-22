@@ -15,7 +15,6 @@
 
 """Smoke tests for the cloudbaseinit."""
 
-from argus import scenario
 from argus.tests.cloud import introspection
 from argus.tests.cloud import smoke
 from argus import util
@@ -41,8 +40,7 @@ def _parse_licenses(output):
     return licenses
 
 
-class TestWindowsSmoke(smoke.BaseSmokeTests,
-                       scenario.BaseWindowsScenario):
+class TestWindowsSmoke(smoke.BaseSmokeTests):
 
     introspection_class = introspection.WindowsInstanceIntrospection
 
@@ -84,9 +82,10 @@ class TestWindowsSmoke(smoke.BaseSmokeTests,
     def test_https_winrm_configured(self):
         # Test that HTTPS transport protocol for WinRM is configured.
         # By default, the test images are built only for HTTP.
-        remote_client = self.get_remote_client(CONF.argus.default_ci_username,
-                                               CONF.argus.default_ci_password,
-                                               protocol='https')
+        remote_client = self.manager.get_remote_client(
+            CONF.argus.default_ci_username,
+            CONF.argus.default_ci_password,
+            protocol='https')
         stdout = remote_client.run_command_verbose('echo 1')
         self.assertEqual('1', stdout.strip())
 
