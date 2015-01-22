@@ -60,6 +60,11 @@ class Runner(object):
                               tests_run != 1 and "s" or "", time_taken))
         self._stream.writeln()
 
+        if failures or errors:
+            self._stream.writeln("FAILED")
+        else:
+            self._stream.writeln("OK")
+
         infos = [
             "failures=%d" % failures,
             "errors=%d" % errors,

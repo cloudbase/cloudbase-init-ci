@@ -17,6 +17,7 @@ import abc
 import base64
 import os
 import unittest
+import sys
 
 import six
 from tempest import clients
@@ -258,7 +259,9 @@ class BaseArgusScenario(object):
             suite = unittest.TestSuite()
             for name in testnames:
                 suite.addTest(self._test_class(name, manager=self))
-            return suite.run(unittest.TestResult())
+
+            # TODO(cpopa): not really customizable at this level.
+            return suite.run(unittest.TextTestResult(sys.stderr, None, 0))
         finally:
             self._cleanup()
 
