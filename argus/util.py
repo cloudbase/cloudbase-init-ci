@@ -136,6 +136,8 @@ def parse_cli():
     parser.add_argument("--git-command", type=str, default=None,
                         help="Pass a git command which should be interpreted "
                              "by a recipee.")
+    parser.add_argument("-p", "--pause", action="store_true",
+                        help="Pause argus before doing any test.")
     opts = parser.parse_args()
     return opts
 

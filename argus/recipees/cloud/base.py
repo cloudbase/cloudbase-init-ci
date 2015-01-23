@@ -95,6 +95,10 @@ class BaseCloudbaseinitRecipee(base.BaseRecipee):
         self.install_cbinit()
         self.install_git()
         self.replace_code()
+        # pause the process until user is satisfied with his changes
+        opts = util.parse_cli()
+        if opts.pause:
+            six.moves.input("Press Enter to continue...")
         self.sysprep()
         self.wait_reboot()
         self.wait_cbinit_finalization()
