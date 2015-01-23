@@ -70,6 +70,14 @@ network.json.network_client.NetworkClientJSON.create_subnet = _create_subnet
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseArgusScenario(object):
+    """A scenario represents a complex testing environment
+
+    It is composed by a recipee for preparing an instance,
+    userdata and metadata which are injected in the instance
+    and a test case, which validates what happened in the instance.
+
+    To run the scenario, it is sufficient to call :meth:`run`.
+    """
 
     def __init__(self, test_class, recipee=None,
                  userdata=None, metadata=None):
@@ -218,7 +226,7 @@ class BaseArgusScenario(object):
         self._prepare_instance()
 
     def _cleanup(self):
-        LOG.info("Cleaning up.")        
+        LOG.info("Cleaning up.")
 
         if self._security_groups_rules:
             for rule in self._security_groups_rules:
@@ -243,7 +251,13 @@ class BaseArgusScenario(object):
 
         self._isolated_creds.clear_isolated_creds()
 
-    def run_tests(self):
+    def run(self):
+        """Run the tests from the underlying test class.
+
+        This will start a new instance and prepare it using the recipee.
+        It will return a list of test results.
+        """
+
         self._prepare_run()
         try:
             self._setup()
@@ -277,6 +291,7 @@ class BaseArgusScenario(object):
             self.remote_client).prepare()
 
     def instance_password(self):
+        """Get the password posted by the instance."""
         _, encoded_password = self._servers_client.get_password(
             self._server['id'])
         return util.decrypt_password(
@@ -284,10 +299,12 @@ class BaseArgusScenario(object):
             password=encoded_password['password'])
 
     def instance_output(self, limit):
+        """Get the console output, sent from the instance."""
         return self._servers_client.get_console_output(self._server['id'],
                                                        limit)
 
     def instance_server(self):
+        """Get the instance server object."""
         return self._servers_client.get_server(self._server['id'])
 
     def public_key(self):
@@ -320,7 +337,7 @@ class BaseArgusScenario(object):
 
 
 class BaseWindowsScenario(BaseArgusScenario):
-    """Base class for Windows-based tests."""
+    """Base class for Windows-based scenarios."""
 
     def get_remote_client(self, username=None, password=None,
                           protocol='http', **kwargs):
@@ -337,6 +354,7 @@ class BaseWindowsScenario(BaseArgusScenario):
 
 
 class BaseArgusTest(unittest.TestCase):
+    """Test class which offers support for parametrization of the manager."""
 
     def __init__(self, methodName='runTest', manager=None):
         super(BaseArgusTest, self).__init__(methodName)
@@ -346,6 +364,8 @@ class BaseArgusTest(unittest.TestCase):
 
     @property
     def server(self):
+        # Protected access is good here.
+        # pylint: disable=protected-access
         return self.manager._server
 
     @property
@@ -354,4 +374,5 @@ class BaseArgusTest(unittest.TestCase):
 
     @property
     def run_command_verbose(self):
-        return self.manager.remote_client.run_command_verbose        
+        return self.manager.remote_client.run_command_verbose
+

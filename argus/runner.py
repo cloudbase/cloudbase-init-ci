@@ -34,6 +34,12 @@ class _WritelnDecorator(object):
 
 
 class Runner(object):
+    """Scenarios runner class.
+
+    Given a list of scenarios, this class iterates through each
+    one and calls its underlying tests.
+    """
+
     def __init__(self, scenarios, stream=None):
         self._scenarios = scenarios
         self._stream = _WritelnDecorator(stream or sys.stderr)
@@ -44,7 +50,7 @@ class Runner(object):
         expected_failures = unexpected_successes = skipped = 0
         failures = errors = 0
         for scenario in self._scenarios:
-            result = scenario.run_tests()
+            result = scenario.run()
             result.printErrors()
             tests_run += result.testsRun
             expected_failures += len(result.expectedFailures)
