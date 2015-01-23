@@ -17,7 +17,6 @@ import abc
 import base64
 import os
 import unittest
-import sys
 
 import six
 from tempest import clients
@@ -31,18 +30,17 @@ from argus import util
 
 CONF = util.get_config()
 LOG = util.get_logger()
-_ORIG_EXCEPTHOOK = sys.excepthook
 
 # tempest sets its own excepthook, which will log the error
 # using the tempest logger. Unfortunately, we are not using
 # the tempest logger, so any uncaught error goes into nothingness.
 # The code which sets the excepthook is here:
 # https://github.com/openstack/tempest/blob/master/tempest/openstack/common/log.py#L420
-# Since the isolated credentials provider imports tempest.config, we
-# import it already here, so that it sets the excepthook it wants
-# and then we reset the value to the original excepthook.
-from tempest import config # pylint: disable=unused-import
-sys.excepthook = _ORIG_EXCEPTHOOK
+# That's why we mock the logging.setup call to something which
+# won't affect us. This is another ugly hack, but unfixable
+# otherwise.
+from tempest.openstack.common import log
+log.setup = lambda *args, **kwargs: None
 
 
 # TODO(cpopa): this is really a horrible hack!
