@@ -17,10 +17,10 @@ import sys
 import time
 import unittest
 
-from argus import util
-from argus import scenario
 from argus.recipees.cloud import windows
+from argus import scenario
 from argus.tests.cloud import test_smoke_windows
+from argus import util
 
 
 class _WritelnDecorator(object):
@@ -79,13 +79,21 @@ class Runner(object):
         else:
             self._stream.write("OK")
 
-        infos = [
-            "failures=%d" % failures,
-            "errors=%d" % errors,
-            "skipped=%d" % skipped,
-            "expected failures=%d" % expected_failures,
-            "unexpected successes=%d" % unexpected_successes
-        ]
+        infos = []
+
+        if failures or errors:
+            if failures:
+                infos.append("failures=%d" % failures)
+            if errors:
+                infos.append("errors=%d" % errors)
+
+        if skipped:
+            infos.append("skipped=%d" % skipped)
+        if expected_failures:
+            infos.append("expected failures=%d" % expected_failures)
+        if unexpected_successes:
+            infos.append("unexpected successes=%d" % unexpected_successes)
+
         if infos:
             self._stream.writeln(" (%s)" % (", ".join(infos),))
         else:
