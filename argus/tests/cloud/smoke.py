@@ -82,7 +82,7 @@ class BaseSmokeTests(scenario.BaseArgusTest):
     @util.cached_property
     def introspection(self):
         if not self.introspection_class:
-            raise exceptions.CloudbaseCIError(
+            raise exceptions.ArgusError(
                 'introspection_class must be set')
 
         # pylint: disable=not-callable

@@ -133,7 +133,7 @@ class BaseArgusScenario(object):
         try:
             return self._isolated_creds.get_admin_creds()
         except NotImplementedError:
-            raise exceptions.CloudbaseCIError(
+            raise exceptions.ArgusError(
                 'Admin Credentials are not available')
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
@@ -283,7 +283,7 @@ class BaseArgusScenario(object):
 
     def _prepare_instance(self):
         if self._recipee is None:
-            raise exceptions.CloudbaseCIError('recipee must be set')
+            raise exceptions.ArgusError('recipee must be set')
 
         LOG.info("Preparing instance.")
         # pylint: disable=not-callable

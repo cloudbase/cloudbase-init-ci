@@ -49,7 +49,7 @@ def _get_git_link():
     soup = bs4.BeautifulSoup(content)
     download_div = soup.find('div', {'class': 'callout downloading'})
     if not download_div:
-        raise exceptions.CloudbaseCIError(
+        raise exceptions.ArgusError(
             "Could not find callout_downloading div.")
 
     for a_object in download_div.find_all('a'):
@@ -57,7 +57,7 @@ def _get_git_link():
         if not href.endswith('.exe'):
             continue
         return href
-    raise exceptions.CloudbaseCIError("git download link not found.")
+    raise exceptions.ArgusError("git download link not found.")
 
 
 class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):

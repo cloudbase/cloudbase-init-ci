@@ -65,7 +65,7 @@ class WinRemoteClient(object):
             stdout, stderr, exit_code = protocol_client.get_command_output(
                 shell_id, command_id)
             if exit_code:
-                raise exceptions.CloudbaseCLIError(
+                raise exceptions.ArgusError(
                     "Executing command {command!r} failed with "
                     "exit code {exit_code!r} and output {output!r}"
                     .format(command=command,

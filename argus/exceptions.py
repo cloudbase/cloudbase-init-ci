@@ -15,13 +15,13 @@
 """Various exceptions that can be raised by the CI project."""
 
 
-class CloudbaseCIError(Exception):
+class ArgusError(Exception):
     pass
 
 
-class CloudbaseTimeoutError(CloudbaseCIError):
+class ArgusTimeoutError(ArgusError):
     pass
 
 
-class CloudbaseCLIError(CloudbaseCIError):
+class ArgusCLIError(ArgusError):
     pass

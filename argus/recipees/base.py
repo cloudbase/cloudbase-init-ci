@@ -53,7 +53,7 @@ class BaseRecipee(object):
         """Execute the given command and fail when the command fails."""
         stdout, stderr, return_code = self._remote_client.run_remote_cmd(cmd)
         if return_code:
-            raise exceptions.CloudbaseCIError(
+            raise exceptions.ArgusError(
                 "Command {command!r} failed with "
                 "return code {return_code!r}"
                 .format(command=cmd,
@@ -86,13 +86,13 @@ class BaseRecipee(object):
                           cmd)
                 count += 1
                 if retry_count and count >= retry_count:
-                    raise exceptions.CloudbaseTimeoutError(
+                    raise exceptions.ArgusTimeoutError(
                         "Command {!r} failed too many times."
                         .format(cmd))
                 time.sleep(retry_count_interval)
             else:
                 if std_err:
-                    raise exceptions.CloudbaseCLIError(
+                    raise exceptions.ArgusCLIError(
                         "Executing command {!r} failed with {!r}"
                         .format(cmd, std_err))
                 elif cond(std_out):
