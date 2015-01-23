@@ -183,7 +183,7 @@ class WindowsInstanceIntrospection(BaseInstanceIntrospection):
         return stdout.strip('\r\n')
 
     def get_cloudbaseinit_traceback(self):
-        code = util.get_resource('get_traceback.ps1')
+        code = util.get_resource('windows/get_traceback.ps1')
         remote_script = "C:\\{}.ps1".format(data_utils.rand_name())
         with _create_tempfile(content=code) as tmp:
             self.remote_client.copy_file(tmp, remote_script)

@@ -103,7 +103,7 @@ class Runner(object):
 
 def run_scenarios():
     metadata = {'network_config': str({'content_path':'random_value_test_random'})}
-    userdata = util.get_resource('multipart_metadata')
+    userdata = util.get_resource('windows/multipart_metadata')
     test_result = unittest.TextTestResult(
         _WritelnDecorator(sys.stderr), None, 0)
 

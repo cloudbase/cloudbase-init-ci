@@ -93,7 +93,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
         LOG.info("Retrieve an installation script for CloudbaseInit")
 
         cmd = ("powershell Invoke-webrequest -uri "
-               "{}/installCBinit.ps1 -outfile C:\\installcbinit.ps1"
+               "{}/windows/installCBinit.ps1 -outfile C:\\installcbinit.ps1"
                .format(CONF.argus.resources))
         self._execute(cmd)
 
@@ -110,7 +110,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
         LOG.info("Installing git.")
 
         cmd = ("powershell Invoke-webrequest -uri "
-               "{}/install_git.ps1 -outfile C:\\\\install_git.ps1"
+               "{}/windows/install_git.ps1 -outfile C:\\\\install_git.ps1"
                .format(CONF.argus.resources))
         self._execute(cmd)
 
@@ -165,7 +165,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
         LOG.info("Running sysprep.")
 
         cmd = ("powershell Invoke-webrequest -uri "
-               "{}/sysprep.ps1 -outfile 'C:\\sysprep.ps1'"
+               "{}/windows/sysprep.ps1 -outfile 'C:\\sysprep.ps1'"
                .format(CONF.argus.resources))
         self._execute(cmd)
         self._execute('powershell C:\\sysprep.ps1')
