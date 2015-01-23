@@ -93,7 +93,7 @@ confidence=
 # --disable=W"
 disable=missing-docstring, bad-builtin, abstract-class-little-used, star-args,
         too-many-ancestors, too-few-public-methods, fixme, too-many-instance-attributes,
-        locally-disabled
+        locally-disabled, too-many-arguments
 
 
 [BASIC]

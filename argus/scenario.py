@@ -17,7 +17,6 @@ import abc
 import base64
 import os
 import unittest
-import sys
 
 import six
 from tempest import clients
@@ -77,10 +76,15 @@ class BaseArgusScenario(object):
     and a test case, which validates what happened in the instance.
 
     To run the scenario, it is sufficient to call :meth:`run`.
+
+    The parameter `result` is either an instance of
+    `unittest.TestResult` or `unittest.TextTestResult` or anything
+    that can work as a test result for the unittest framework.
+    If nothing is given, it will default to `unittest.TestResult`.
     """
 
     def __init__(self, test_class, recipee=None,
-                 userdata=None, metadata=None):
+                 userdata=None, metadata=None, result=None):
         self._recipee = recipee
         self._userdata = userdata
         self._metadata = metadata
@@ -93,6 +97,7 @@ class BaseArgusScenario(object):
         self._subnets = []
         self._routers = []
         self._floating_ip = None
+        self._result = result or unittest.TestResult()
 
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
@@ -265,7 +270,6 @@ class BaseArgusScenario(object):
             self._cleanup()
             raise
 
-        # run tests
         try:
             LOG.info("Running tests.")
             testloader = unittest.TestLoader()
@@ -273,9 +277,7 @@ class BaseArgusScenario(object):
             suite = unittest.TestSuite()
             for name in testnames:
                 suite.addTest(self._test_class(name, manager=self))
-
-            # TODO(cpopa): not really customizable at this level.
-            return suite.run(unittest.TextTestResult(sys.stderr, None, 0))
+            return suite.run(self._result)
         finally:
             self._cleanup()
 
