@@ -348,7 +348,6 @@ class BaseArgusScenario(object):
         """An astract property which should return the default client."""
 
 
-
 class BaseWindowsScenario(BaseArgusScenario):
     """Base class for Windows-based scenarios."""
 
@@ -388,4 +387,3 @@ class BaseArgusTest(unittest.TestCase):
     @property
     def run_command_verbose(self):
         return self.manager.remote_client.run_command_verbose
-

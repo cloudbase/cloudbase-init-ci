@@ -120,7 +120,7 @@ class cached_property(object):  # pylint: disable=invalid-name
         self.name = name or func.__name__
 
     def __get__(self, instance, klass=None):
-        instance.__dict__[self.name_] = result = self.func(instance)
+        instance.__dict__[self.name] = result = self.func(instance)
         return result
 
 
