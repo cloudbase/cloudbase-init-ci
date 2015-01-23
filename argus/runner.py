@@ -19,7 +19,7 @@ import unittest
 
 from argus.recipees.cloud import windows
 from argus import scenario
-from argus.tests.cloud import test_smoke_windows
+from argus.tests.cloud.windows import test_smoke
 from argus import util
 
 
@@ -57,8 +57,8 @@ class Runner(object):
         failures = errors = 0
 
         # pylint: disable=redefined-outer-name
-        for scenario in self._scenarios:
-            result = scenario.run()
+        for my_scenario in self._scenarios:
+            result = my_scenario.run()
             result.printErrors()
             tests_run += result.testsRun
             expected_failures += len(result.expectedFailures)
@@ -110,7 +110,7 @@ def run_scenarios():
 
     scenarios = [
         scenario.BaseWindowsScenario(
-            test_class=test_smoke_windows.TestWindowsSmoke,
+            test_class=test_smoke.TestWindowsSmoke,
             recipee=windows.WindowsCloudbaseinitRecipee,
             userdata=userdata,
             metadata=metadata,
