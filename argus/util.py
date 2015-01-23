@@ -154,7 +154,7 @@ def get_config():
 @run_once
 def get_logger():
     """Get the default logger."""
-    logger = logging.getLogger('cbinit')
+    logger = logging.getLogger('argus')
     conf = get_config()
     formatter = logging.Formatter(conf.argus.log_format or DEFAULT_FORMAT)
 

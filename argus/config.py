@@ -23,13 +23,9 @@ TEMPEST_CONF = config.CONF
 # from test resets all our attributes.
 CONF = cfg.ConfigOpts()
 
-CBINIT_GROUP = cfg.OptGroup(name='argus',
-                            title="Argus Options")
+ARGUS_GROUP = cfg.OptGroup(name='argus',
+                           title="Argus Options")
 OPTS = [
-    cfg.BoolOpt('replace_code',
-                default=False,
-                help="replace cbinit code, or use the one added by the "
-                     "installer"),
     cfg.StrOpt('service_type',
                default='http',
                help="service_type should take value 'http', 'ec2', "
@@ -80,5 +76,5 @@ OPTS = [
 
 
 ]
-config.register_opt_group(CONF, CBINIT_GROUP, OPTS)
+config.register_opt_group(CONF, ARGUS_GROUP, OPTS)
 # Done registering.
