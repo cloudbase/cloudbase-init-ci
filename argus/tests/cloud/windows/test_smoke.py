@@ -15,8 +15,8 @@
 
 """Smoke tests for the cloudbaseinit."""
 
-from argus.tests.cloud import introspection
 from argus.tests.cloud import smoke
+from argus.tests.cloud.windows import introspection
 from argus import util
 
 

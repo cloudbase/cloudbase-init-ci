@@ -275,13 +275,9 @@ class BaseArgusScenario(object):
         """
 
         self._prepare_run()
-        try:
-            self._setup()
-        except:
-            self._cleanup()
-            raise
 
         try:
+            self._setup()
             LOG.info("Running tests.")
             testloader = unittest.TestLoader()
             testnames = testloader.getTestCaseNames(self._test_class)
@@ -368,6 +364,8 @@ class BaseWindowsScenario(BaseArgusScenario):
 class BaseArgusTest(unittest.TestCase):
     """Test class which offers support for parametrization of the manager."""
 
+    introspection_class = None
+
     def __init__(self, methodName='runTest', manager=None):
         super(BaseArgusTest, self).__init__(methodName)
         self.manager = manager
@@ -387,3 +385,12 @@ class BaseArgusTest(unittest.TestCase):
     @property
     def run_command_verbose(self):
         return self.manager.remote_client.run_command_verbose
+
+    @util.cached_property
+    def introspection(self):
+        if not self.introspection_class:
+            raise exceptions.ArgusError(
+                'introspection_class must be set')
+
+        # pylint: disable=not-callable
+        return self.introspection_class(self.remote_client, self.server['id'])

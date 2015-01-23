@@ -16,7 +16,6 @@
 import os
 import unittest
 
-from argus import exceptions
 from argus import scenario
 from argus import util
 
@@ -77,16 +76,6 @@ class BaseSmokeTests(scenario.BaseArgusTest):
     cloudbaseinit is fulfilled. OS specific tests should go in the
     specific subclass.
     """
-    introspection_class = None
-
-    @util.cached_property
-    def introspection(self):
-        if not self.introspection_class:
-            raise exceptions.ArgusError(
-                'introspection_class must be set')
-
-        # pylint: disable=not-callable
-        return self.introspection_class(self.remote_client, self.server['id'])
 
     def test_plugins_count(self):
         # Test that we have the expected numbers of plugins.
