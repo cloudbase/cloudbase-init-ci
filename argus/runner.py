@@ -15,6 +15,12 @@
 
 import sys
 import time
+import unittest
+
+from argus import util
+from argus import scenario
+from argus.recipees.cloud import windows
+from argus.tests.cloud import test_smoke_windows
 
 
 class _WritelnDecorator(object):
@@ -49,6 +55,8 @@ class Runner(object):
         tests_run = 0
         expected_failures = unexpected_successes = skipped = 0
         failures = errors = 0
+
+        # pylint: disable=redefined-outer-name
         for scenario in self._scenarios:
             result = scenario.run()
             result.printErrors()
@@ -83,3 +91,20 @@ class Runner(object):
         else:
             self._stream.write("\n")
         return result
+
+
+def run_scenarios():
+    metadata = {'network_config': str({'content_path':'random_value_test_random'})}
+    userdata = util.get_resource('multipart_metadata')
+    test_result = unittest.TextTestResult(
+        _WritelnDecorator(sys.stderr), None, 0)
+
+    scenarios = [
+        scenario.BaseWindowsScenario(
+            test_class=test_smoke_windows.TestWindowsSmoke,
+            recipee=windows.WindowsCloudbaseinitRecipee,
+            userdata=userdata,
+            metadata=metadata,
+            result=test_result),
+    ]
+    Runner(scenarios).run()

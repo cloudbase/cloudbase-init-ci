@@ -13,23 +13,7 @@
 #    under the License.
 
 from argus import runner
-from argus import util
-from argus import scenario
-from argus.recipees.cloud import windows
-from argus.tests.cloud import test_smoke_windows
 
-def main():
-    metadata = {'network_config': str({'content_path':'random_value_test_random'})}
-    userdata = util.get_resource('multipart_metadata')
-
-    scenarios = [
-        scenario.BaseWindowsScenario(
-            test_class=test_smoke_windows.TestWindowsSmoke,
-            recipee=windows.WindowsCloudbaseinitRecipee,
-            userdata=userdata,
-            metadata=metadata),
-    ]
-    runner.Runner(scenarios).run()
 
 if __name__ == "__main__":
-    main()
+    runner.run_scenarios()
