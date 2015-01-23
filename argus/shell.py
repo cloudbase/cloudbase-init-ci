@@ -15,5 +15,9 @@
 from argus import runner
 
 
-if __name__ == "__main__":
+def main():
     runner.run_scenarios()
+
+
+if __name__ == "__main__":
+    main()
