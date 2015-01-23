@@ -75,9 +75,9 @@ class Runner(object):
         self._stream.writeln()
 
         if failures or errors:
-            self._stream.writeln("FAILED")
+            self._stream.write("FAILED")
         else:
-            self._stream.writeln("OK")
+            self._stream.write("OK")
 
         infos = [
             "failures=%d" % failures,
