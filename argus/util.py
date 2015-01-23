@@ -134,14 +134,8 @@ def parse_cli():
                              "It should be an .ini file format "
                              "with a section called [argus].")
     parser.add_argument("--git-command", type=str, default=None,
-                        help="If the code from cloudbaseinit installation "
-                             "should be replaced, then this command will "
-                             "be used to update a local repo with "
-                             "the latest changes. Note that "
-                             "the local repo will contain the code "
-                             "from the stackforge/cloudbase-init only, "
-                             "but that can be changed through this "
-                             "option.")
+                        help="Pass a git command which should be interpreted "
+                             "by a recipee.")
     opts = parser.parse_args()
     return opts
 
