@@ -352,7 +352,7 @@ class BaseWindowsScenario(BaseArgusScenario):
                                     password,
                                     transport_protocol=protocol)
 
-    remote_client = util.cached_property(get_remote_client)
+    remote_client = util.cached_property(get_remote_client, 'remote_client')
 
 
 class BaseArgusTest(unittest.TestCase):

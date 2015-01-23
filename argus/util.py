@@ -115,11 +115,12 @@ def get_resource(resource):
 class cached_property(object):  # pylint: disable=invalid-name
     """A property which caches the result on access."""
 
-    def __init__(self, func):
+    def __init__(self, func, name=None):
         self.func = func
+        self.name = name or func.__name__
 
     def __get__(self, instance, klass=None):
-        instance.__dict__[self.func.__name__] = result = self.func(instance)
+        instance.__dict__[self.name_] = result = self.func(instance)
         return result
 
 
