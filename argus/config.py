@@ -18,7 +18,7 @@ import collections
 import six
 
 
-def _get_default(parser, section, option, default):
+def _get_default(parser, section, option, default=None):
     try:
         return parser.get(section, option)
     except six.moves.configparser.NoOptionError:
@@ -56,8 +56,8 @@ def parse_config(filename):
         'argus-ci/master/argus/resources')
     debug = parser.getboolean('argus', 'debug')
     path_to_private_key = parser.get('argus', 'path_to_private_key')
-    file_log = parser.get('argus', 'file_log')
-    log_format = parser.get('argus', 'log_format')
+    file_log = _get_default(parser, 'argus', 'file_log')
+    log_format = _get_default(parser, 'argus', 'log_format')
     dns_nameservers = _get_default(
         parser, 'argus', 'dns_nameservers',
         ['8.8.8.8', '8.8.4.4'])
