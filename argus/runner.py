@@ -134,7 +134,10 @@ def build_scenario(scenario, config):
             "Could not find the image for the scenario %r" % scenario.name)
 
     # TODO: load userdata and metadata
-    userdata = _load_userdata(scenario.userdata)
+    if scenario.userdata:
+        userdata = _load_userdata(scenario.userdata)
+    else:
+        userdata = None
     metadata = _load_metadata(scenario.metadata)
     test_class = util.load_qualified_object(scenario.test_class)
     recipee = util.load_qualified_object(scenario.recipee)

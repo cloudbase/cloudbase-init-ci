@@ -83,6 +83,7 @@ recipee = <none>
 #   resolves to argus/windows/multipart_userdata
 # * otherwise, the file is considered other location and it will
 #   be loaded.
+# * if no userdata is wanted, just use 'userdata = '
 userdata = <none>
 
 # This is the metadata which will be passed in the instance.
