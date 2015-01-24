@@ -99,10 +99,8 @@ class WindowsInstanceIntrospection(introspection.BaseInstanceIntrospection):
         stdout = self.remote_client.run_command_verbose(cmd)
         homedir, _, _ = stdout.rpartition(ntpath.sep)
         return ntpath.join(
-            homedir,
-            CONF.argus.created_user,
-            ".ssh",
-            "authorized_keys")
+            homedir, self.image.created_user,
+            ".ssh", "authorized_keys")
 
     def get_instance_file_content(self, filepath):
         cmd = 'powershell "cat %s"' % filepath

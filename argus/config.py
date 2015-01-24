@@ -13,68 +13,85 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from oslo.config import cfg
-from tempest import config
+import collections
+
+import six
 
 
-TEMPEST_CONF = config.CONF
-
-# Don't use the global CONF object, since something
-# from test resets all our attributes.
-CONF = cfg.ConfigOpts()
-
-ARGUS_GROUP = cfg.OptGroup(name='argus',
-                           title="Argus Options")
-OPTS = [
-    cfg.StrOpt('service_type',
-               default='http',
-               help="service_type should take value 'http', 'ec2', "
-                    "or 'configdrive'"),
-    cfg.StrOpt('default_ci_username',
-               default='CiAdmin',
-               help="The default CI user for the instances."),
-    cfg.StrOpt('default_ci_password',
-               default='Passw0rd',
-               help="The default password for the CI user."),
-    cfg.StrOpt('created_user',
-               default='Admin',
-               help='The user created by the CloudbaseInit plugins.'),
-    cfg.StrOpt('resources',
-               default='https://raw.githubusercontent.com/PCManticore/'
-                       'argus-ci/master/argus/resources',
-               help="An URL representing the locations of the resources."),
-    cfg.BoolOpt('debug',
-                default=False,
-                help="Switch to a debug behaviour. This includes "
-                     "logging of command output directly to stdout "
-                     "and failure hooks, using pdb."),
-    cfg.IntOpt('expected_plugins_count',
-               default=13,
-               help="The number of plugins expected to exist after "
-                    "cloudbase-init ran."),
-    cfg.StrOpt('group',
-               default='Administrators',
-               help="The group in which the created user "
-                    "is expected to be part of."),
-    cfg.StrOpt('image_ref',
-               help='The id of the image argus should use.'),
-    cfg.StrOpt('flavor_ref',
-               help='The id of the flavor argus should use.'),
-    cfg.StrOpt('path_to_private_key',
-               help='Where the private key should be saved.'),
-    cfg.StrOpt('file_log', default=None,
-               help='A file which will contain the logs '
-                    'from argus.'),
-    cfg.StrOpt('log_format', default=None,
-               help='The log format which will be used when logging. '
-                    'It should be a format known by the "logging" '
-                    'module.'),
-    cfg.ListOpt('dns_nameservers',
-                default=['8.8.8.8', '8.8.4.4'],
-                help="List of dns servers whichs hould be used for "
-                     "subnet creation"),
+def _get_default(parser, section, option, default=None):
+    try:
+        return parser.get(section, option)
+    except six.moves.configparser.NoOptionError:
+        return default
 
 
-]
-config.register_opt_group(CONF, ARGUS_GROUP, OPTS)
-# Done registering.
+def parse_config(filename):
+    """Parse the given config file.
+
+    It will return a object with three attributes, ``argus``
+    for general argus options, ``cloudbaseinit`` for options
+    related to cloudbaseinit and ``images``, a list of
+    image objects with some attributes exported, such as ``image_ref``
+    and so on.
+    """
+    # pylint: disable=too-many-locals
+    argus = collections.namedtuple('argus',
+                                   'resources debug path_to_private_key '
+                                   'file_log log_format dns_nameservers')
+    cloudbaseinit = collections.namedtuple('cloudbaseinit',
+                                           'expected_plugins_count')
+    image = collections.namedtuple('image',
+                                   'service_type default_ci_username '
+                                   'default_ci_password image_ref flavor_ref '
+                                   'group created_user os_type')
+    conf = collections.namedtuple('conf', 'argus cloudbaseinit images')
+
+    parser = six.moves.configparser.ConfigParser()
+    parser.read(filename)
+
+    # Get the argus section
+    resources = _get_default(
+        parser, 'argus', 'resources',
+        'https://raw.githubusercontent.com/PCManticore/'
+        'argus-ci/master/argus/resources')
+    debug = parser.getboolean('argus', 'debug')
+    path_to_private_key = parser.get('argus', 'path_to_private_key')
+    file_log = _get_default(parser, 'argus', 'file_log')
+    log_format = _get_default(parser, 'argus', 'log_format')
+    dns_nameservers = _get_default(
+        parser, 'argus', 'dns_nameservers',
+        ['8.8.8.8', '8.8.4.4'])
+    if not isinstance(dns_nameservers, list):
+        # pylint: disable=no-member
+        dns_nameservers = dns_nameservers.split(",")
+
+    argus = argus(resources, debug, path_to_private_key,
+                  file_log, log_format, dns_nameservers)
+
+    # Get the cloudbaseinit section
+    try:
+        expected_plugins_count = parser.getint(
+            'cloudbaseinit',
+            'expected_plugins_count')
+    except (six.moves.configparser.NoOptionError, ValueError):
+        expected_plugins_count = 13
+
+    cloudbaseinit = cloudbaseinit(expected_plugins_count)
+
+    # Get the images section
+    images = []
+    for key in parser.sections():
+        if not key.startswith("image"):
+            continue
+        service_type = _get_default(parser, key, 'service_type', 'http')
+        ci_user = _get_default(parser, key, 'default_ci_username', 'CiAdmin')
+        ci_password = _get_default(parser, key, 'default_ci_password', 'Passw0rd')
+        image_ref = parser.get(key, 'image_ref')
+        flavor_ref = parser.get(key, 'flavor_ref')
+        group = parser.get(key, 'group')
+        created_user = parser.get(key, 'created_user')
+        os_type = _get_default(parser, key, 'os_type', 'Windows')
+        images.append(image(service_type, ci_user, ci_password,
+                            image_ref, flavor_ref, group, created_user,
+                            os_type))
+    return conf(argus, cloudbaseinit, images)

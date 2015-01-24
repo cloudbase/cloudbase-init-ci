@@ -80,7 +80,7 @@ class BaseSmokeTests(scenario.BaseArgusTest):
     def test_plugins_count(self):
         # Test that we have the expected numbers of plugins.
         plugins_count = self.introspection.get_plugins_count()
-        self.assertEqual(CONF.argus.expected_plugins_count,
+        self.assertEqual(CONF.cloudbaseinit.expected_plugins_count,
                          plugins_count)
 
     def test_disk_expanded(self):
@@ -92,7 +92,7 @@ class BaseSmokeTests(scenario.BaseArgusTest):
 
     def test_username_created(self):
         # Verify that the expected created user exists.
-        exists = self.introspection.username_exists(CONF.argus.created_user)
+        exists = self.introspection.username_exists(self.image.created_user)
         self.assertTrue(exists)
 
     def test_hostname_set(self):
@@ -116,7 +116,7 @@ class BaseSmokeTests(scenario.BaseArgusTest):
     def test_password_set(self):
         # Test that the proper password was set.
         remote_client = self.manager.get_remote_client(
-            CONF.argus.created_user,
+            self.image.created_user,
             self.manager.instance_password())
         # Pylint emits properly this error, but it doesn't understand
         # that this class is used as a mixin later on (and will
@@ -161,8 +161,8 @@ class BaseSmokeTests(scenario.BaseArgusTest):
 
     def test_user_belongs_to_group(self):
         # Check that the created user belongs to the specified local groups
-        members = self.introspection.get_group_members(CONF.argus.group)
-        self.assertIn(CONF.argus.created_user, members)
+        members = self.introspection.get_group_members(self.image.group)
+        self.assertIn(self.image.created_user, members)
 
     def test_cloudconfig_userdata(self):
         # Verify that the cloudconfig part handler plugin executed correctly.
