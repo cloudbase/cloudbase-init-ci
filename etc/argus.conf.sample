@@ -13,13 +13,6 @@ debug = False
 dns_nameservers = 8.8.8.8
 
 
-# A file where logging output should be redirected.
-file_log = <none>
-
-# A format which will be used for logging
-log_format = <none>
-
-
 [cloudbaseinit]
 
 # The number of plugins of cloudbaseinit which are expected to run

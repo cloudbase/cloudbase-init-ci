@@ -139,6 +139,12 @@ def parse_cli():
                              "by a recipee.")
     parser.add_argument("-p", "--pause", action="store_true",
                         help="Pause argus before doing any test.")
+    parser.add_argument("--logging-format",
+                        type=str, default=DEFAULT_FORMAT,
+                        help="The logging format argus should use.")
+    parser.add_argument("--logging-file",
+                        type=str, default="argus.log",
+                        help="The logging file argus should use.")
     opts = parser.parse_args()
     return opts
 
@@ -154,11 +160,11 @@ def get_config():
 def get_logger():
     """Get the default logger."""
     logger = logging.getLogger('argus')
-    conf = get_config()
-    formatter = logging.Formatter(conf.argus.log_format or DEFAULT_FORMAT)
+    opts = parse_cli()
+    formatter = logging.Formatter(opts.logging_format or DEFAULT_FORMAT)
 
-    if conf.argus.file_log:
-        file_handler = logging.FileHandler(conf.argus.file_log)
+    if opts.logging_file:
+        file_handler = logging.FileHandler(opts.logging_file)
         file_handler.setFormatter(formatter)
         logger.addHandler(file_handler)
 
