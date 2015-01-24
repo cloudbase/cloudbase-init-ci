@@ -87,7 +87,7 @@ def parse_config(filename):
     for key in parser.sections():
         if not key.startswith("image_"):
             continue
-        image_name = key.partition("image_")[1]
+        image_name = key.partition("image_")[2]
         service_type = _get_default(parser, key, 'service_type', 'http')
         ci_user = _get_default(parser, key, 'default_ci_username', 'CiAdmin')
         ci_password = _get_default(parser, key, 'default_ci_password',
@@ -108,7 +108,7 @@ def parse_config(filename):
             continue
 
         scenario_class = parser.get(key, 'scenario')
-        scenario_name = key.partition("scenario_")[1]
+        scenario_name = key.partition("scenario_")[2]
         test_class = parser.get(key, 'test_class')
         recipee = parser.get(key, 'recipee')
         userdata = parser.get(key, 'userdata')
