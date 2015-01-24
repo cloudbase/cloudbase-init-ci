@@ -83,8 +83,9 @@ class BaseArgusScenario(object):
     """A scenario represents a complex testing environment
 
     It is composed by a recipee for preparing an instance,
-    userdata and metadata which are injected in the instance
-    and a test case, which validates what happened in the instance.
+    userdata and metadata which are injected in the instance,
+    an image which will be prepared, as well as a flavor for it
+    and test case, which validates what happened in the instance.
 
     To run the scenario, it is sufficient to call :meth:`run`.
 
@@ -95,7 +96,9 @@ class BaseArgusScenario(object):
     """
 
     def __init__(self, test_class, recipee=None,
-                 userdata=None, metadata=None, result=None):
+                 userdata=None, metadata=None,
+                 image_ref=None, flavor_ref=None,
+                 result=None):
         self._recipee = recipee
         self._userdata = userdata
         self._metadata = metadata
@@ -109,6 +112,8 @@ class BaseArgusScenario(object):
         self._routers = []
         self._floating_ip = None
         self._result = result or unittest.TestResult()
+        self._image_ref = image_ref
+        self._flavor_ref = flavor_ref
 
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
@@ -150,8 +155,8 @@ class BaseArgusScenario(object):
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         _, server = self._servers_client.create_server(
             data_utils.rand_name(self.__class__.__name__ + "-instance"),
-            CONF.argus.image_ref,
-            CONF.argus.flavor_ref,
+            self._image_ref,
+            self._flavor_ref,
             **kwargs)
         self._servers_client.wait_for_server_status(server['id'], wait_until)
         return server
@@ -323,7 +328,7 @@ class BaseArgusScenario(object):
         return self._keypair['private_key']
 
     def get_image_ref(self):
-        return self._images_client.get_image(CONF.argus.image_ref)
+        return self._images_client.get_image(self._image_ref)
 
     @abc.abstractmethod
     def get_remote_client(self, username=None, password=None, **kwargs):

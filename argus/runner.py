@@ -23,6 +23,9 @@ from argus.tests.cloud.windows import test_smoke
 from argus import util
 
 
+CONF = util.get_config()
+
+
 class _WritelnDecorator(object):
     """Used to decorate file-like objects with a handy 'writeln' method"""
     def __init__(self, stream):
@@ -114,6 +117,8 @@ def run_scenarios():
             recipee=windows.WindowsCloudbaseinitRecipee,
             userdata=userdata,
             metadata=metadata,
+            image_ref=CONF.argus.image_ref,
+            flavor_ref=CONF.argus.flavor_ref,
             result=test_result),
     ]
     Runner(scenarios).run()
