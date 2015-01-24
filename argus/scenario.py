@@ -84,8 +84,8 @@ class BaseArgusScenario(object):
 
     It is composed by a recipee for preparing an instance,
     userdata and metadata which are injected in the instance,
-    an image which will be prepared, as well as a flavor for it
-    and test case, which validates what happened in the instance.
+    an image which will be prepared, and test case, which
+    validates what happened in the instance.
 
     To run the scenario, it is sufficient to call :meth:`run`.
 
@@ -97,8 +97,7 @@ class BaseArgusScenario(object):
 
     def __init__(self, test_class, recipee=None,
                  userdata=None, metadata=None,
-                 image_ref=None, flavor_ref=None,
-                 result=None):
+                 image=None, result=None):
         self._recipee = recipee
         self._userdata = userdata
         self._metadata = metadata
@@ -112,8 +111,7 @@ class BaseArgusScenario(object):
         self._routers = []
         self._floating_ip = None
         self._result = result or unittest.TestResult()
-        self._image_ref = image_ref
-        self._flavor_ref = flavor_ref
+        self._image = image
 
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
@@ -155,8 +153,8 @@ class BaseArgusScenario(object):
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         _, server = self._servers_client.create_server(
             data_utils.rand_name(self.__class__.__name__ + "-instance"),
-            self._image_ref,
-            self._flavor_ref,
+            self._image.image_ref,
+            self._image.flavor_ref,
             **kwargs)
         self._servers_client.wait_for_server_status(server['id'], wait_until)
         return server
@@ -288,7 +286,9 @@ class BaseArgusScenario(object):
             testnames = testloader.getTestCaseNames(self._test_class)
             suite = unittest.TestSuite()
             for name in testnames:
-                suite.addTest(self._test_class(name, manager=self))
+                suite.addTest(self._test_class(name,
+                                               manager=self,
+                                               image=self._image))
             return suite.run(self._result)
         finally:
             self._cleanup()
@@ -300,9 +300,10 @@ class BaseArgusScenario(object):
         LOG.info("Preparing instance.")
         # pylint: disable=not-callable
         self._recipee(
-            self._server['id'],
-            self._servers_client,
-            self.remote_client).prepare()
+            instance_id=self._server['id'],
+            api_manager=self._manager,
+            remote_client=self.remote_client,
+            image=self._image).prepare()
 
     def instance_password(self):
         """Get the password posted by the instance."""
@@ -328,7 +329,7 @@ class BaseArgusScenario(object):
         return self._keypair['private_key']
 
     def get_image_ref(self):
-        return self._images_client.get_image(self._image_ref)
+        return self._images_client.get_image(self._image.image_ref)
 
     @abc.abstractmethod
     def get_remote_client(self, username=None, password=None, **kwargs):
@@ -355,9 +356,9 @@ class BaseWindowsScenario(BaseArgusScenario):
     def get_remote_client(self, username=None, password=None,
                           protocol='http', **kwargs):
         if username is None:
-            username = CONF.argus.default_ci_username
+            username = self._image.default_ci_username
         if password is None:
-            password = CONF.argus.default_ci_password
+            password = self._image.default_ci_password
         return util.WinRemoteClient(self._floating_ip['ip'],
                                     username,
                                     password,
@@ -371,9 +372,10 @@ class BaseArgusTest(unittest.TestCase):
 
     introspection_class = None
 
-    def __init__(self, methodName='runTest', manager=None):
+    def __init__(self, methodName='runTest', manager=None, image=None):
         super(BaseArgusTest, self).__init__(methodName)
         self.manager = manager
+        self.image = image
 
     # Export a couple of APIs from the underlying manager.
 
@@ -398,4 +400,6 @@ class BaseArgusTest(unittest.TestCase):
                 'introspection_class must be set')
 
         # pylint: disable=not-callable
-        return self.introspection_class(self.remote_client, self.server['id'])
+        return self.introspection_class(self.remote_client,
+                                        self.server['id'],
+                                        image=self.image)

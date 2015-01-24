@@ -83,8 +83,8 @@ class TestWindowsSmoke(smoke.BaseSmokeTests):
         # Test that HTTPS transport protocol for WinRM is configured.
         # By default, the test images are built only for HTTP.
         remote_client = self.manager.get_remote_client(
-            CONF.argus.default_ci_username,
-            CONF.argus.default_ci_password,
+            self.image.default_ci_username,
+            self.image.default_ci_password,
             protocol='https')
         stdout = remote_client.run_command_verbose('echo 1')
         self.assertEqual('1', stdout.strip())

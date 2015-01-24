@@ -1,4 +1,33 @@
 [argus]
+# A private key file, for SSH access to remote host
+# (and used for nova boot)
+path_to_private_key = <none>
+
+# Activates debugging behaviour.
+# When tests fails, a console with pdb will be activated
+# instead of failing. sys.exc_info() will be available as 'exc'
+debug = False
+
+# A comma separated list of DNS ips, which will be used
+# for network connectivity inside the instance.
+dns_nameservers = 8.8.8.8
+
+
+# A file where logging output should be redirected.
+file_log = <none>
+
+# A format which will be used for logging
+log_format = <none>
+
+
+[cloudbaseinit]
+
+# The number of plugins of cloudbaseinit which are expected to run
+expected_plugins_count = 13
+
+
+[image_windows]
+
 # The default username which can connect to the instance.
 # It should be created when the image is created.
 default_ci_username = CiAdmin
@@ -9,13 +38,8 @@ default_ci_password = Passw0rd
 # The username which will be created by cloudbaseinit.
 created_user = Admin
 
-# The number of plugins of cloudbaseinit which are expected to run
-expected_plugins_count = 13
-
-
 # The group where the created user can be found
 group = Administrators
-
 
 # The id of the image you want to use for testing.
 image_ref = <none>
@@ -24,15 +48,3 @@ image_ref = <none>
 # Note that there's no check to see that a flavor is enough
 # for an image.
 flavor_ref = <none>
-
-# A private key file, for SSH access to remote host
-# (and used for nova boot)
-path_to_private_key = <none>
-
-
-# Activates debugging behaviour.
-# When tests fails, a console with pdb will be activated
-# instead of failing. sys.exc_info() will be available as 'exc'
-
-# A file where logging output should be redirected.
-file_log = <none>

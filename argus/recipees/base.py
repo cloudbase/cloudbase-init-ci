@@ -44,10 +44,11 @@ class BaseRecipee(object):
     some easy steps.
     """
 
-    def __init__(self, instance_id, servers_client, remote_client):
-        self._servers_client = servers_client
+    def __init__(self, instance_id, api_manager, remote_client, image):
+        self._api_manager = api_manager
         self._instance_id = instance_id
         self._remote_client = remote_client
+        self._image = image
 
     def _execute(self, cmd):
         """Execute the given command and fail when the command fails."""
