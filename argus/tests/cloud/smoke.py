@@ -166,7 +166,7 @@ class BaseSmokeTests(scenario.BaseArgusTest):
 
     def test_cloudconfig_userdata(self):
         # Verify that the cloudconfig part handler plugin executed correctly.
-        files = self.introspection.list_location("C:\\")
+        files = self.introspection.get_cloudconfig_executed_plugins()
         expected = {
             'b64', 'b64_1',
             'gzip', 'gzip_1',
@@ -175,12 +175,11 @@ class BaseSmokeTests(scenario.BaseArgusTest):
         self.assertTrue(expected.issubset(set(files)),
                         "The expected set is not subset of {}"
                         .format(files))
-        for basefile in expected:
-            path = os.path.join("C:\\", basefile)
-            content = self.introspection.get_instance_file_content(path)
-            # The content of the cloudconfig files is '42', encoded
-            # in various forms.
-            self.assertEqual('42', content.strip())
+
+        # The content of the cloudconfig files is '42', encoded
+        # in various forms. This is known in advance, so the
+        # multipart is tied with this test.
+        self.assertEqual(set(files.values()), {'42'})
 
     def test_get_console_output(self):
         # Verify that the product emits messages to the console output.

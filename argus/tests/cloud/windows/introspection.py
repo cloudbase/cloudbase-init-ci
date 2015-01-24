@@ -161,3 +161,16 @@ class WindowsInstanceIntrospection(introspection.BaseInstanceIntrospection):
             raise ValueError("Unable to get the triggers for the "
                              "given service.")
         return (match.group(1).strip(), match.group(2).strip())
+
+    def get_cloudconfig_executed_plugins(self):
+        expected = {
+            'b64', 'b64_1',
+            'gzip', 'gzip_1',
+            'gzip_base64', 'gzip_base64_1', 'gzip_base64_2'
+        }
+        files = {}
+        for basefile in expected:
+            path = os.path.join("C:\\", basefile)
+            content = self.get_instance_file_content(path)
+            files[basefile] = content
+        return files
