@@ -60,14 +60,6 @@ class TestWindowsSmoke(smoke.BaseSmokeTests):
 
         self.assertEqual("Running\r\n", str(stdout))
 
-    def test_local_scripts_executed(self):
-        # Verify that the shell script we provided as local script
-        # was executed.
-        self.assertTrue(self.introspection.instance_shell_script_executed())
-        command = 'powershell "Test-Path C:\\Scripts\\powershell.output"'
-        stdout = self.remote_client.run_command_verbose(command)
-        self.assertEqual('True', stdout.strip())
-
     def test_licensing(self):
         # Check that the instance OS was licensed properly.
         command = ('powershell "Get-WmiObject SoftwareLicensingProduct | '
@@ -97,6 +89,18 @@ class TestWindowsSmoke(smoke.BaseSmokeTests):
         start_trigger, _ = self.introspection.get_service_triggers('w32time')
         self.assertEqual('IP ADDRESS AVAILABILITY', start_trigger)
 
+
+class TestWindowsMultipartUserdataSmoke(TestWindowsSmoke):
+    """This test is tied up to a particular userdata:
+
+       resources/windows/multipart_userdata
+
+    Because of this, it is separated from the actual Windows smoke tests,
+    but inherits from it in order to test the same things.
+    """
+
+    introspection_class = introspection.WindowsInstanceIntrospection
+
     def test_cloudconfig_userdata(self):
         # Verify that the cloudconfig part handler plugin executed correctly.
         files = self.introspection.get_cloudconfig_executed_plugins()
@@ -120,3 +124,11 @@ class TestWindowsSmoke(smoke.BaseSmokeTests):
         userdata_executed_plugins = (
             self.introspection.get_userdata_executed_plugins())
         self.assertEqual(4, userdata_executed_plugins)
+
+    def test_local_scripts_executed(self):
+        # Verify that the shell script we provided as local script
+        # was executed.
+        self.assertTrue(self.introspection.instance_shell_script_executed())
+        command = 'powershell "Test-Path C:\\Scripts\\powershell.output"'
+        stdout = self.remote_client.run_command_verbose(command)
+        self.assertEqual('True', stdout.strip())

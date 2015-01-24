@@ -107,7 +107,6 @@ class Runner(object):
 def run_scenarios():
     metadata = {
         'network_config': str({'content_path': 'random_value_test_random'})}
-    userdata = util.get_resource('windows/multipart_metadata')
     test_result = unittest.TextTestResult(
         _WritelnDecorator(sys.stderr), None, 0)
 
@@ -115,7 +114,13 @@ def run_scenarios():
         scenario.BaseWindowsScenario(
             test_class=test_smoke.TestWindowsSmoke,
             recipee=windows.WindowsCloudbaseinitRecipee,
-            userdata=userdata,
+            metadata=metadata,
+            image=CONF.images[0],
+            result=test_result),
+        scenario.BaseWindowsScenario(
+            test_class=test_smoke.TestWindowsMultipartUserdataSmoke,
+            recipee=windows.WindowsCloudbaseinitRecipee,
+            userdata=util.get_resource('windows/multipart_userdata'),
             metadata=metadata,
             image=CONF.images[0],
             result=test_result),

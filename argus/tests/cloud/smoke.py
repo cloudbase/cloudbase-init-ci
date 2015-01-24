@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import abc
 import os
 import unittest
 
@@ -160,28 +159,3 @@ class BaseSmokeTests(scenario.BaseArgusTest):
         self.assertTrue(output, "Console output was empty.")
         lines = len(output.split('\n'))
         self.assertEqual(lines, 10)
-
-    @abc.abstractmethod
-    def test_cloudconfig_userdata(self):
-        """Implement this test for testing that the cloudconfig did what it had to.
-
-        Since this test class can be used with other userdata,
-        this method is not implemented here.
-        """
-
-    @abc.abstractmethod
-    def test_local_scripts_executed(self):
-        """Test that the local scripts were executed.
-
-        Since this test class can be used with other userdata,
-        this method is not implemented here.
-        """
-
-    @abc.abstractmethod
-    def test_userdata(self):
-        """Test that the userdata plugin did what it had to.
-
-        Since this test class can be used with other userdata,
-        this method is not implemented here.
-        """
-
