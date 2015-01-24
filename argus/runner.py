@@ -13,13 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
+import os
 import sys
 import time
 import unittest
 
-from argus.recipees.cloud import windows
-from argus import scenario
-from argus.tests.cloud.windows import test_smoke
+from argus import exceptions
 from argus import util
 
 
@@ -104,25 +104,53 @@ class Runner(object):
         return result
 
 
-def run_scenarios():
-    metadata = {
-        'network_config': str({'content_path': 'random_value_test_random'})}
+def _load_userdata(userdata):
+    userdata, is_argus, part = userdata.partition("argus.")
+    if is_argus:
+        userdata = util.get_resource(part.replace(".", "/"))
+    else:
+        with open(userdata, 'rb') as stream:
+            userdata = stream.read()
+    return userdata
+
+
+def _load_metadata(metadata):
+    if os.path.isfile(metadata):
+        with open(metadata) as stream:
+            return json.load(stream)
+    return json.loads(metadata)
+
+
+def build_scenario(scenario, config):
     test_result = unittest.TextTestResult(
         _WritelnDecorator(sys.stderr), None, 0)
+    image = None
 
-    scenarios = [
-        scenario.BaseWindowsScenario(
-            test_class=test_smoke.TestWindowsSmoke,
-            recipee=windows.WindowsCloudbaseinitRecipee,
-            metadata=metadata,
-            image=CONF.images[0],
-            result=test_result),
-        scenario.BaseWindowsScenario(
-            test_class=test_smoke.TestWindowsMultipartUserdataSmoke,
-            recipee=windows.WindowsCloudbaseinitRecipee,
-            userdata=util.get_resource('windows/multipart_userdata'),
-            metadata=metadata,
-            image=CONF.images[0],
-            result=test_result),
-    ]
-    Runner(scenarios).run()
+    for image in config.images:
+        if image.name == scenario.image:
+            break
+    else:
+        raise exceptions.ArgusError(
+            "Could not find the image for the scenario %r" % scenario.name)
+
+    # TODO: load userdata and metadata
+    userdata = _load_userdata(scenario.userdata)
+    metadata = _load_metadata(scenario.metadata)
+    test_class = util.load_qualified_object(scenario.test_class)
+    recipee = util.load_qualified_object(scenario.recipee)
+    scenario_class = util.load_qualified_object(scenario.scenario)
+
+    return scenario_class(
+        test_class=test_class,
+        recipee=recipee,
+        metadata=metadata,
+        userdata=userdata,
+        image=image,
+        result=test_result)
+
+
+def run_scenarios():
+    # TODO(cpopa): add scenario filtering.
+    scenario_classes = [build_scenario(scenario, CONF)
+                        for scenario in CONF.scenarios]
+    Runner(scenario_classes).run()

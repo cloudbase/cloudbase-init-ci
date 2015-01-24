@@ -54,12 +54,21 @@ class TestConfig(unittest.TestCase):
         flavor_ref = flavor_ref
         group = 4
         created_user = 5
+
+        [scenario_windows]
+        scenario = 3
+        test_class = 4
+        recipee = 5
+        userdata = 6
+        metadata = 7
+        image = 8
         """)
 
         parsed = config.parse_config(tmp)
         self.assertTrue({'argus',
                          'images',
-                         'cloudbaseinit'}.issubset(set(dir(parsed))))
+                         'cloudbaseinit',
+                         'scenarios'}.issubset(set(dir(parsed))))
 
         self.assertEqual('a', parsed.argus.resources)
         self.assertFalse(parsed.argus.debug)
@@ -79,3 +88,9 @@ class TestConfig(unittest.TestCase):
         self.assertEqual('4', parsed.images[0].group)
         self.assertEqual('5', parsed.images[0].created_user)
 
+        self.assertEqual('3', parsed.scenarios[0].scenario)
+        self.assertEqual('4', parsed.scenarios[0].test_class)
+        self.assertEqual('5', parsed.scenarios[0].recipee)
+        self.assertEqual('6', parsed.scenarios[0].userdata)
+        self.assertEqual('7', parsed.scenarios[0].metadata)
+        self.assertEqual('8', parsed.scenarios[0].image)

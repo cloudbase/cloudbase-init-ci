@@ -15,6 +15,7 @@
 
 import argparse
 import base64
+import importlib
 import logging
 import pkgutil
 import subprocess
@@ -32,6 +33,7 @@ __all__ = (
     'run_once',
     'get_resource',
     'cached_property',
+    'load_qualified_object',
 )
 
 DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -167,5 +169,22 @@ def get_logger():
     logger.addHandler(stdout_handler)
     logger.setLevel(logging.DEBUG)
     return logger
+
+
+def load_qualified_object(obj):
+    """Load a qualified object name.
+
+    The name must be in the format module:qualname syntax.
+    """
+    mod_name, has_attrs, attrs = obj.partition(":")
+    obj = module = importlib.import_module(mod_name)
+
+    if has_attrs:
+        parts = attrs.split(".")
+        obj = module
+        for part in parts:
+            obj = getattr(obj, part)
+    return obj
+
 
 LOG = get_logger()
