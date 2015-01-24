@@ -233,12 +233,17 @@ class BaseArgusScenario(object):
     def _setup(self):
         # pylint: disable=attribute-defined-outside-init
         LOG.info("Creating server.")
+        if self._userdata:
+            userdata = base64.encodestring(self._userdata)
+        else:
+            userdata = None
+
         self._keypair = self._create_keypair()
         self._server = self._create_server(
             wait_until='ACTIVE',
             key_name=self._keypair['name'],
             disk_config='AUTO',
-            user_data=base64.encodestring(self._userdata),
+            user_data=userdata,
             meta=self._metadata)
         self._floating_ip = self._assign_floating_ip()
         self._security_group = self._create_security_groups()
