@@ -48,3 +48,7 @@ image_ref = <none>
 # Note that there's no check to see that a flavor is enough
 # for an image.
 flavor_ref = <none>
+
+# The OS type of the image. This should be the result
+# of platform.system
+os_type = Windows

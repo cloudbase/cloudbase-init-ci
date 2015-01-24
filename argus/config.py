@@ -36,7 +36,7 @@ def parse_config(filename):
     image = collections.namedtuple('image',
                                    'service_type default_ci_username '
                                    'default_ci_password image_ref flavor_ref '
-                                   'group created_user')
+                                   'group created_user os_type')
     conf = collections.namedtuple('conf', 'argus cloudbaseinit images')
 
     parser = six.moves.configparser.ConfigParser()
@@ -83,6 +83,8 @@ def parse_config(filename):
         flavor_ref = parser.get(key, 'flavor_ref')
         group = parser.get(key, 'group')
         created_user = parser.get(key, 'created_user')
+        os_type = parser.get(key, 'os_type', 'windows')
         images.append(image(service_type, ci_user, ci_password,
-                            image_ref, flavor_ref, group, created_user))
+                            image_ref, flavor_ref, group, created_user,
+                            os_type))
     return conf(argus, cloudbaseinit, images)
