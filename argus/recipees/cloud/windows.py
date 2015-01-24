@@ -83,10 +83,10 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
 
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
                     'where -Property Name -contains {0}).Name"'
-                    .format(CONF.argus.default_ci_username))
+                    .format(self._image.default_ci_username))
         return self._run_cmd_until_condition(
             wait_cmd,
-            lambda stdout: stdout.strip() == CONF.argus.default_ci_username)
+            lambda stdout: stdout.strip() == self._image.default_ci_username)
 
     def get_installation_script(self):
         """Get an insallation script for CloudbaseInit."""
@@ -102,7 +102,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
         LOG.info("Run the downloaded installation script")
 
         cmd = ('powershell "C:\\\\installcbinit.ps1 -serviceType {}"'
-               .format(CONF.argus.service_type))
+               .format(self._image.service_type))
         self._execute(cmd)
 
     def install_git(self):
@@ -196,14 +196,14 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
         """Do a reboot and wait until the instance is up."""
 
         LOG.info('Waiting for server status SHUTOFF because of sysprep')
-        self._servers_client.wait_for_server_status(
+        self._api_manager.servers_client.wait_for_server_status(
             server_id=self._instance_id,
             status='SHUTOFF',
             extra_timeout=600)
 
-        self._servers_client.start(self._instance_id)
+        self._api_manager.servers_client.start(self._instance_id)
 
         LOG.info('Waiting for server status ACTIVE')
-        self._servers_client.wait_for_server_status(
+        self._api_manager.servers_client.wait_for_server_status(
             server_id=self._instance_id,
             status='ACTIVE')

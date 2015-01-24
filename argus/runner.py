@@ -117,8 +117,7 @@ def run_scenarios():
             recipee=windows.WindowsCloudbaseinitRecipee,
             userdata=userdata,
             metadata=metadata,
-            image_ref=CONF.argus.image_ref,
-            flavor_ref=CONF.argus.flavor_ref,
+            image=CONF.images[0],
             result=test_result),
     ]
     Runner(scenarios).run()
