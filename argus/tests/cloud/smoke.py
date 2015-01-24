@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import abc
 import os
 import unittest
 
@@ -134,13 +135,6 @@ class BaseSmokeTests(scenario.BaseArgusTest):
             authorized_keys).replace('\r\n', '\n')
         self.assertEqual(self.manager.public_key(), public_key)
 
-    def test_userdata(self):
-        # Verify that we executed the expected number of
-        # user data plugins.
-        userdata_executed_plugins = (
-            self.introspection.get_userdata_executed_plugins())
-        self.assertEqual(4, userdata_executed_plugins)
-
     @skip_unless_dnsmasq_configured
     def test_mtu(self):
         # Verify that we have the expected MTU in the instance.
@@ -154,32 +148,10 @@ class BaseSmokeTests(scenario.BaseArgusTest):
         instance_traceback = self.introspection.get_cloudbaseinit_traceback()
         self.assertEqual('', instance_traceback)
 
-    def test_local_scripts_executed(self):
-        # Verify that the shell script we provided as local script
-        # was executed.
-        self.assertTrue(self.introspection.instance_shell_script_executed())
-
     def test_user_belongs_to_group(self):
         # Check that the created user belongs to the specified local groups
         members = self.introspection.get_group_members(self.image.group)
         self.assertIn(self.image.created_user, members)
-
-    def test_cloudconfig_userdata(self):
-        # Verify that the cloudconfig part handler plugin executed correctly.
-        files = self.introspection.get_cloudconfig_executed_plugins()
-        expected = {
-            'b64', 'b64_1',
-            'gzip', 'gzip_1',
-            'gzip_base64', 'gzip_base64_1', 'gzip_base64_2'
-        }
-        self.assertTrue(expected.issubset(set(files)),
-                        "The expected set is not subset of {}"
-                        .format(files))
-
-        # The content of the cloudconfig files is '42', encoded
-        # in various forms. This is known in advance, so the
-        # multipart is tied with this test.
-        self.assertEqual(set(files.values()), {'42'})
 
     def test_get_console_output(self):
         # Verify that the product emits messages to the console output.
@@ -188,3 +160,28 @@ class BaseSmokeTests(scenario.BaseArgusTest):
         self.assertTrue(output, "Console output was empty.")
         lines = len(output.split('\n'))
         self.assertEqual(lines, 10)
+
+    @abc.abstractmethod
+    def test_cloudconfig_userdata(self):
+        """Implement this test for testing that the cloudconfig did what it had to.
+
+        Since this test class can be used with other userdata,
+        this method is not implemented here.
+        """
+
+    @abc.abstractmethod
+    def test_local_scripts_executed(self):
+        """Test that the local scripts were executed.
+
+        Since this test class can be used with other userdata,
+        this method is not implemented here.
+        """
+
+    @abc.abstractmethod
+    def test_userdata(self):
+        """Test that the userdata plugin did what it had to.
+
+        Since this test class can be used with other userdata,
+        this method is not implemented here.
+        """
+

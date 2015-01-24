@@ -61,8 +61,9 @@ class TestWindowsSmoke(smoke.BaseSmokeTests):
         self.assertEqual("Running\r\n", str(stdout))
 
     def test_local_scripts_executed(self):
-        super(TestWindowsSmoke, self).test_local_scripts_executed()
-
+        # Verify that the shell script we provided as local script
+        # was executed.
+        self.assertTrue(self.introspection.instance_shell_script_executed())
         command = 'powershell "Test-Path C:\\Scripts\\powershell.output"'
         stdout = self.remote_client.run_command_verbose(command)
         self.assertEqual('True', stdout.strip())
@@ -95,3 +96,27 @@ class TestWindowsSmoke(smoke.BaseSmokeTests):
         # domain joined triggers
         start_trigger, _ = self.introspection.get_service_triggers('w32time')
         self.assertEqual('IP ADDRESS AVAILABILITY', start_trigger)
+
+    def test_cloudconfig_userdata(self):
+        # Verify that the cloudconfig part handler plugin executed correctly.
+        files = self.introspection.get_cloudconfig_executed_plugins()
+        expected = {
+            'b64', 'b64_1',
+            'gzip', 'gzip_1',
+            'gzip_base64', 'gzip_base64_1', 'gzip_base64_2'
+        }
+        self.assertTrue(expected.issubset(set(files)),
+                        "The expected set is not subset of {}"
+                        .format(files))
+
+        # The content of the cloudconfig files is '42', encoded
+        # in various forms. This is known in advance, so the
+        # multipart is tied with this test.
+        self.assertEqual(set(files.values()), {'42'})
+
+    def test_userdata(self):
+        # Verify that we executed the expected number of
+        # user data plugins.
+        userdata_executed_plugins = (
+            self.introspection.get_userdata_executed_plugins())
+        self.assertEqual(4, userdata_executed_plugins)
