@@ -85,7 +85,8 @@ def parse_config(filename):
             continue
         service_type = _get_default(parser, key, 'service_type', 'http')
         ci_user = _get_default(parser, key, 'default_ci_username', 'CiAdmin')
-        ci_password = _get_default(parser, key, 'default_ci_password', 'Passw0rd')
+        ci_password = _get_default(parser, key, 'default_ci_password',
+                                   'Passw0rd')
         image_ref = parser.get(key, 'image_ref')
         flavor_ref = parser.get(key, 'flavor_ref')
         group = parser.get(key, 'group')
