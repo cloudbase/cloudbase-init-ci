@@ -18,6 +18,13 @@ import collections
 import six
 
 
+def _get_default(parser, section, option, default):
+    try:
+        return parser.get(section, option)
+    except six.moves.configparser.NoOptionError:
+        return default
+
+
 def parse_config(filename):
     """Parse the given config file.
 
@@ -43,19 +50,19 @@ def parse_config(filename):
     parser.read(filename)
 
     # Get the argus section
-    resources = parser.get(
-        'argus',
-        'resources',
+    resources = _get_default(
+        parser, 'argus', 'resources',
         'https://raw.githubusercontent.com/PCManticore/'
         'argus-ci/master/argus/resources')
     debug = parser.getboolean('argus', 'debug')
     path_to_private_key = parser.get('argus', 'path_to_private_key')
     file_log = parser.get('argus', 'file_log')
     log_format = parser.get('argus', 'log_format')
-    dns_nameservers = parser.get('argus', 'dns_nameservers')
-    if not dns_nameservers:
-        dns_nameservers = ['8.8.8.8', '8.8.4.4']
-    else:
+    dns_nameservers = _get_default(
+        parser, 'argus', 'dns_nameservers',
+        ['8.8.8.8', '8.8.4.4'])
+    if not isinstance(dns_nameservers, list):
+        # pylint: disable=no-member
         dns_nameservers = dns_nameservers.split(",")
 
     argus = argus(resources, debug, path_to_private_key,
@@ -76,14 +83,14 @@ def parse_config(filename):
     for key in parser.sections():
         if not key.startswith("image"):
             continue
-        service_type = parser.get(key, 'service_type', 'http')
-        ci_user = parser.get(key, 'default_ci_username', 'CiAdmin')
-        ci_password = parser.get(key, 'default_ci_password', 'Passw0rd')
+        service_type = _get_default(parser, key, 'service_type', 'http')
+        ci_user = _get_default(parser, key, 'default_ci_username', 'CiAdmin')
+        ci_password = _get_default(parser, key, 'default_ci_password', 'Passw0rd')
         image_ref = parser.get(key, 'image_ref')
         flavor_ref = parser.get(key, 'flavor_ref')
         group = parser.get(key, 'group')
         created_user = parser.get(key, 'created_user')
-        os_type = parser.get(key, 'os_type', 'windows')
+        os_type = _get_default(parser, key, 'os_type', 'Windows')
         images.append(image(service_type, ci_user, ci_password,
                             image_ref, flavor_ref, group, created_user,
                             os_type))
