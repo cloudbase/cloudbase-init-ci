@@ -45,3 +45,49 @@ flavor_ref = <none>
 # The OS type of the image. This should be the result
 # of platform.system
 os_type = Windows
+
+
+
+
+[scenario_windows]
+
+# This section describes a scenario for testing.
+# It is composed of a test class, a recipee, user data, metadata
+# and an image section, as well as a scenario class.
+
+# The scenario class which will be used to build a new scenario
+# ouf of it. It must be a qualified name, e.g.
+# argus.scenario:BaseWindowsScenario
+scenario = <none>
+
+# The test class which will be used for this test. This must be a qualified name
+# e.g argus.tests.cloud.smoke.test_windows:WindowsSmokeTest
+test_class = <none>
+
+# The recipee which will be used to prepare this test's instance
+# This must be a qualified name, e.g. argus.recipees.cloud.windows:WindowsCloudbaseinitRecipee
+recipee = <none>
+
+# A file location which contains the userdata which will
+# be sent into the instance.
+# There are some cases which handles this:
+# * if it startswith argus., then it is expected to be found in
+#   argus.userdata. For instance, argus.windows.multipart_userdata,
+#   resolves to argus/windows/multipart_userdata
+# * otherwise, the file is considered other location and it will
+#   be loaded.
+# * if no userdata is wanted, just use 'userdata = '
+userdata = <none>
+
+# This is the metadata which will be passed in the instance.
+# There are two cases:
+# * if it is a file, it is considered to be a JSON file and it will
+#   be loaded
+# * if it's not a file, then it will be loaded with json.loads.  
+metadata = <none>
+
+# The image which will be used for this test.
+# This should be the name of another section, which will
+# have the format 'image_<this_name>'. If it can't be
+# found in the conf, an error will be raised.
+image = <none>

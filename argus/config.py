@@ -28,11 +28,11 @@ def _get_default(parser, section, option, default=None):
 def parse_config(filename):
     """Parse the given config file.
 
-    It will return a object with three attributes, ``argus``
+    It will return a object with four attributes, ``argus``
     for general argus options, ``cloudbaseinit`` for options
-    related to cloudbaseinit and ``images``, a list of
-    image objects with some attributes exported, such as ``image_ref``
-    and so on.
+    related to cloudbaseinit, scenarios for the list of scenarios
+    and ``images``, a list of image objects with some attributes
+    exported, such as ``image_ref`` and so on.
     """
     # pylint: disable=too-many-locals
     argus = collections.namedtuple('argus',
@@ -41,10 +41,14 @@ def parse_config(filename):
     cloudbaseinit = collections.namedtuple('cloudbaseinit',
                                            'expected_plugins_count')
     image = collections.namedtuple('image',
-                                   'service_type default_ci_username '
+                                   'name service_type default_ci_username '
                                    'default_ci_password image_ref flavor_ref '
                                    'group created_user os_type')
-    conf = collections.namedtuple('conf', 'argus cloudbaseinit images')
+    scenario = collections.namedtuple('scenario',
+                                      'name scenario test_class recipee '
+                                      'userdata metadata image')
+    conf = collections.namedtuple('conf',
+                                  'argus cloudbaseinit images scenarios')
 
     parser = six.moves.configparser.ConfigParser()
     parser.read(filename)
@@ -81,8 +85,9 @@ def parse_config(filename):
     # Get the images section
     images = []
     for key in parser.sections():
-        if not key.startswith("image"):
+        if not key.startswith("image_"):
             continue
+        image_name = key.partition("image_")[2]
         service_type = _get_default(parser, key, 'service_type', 'http')
         ci_user = _get_default(parser, key, 'default_ci_username', 'CiAdmin')
         ci_password = _get_default(parser, key, 'default_ci_password',
@@ -92,7 +97,24 @@ def parse_config(filename):
         group = parser.get(key, 'group')
         created_user = parser.get(key, 'created_user')
         os_type = _get_default(parser, key, 'os_type', 'Windows')
-        images.append(image(service_type, ci_user, ci_password,
+        images.append(image(image_name, service_type, ci_user, ci_password,
                             image_ref, flavor_ref, group, created_user,
                             os_type))
-    return conf(argus, cloudbaseinit, images)
+
+    # Get the scenarios section
+    scenarios = []
+    for key in parser.sections():
+        if not key.startswith("scenario_"):
+            continue
+
+        scenario_class = parser.get(key, 'scenario')
+        scenario_name = key.partition("scenario_")[2]
+        test_class = parser.get(key, 'test_class')
+        recipee = parser.get(key, 'recipee')
+        userdata = parser.get(key, 'userdata')
+        metadata = parser.get(key, 'metadata')
+        image = parser.get(key, 'image')
+        scenarios.append(scenario(scenario_name, scenario_class, test_class,
+                                  recipee, userdata, metadata, image))
+
+    return conf(argus, cloudbaseinit, images, scenarios)
