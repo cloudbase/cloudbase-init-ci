@@ -14,8 +14,18 @@
 #    under the License.
 
 import collections
+import itertools
 
 import six
+
+
+class _ConfigParser(six.moves.configparser.ConfigParser):
+    def getlist(self, section, option):
+        value = self.get(section, option)
+        values = value.splitlines()
+        iters = (map(str.strip, filter(None, value.split(",")))
+                 for value in values)
+        return list(itertools.chain.from_iterable(iters))
 
 
 def _get_default(parser, section, option, default=None):
@@ -50,7 +60,7 @@ def parse_config(filename):
     conf = collections.namedtuple('conf',
                                   'argus cloudbaseinit images scenarios')
 
-    parser = six.moves.configparser.ConfigParser()
+    parser = _ConfigParser()
     parser.read(filename)
 
     # Get the argus section
@@ -110,7 +120,8 @@ def parse_config(filename):
         scenario_class = parser.get(key, 'scenario')
         scenario_name = key.partition("scenario_")[2]
         test_classes = parser.get(key, 'test_classes')
-        test_classes = list(map(str.strip, test_classes.split(",")))
+
+        test_classes = parser.getlist(key, 'test_classes')
         recipee = parser.get(key, 'recipee')
         userdata = parser.get(key, 'userdata')
         metadata = parser.get(key, 'metadata')
