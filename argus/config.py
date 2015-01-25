@@ -56,7 +56,7 @@ def parse_config(filename):
                                    'group created_user os_type')
     scenario = collections.namedtuple('scenario',
                                       'name scenario test_classes recipee '
-                                      'userdata metadata image')
+                                      'userdata metadata image type')
     conf = collections.namedtuple('conf',
                                   'argus cloudbaseinit images scenarios')
 
@@ -112,6 +112,7 @@ def parse_config(filename):
                             os_type))
 
     # Get the scenarios section
+    images_names = {image.name: image for image in images}
     scenarios = []
     for key in parser.sections():
         if not key.startswith("scenario_"):
@@ -125,8 +126,10 @@ def parse_config(filename):
         recipee = parser.get(key, 'recipee')
         userdata = parser.get(key, 'userdata')
         metadata = parser.get(key, 'metadata')
-        image = parser.get(key, 'image')
+        image = images_names[parser.get(key, 'image')]
+        scenario_type = _get_default(parser, key, 'type')
         scenarios.append(scenario(scenario_name, scenario_class, test_classes,
-                                  recipee, userdata, metadata, image))
+                                  recipee, userdata, metadata, image,
+                                  scenario_type))
 
     return conf(argus, cloudbaseinit, images, scenarios)

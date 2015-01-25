@@ -19,7 +19,6 @@ import sys
 import time
 import unittest
 
-from argus import exceptions
 from argus import util
 
 
@@ -121,19 +120,10 @@ def _load_metadata(metadata):
     return json.loads(metadata)
 
 
-def build_scenario(scenario, config):
+def _build_scenario(scenario):
     test_result = unittest.TextTestResult(
         _WritelnDecorator(sys.stderr), None, 0)
-    image = None
 
-    for image in config.images:
-        if image.name == scenario.image:
-            break
-    else:
-        raise exceptions.ArgusError(
-            "Could not find the image for the scenario %r" % scenario.name)
-
-    # TODO: load userdata and metadata
     if scenario.userdata:
         userdata = _load_userdata(scenario.userdata)
     else:
@@ -149,12 +139,45 @@ def build_scenario(scenario, config):
         recipee=recipee,
         metadata=metadata,
         userdata=userdata,
-        image=image,
+        image=scenario.image,
         result=test_result)
 
 
+def _filter_scenarios(scenarios):
+    """Filter the given scenarios according to some rules.
+
+    The rules are passed at command line and the following
+    rules are known:
+
+      * os_type
+
+          Use a scenario only if the image has this OS.
+          Multiple OSes can be filtered.
+
+      * test_type: Use a scenario only if it uses a particular test type.
+    """
+    opts = util.parse_cli()
+
+    # Filter by OS type
+    os_types = opts.test_os_types
+    if os_types:
+        scenarios = [scenario for scenario in scenarios
+                     if scenario.image.os_type in os_types]
+
+    # Filter by test_type
+    scenario_type = opts.test_scenario_type
+    if scenario_type:
+        scenarios = [scenario for scenario in scenarios
+                     if scenario.type and scenario.type == scenario_type]
+    return scenarios
+
+
 def run_scenarios():
-    # TODO(cpopa): add scenario filtering.
-    scenario_classes = [build_scenario(scenario, CONF)
-                        for scenario in CONF.scenarios]
+    """Run all the defined scenarios in the configuration file.
+
+    The function will filter all scenarios according to the requested OSes
+    and test type. By default, all scenarios are executed.
+    """
+    scenarios = _filter_scenarios(CONF.scenarios)
+    scenario_classes = map(_build_scenario, scenarios)
     Runner(scenario_classes).run()
