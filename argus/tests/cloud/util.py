@@ -65,7 +65,7 @@ def requires_metadata(metadata_type='http'):
     def factory(func):
         @functools.wraps(func)
         def wrapper(self):
-            if self.metadata_type() != metadata_type:
+            if self.metadata_type != metadata_type:
                 raise unittest.SkipTest(
                     "Not the expected service metadata.""")
             return func(self)
