@@ -84,8 +84,8 @@ class BaseArgusScenario(object):
 
     It is composed by a recipee for preparing an instance,
     userdata and metadata which are injected in the instance,
-    an image which will be prepared, and test case, which
-    validates what happened in the instance.
+    an image which will be prepared and one or more test cases,
+    which validates what happened in the instance.
 
     To run the scenario, it is sufficient to call :meth:`run`.
 
@@ -95,13 +95,13 @@ class BaseArgusScenario(object):
     If nothing is given, it will default to `unittest.TestResult`.
     """
 
-    def __init__(self, test_class, recipee=None,
+    def __init__(self, test_classes, recipee=None,
                  userdata=None, metadata=None,
                  image=None, result=None):
         self._recipee = recipee
         self._userdata = userdata
         self._metadata = metadata
-        self._test_class = test_class
+        self._test_classes = test_classes
         # Internal created objects
         self._server = None
         self._keypair = None
@@ -288,12 +288,13 @@ class BaseArgusScenario(object):
             self._setup()
             LOG.info("Running tests.")
             testloader = unittest.TestLoader()
-            testnames = testloader.getTestCaseNames(self._test_class)
             suite = unittest.TestSuite()
-            for name in testnames:
-                suite.addTest(self._test_class(name,
-                                               manager=self,
-                                               image=self._image))
+            for test_class in self._test_classes:
+                testnames = testloader.getTestCaseNames(test_class)
+                for name in testnames:
+                    suite.addTest(test_class(name,
+                                             manager=self,
+                                             image=self._image))
             return suite.run(self._result)
         finally:
             self._cleanup()

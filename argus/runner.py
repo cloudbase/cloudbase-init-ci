@@ -139,12 +139,13 @@ def build_scenario(scenario, config):
     else:
         userdata = None
     metadata = _load_metadata(scenario.metadata)
-    test_class = util.load_qualified_object(scenario.test_class)
+    test_classes = list(map(util.load_qualified_object,
+                            scenario.test_classes))
     recipee = util.load_qualified_object(scenario.recipee)
     scenario_class = util.load_qualified_object(scenario.scenario)
 
     return scenario_class(
-        test_class=test_class,
+        test_classes=test_classes,
         recipee=recipee,
         metadata=metadata,
         userdata=userdata,

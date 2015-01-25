@@ -60,9 +60,10 @@ os_type = Windows
 # argus.scenario:BaseWindowsScenario
 scenario = <none>
 
-# The test class which will be used for this test. This must be a qualified name
+# The test classes which will be used for this test. This must be a
+# qualified name
 # e.g argus.tests.cloud.smoke.test_windows:WindowsSmokeTest
-test_class = <none>
+test_classes = <none, none, ...>
 
 # The recipee which will be used to prepare this test's instance
 # This must be a qualified name, e.g. argus.recipees.cloud.windows:WindowsCloudbaseinitRecipee
