@@ -15,6 +15,7 @@
 
 """Smoke tests for the cloudbaseinit."""
 
+from argus import scenario
 from argus.tests.cloud import smoke
 from argus.tests.cloud.windows import introspection
 from argus.tests.cloud import util as test_util
@@ -133,3 +134,15 @@ class TestWindowsMultipartUserdataSmoke(TestWindowsSmoke):
         command = 'powershell "Test-Path C:\\Scripts\\powershell.output"'
         stdout = self.remote_client.run_command_verbose(command)
         self.assertEqual('True', stdout.strip())
+
+
+class TestEC2Userdata(scenario.BaseArgusTest):
+
+    introspection_class = introspection.WindowsInstanceIntrospection
+
+    def test_ec2_script(self):
+        file_name = "ec2file.txt"
+        directory_name = "ec2dir"
+        names = self.introspection.list_location("C:\\")
+        self.assertIn(file_name, names)
+        self.assertIn(directory_name, names)

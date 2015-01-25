@@ -1,0 +1,10 @@
+<script>
+set root=%SystemDrive%
+echo ec2dir>%root%\ec2file.txt
+</script>
+
+<powershell>
+$root = $env:SystemDrive
+$dname = Get-Content "$root\ec2file.txt"
+New-Item -path "$root\$dname" -type directory
+</powershell>
