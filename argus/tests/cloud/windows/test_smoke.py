@@ -17,6 +17,7 @@
 
 from argus.tests.cloud import smoke
 from argus.tests.cloud.windows import introspection
+from argus.tests.cloud import util as test_util
 from argus import util
 
 
@@ -51,7 +52,7 @@ class TestWindowsSmoke(smoke.BaseSmokeTests):
         stdout = self.run_command_verbose(cmd)
         self.assertEqual("Cloud Initialization Service\r\n", str(stdout))
 
-    @smoke.skip_unless_dnsmasq_configured
+    @test_util.skip_unless_dnsmasq_configured
     def test_ntp_service_running(self):
         # Test that the NTP service is started.
         cmd = ('powershell (Get-Service "| where -Property Name '
@@ -82,7 +83,7 @@ class TestWindowsSmoke(smoke.BaseSmokeTests):
         stdout = remote_client.run_command_verbose('echo 1')
         self.assertEqual('1', stdout.strip())
 
-    @smoke.skip_unless_dnsmasq_configured
+    @test_util.skip_unless_dnsmasq_configured
     def test_w32time_triggers(self):
         # Test that w32time has network availability triggers, not
         # domain joined triggers

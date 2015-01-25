@@ -13,57 +13,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import functools
-import os
-import unittest
-
 from argus import scenario
 from argus import util
+from argus.tests.cloud import util as test_util
 
 CONF = util.get_config()
 DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
-DHCP_AGENT = '/etc/neutron/dhcp_agent.ini'
-
-
-@util.run_once
-def _dnsmasq_configured():
-    """Verify that the dnsmasq_config_file was set and it exists.
-
-    Without it, tests for MTU or NTP will fail, since their plugins
-    are relying on DHCP to provide this information.
-    """
-    if not os.path.exists(DHCP_AGENT):
-        return False
-    with open(DHCP_AGENT) as stream:
-        for line in stream:
-            if not line.startswith('dnsmasq_config_file'):
-                continue
-            _, _, dnsmasq_file = line.partition("=")
-            if dnsmasq_file.strip() == DNSMASQ_NEUTRON:
-                return True
-    return False
-
-
-def skip_unless_dnsmasq_configured(func):
-    msg = (
-        "Test will fail if the `dhcp-option-force` option "
-        "was not configured by the `dnsmasq_config_file` "
-        "from neutron/dhcp-agent.ini.")
-    return unittest.skipUnless(_dnsmasq_configured(), msg)(func)
-
-
-def requires_metadata(metadata_type='http'):
-    """Expect that the underlying test uses the given service metadata."""
-
-    def factory(func):
-        @functools.wraps(func)
-        def wrapper(self):
-            if self.metadata_type() != metadata_type:
-                raise unittest.SkipTest(
-                    "Not the expected service metadata.""")
-            return func(self)
-        return wrapper
-    return factory
 
 
 def _get_dhcp_value(key):
@@ -123,7 +78,7 @@ class BaseSmokeTests(scenario.BaseArgusTest):
         self.assertEqual(instance_hostname,
                          str(server['name'][:15]).lower())
 
-    @skip_unless_dnsmasq_configured
+    @test_util.skip_unless_dnsmasq_configured
     def test_ntp_properly_configured(self):
         # Verify that the expected NTP peers are active.
         peers = self.introspection.get_instance_ntp_peers()
@@ -133,7 +88,7 @@ class BaseSmokeTests(scenario.BaseArgusTest):
 
         self.assertEqual(expected_peers, peers)
 
-    @requires_metadata('http')
+    @test_util.requires_metadata('http')
     def test_password_set(self):
         # Test that the proper password was set.
         remote_client = self.manager.get_remote_client(
@@ -155,7 +110,7 @@ class BaseSmokeTests(scenario.BaseArgusTest):
             authorized_keys).replace('\r\n', '\n')
         self.assertEqual(self.manager.public_key(), public_key)
 
-    @skip_unless_dnsmasq_configured
+    @test_util.skip_unless_dnsmasq_configured
     def test_mtu(self):
         # Verify that we have the expected MTU in the instance.
         mtu = self.introspection.get_instance_mtu()
