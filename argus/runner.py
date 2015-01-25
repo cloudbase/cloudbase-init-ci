@@ -100,7 +100,6 @@ class Runner(object):
             self._stream.writeln(" (%s)" % (", ".join(infos),))
         else:
             self._stream.write("\n")
-        return result
 
 
 def _load_userdata(userdata):
