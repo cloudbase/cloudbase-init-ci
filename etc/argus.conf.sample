@@ -54,6 +54,13 @@ os_type = Windows
 # This section describes a scenario for testing.
 # It is composed of a test class, a recipee, user data, metadata
 # and an image section, as well as a scenario class.
+#
+
+# Mark the type of this scenario. Scenarios can have types such as
+# `smoke`, `deep` or no type at all. Scenarios can be filtered
+# according to their type, through `--test-scenario-type` flag
+# for the argus utility.
+type = <none>
 
 # The scenario class which will be used to build a new scenario
 # ouf of it. It must be a qualified name, e.g.

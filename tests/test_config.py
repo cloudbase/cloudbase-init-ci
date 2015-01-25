@@ -46,7 +46,7 @@ class TestConfig(unittest.TestCase):
         [cloudbaseinit]
         expected_plugins_count = 4
 
-        [image_0]
+        [image_8]
         default_ci_username = Admin
         default_ci_password = Passw0rd
         service_type = configdrive
@@ -95,4 +95,4 @@ class TestConfig(unittest.TestCase):
         self.assertEqual('5', parsed.scenarios[0].recipee)
         self.assertEqual('6', parsed.scenarios[0].userdata)
         self.assertEqual('7', parsed.scenarios[0].metadata)
-        self.assertEqual('8', parsed.scenarios[0].image)
+        self.assertEqual(parsed.images[0], parsed.scenarios[0].image)

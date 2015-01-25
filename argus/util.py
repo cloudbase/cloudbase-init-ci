@@ -147,6 +147,18 @@ def parse_cli():
     parser.add_argument("--logging-file",
                         type=str, default="argus.log",
                         help="The logging file argus should use.")
+    parser.add_argument("--test-os-types",
+                        type=str, nargs="*",
+                        help="Test only those scenarios with these OS types. "
+                             "By default, all scenarios are executed. "
+                             "For instance, to run only the Windows and "
+                             "FreeBSD scenarios, use "
+                             "`--test-os-types Windows,FreeBSD`")
+    parser.add_argument("--test-scenario-type",
+                        type=str,
+                        help="Test only the scenarios with this type. "
+                             "The type can be `smoke` or `deep`. By default, "
+                             "all scenarios types are executed.")
     opts = parser.parse_args()
     return opts
 
