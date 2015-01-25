@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import functools
 import os
 import unittest
 
@@ -51,6 +52,20 @@ def skip_unless_dnsmasq_configured(func):
     return unittest.skipUnless(_dnsmasq_configured(), msg)(func)
 
 
+def requires_metadata(metadata_type='http'):
+    """Expect that the underlying test uses the given service metadata."""
+
+    def factory(func):
+        @functools.wraps(func)
+        def wrapper(self):
+            if self.metadata_type() != metadata_type:
+                raise unittest.SkipTest(
+                    "Not the expected service metadata.""")
+            return func(self)
+        return wrapper
+    return factory
+
+
 def _get_dhcp_value(key):
     """Get the value of an override from the dnsmasq-config file.
 
@@ -76,6 +91,11 @@ class BaseSmokeTests(scenario.BaseArgusTest):
     cloudbaseinit is fulfilled. OS specific tests should go in the
     specific subclass.
     """
+
+    @property
+    def metadata_type(self):
+        """Get the metadata type from the underlying image."""
+        return self.image.service_type
 
     def test_plugins_count(self):
         # Test that we have the expected numbers of plugins.
@@ -113,6 +133,7 @@ class BaseSmokeTests(scenario.BaseArgusTest):
 
         self.assertEqual(expected_peers, peers)
 
+    @requires_metadata('http')
     def test_password_set(self):
         # Test that the proper password was set.
         remote_client = self.manager.get_remote_client(
