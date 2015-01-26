@@ -102,7 +102,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
         LOG.info("Run the downloaded installation script")
 
         cmd = ('powershell "C:\\\\installcbinit.ps1 -serviceType {}"'
-               .format(self._image.service_type))
+               .format(self._service_type))
         self._execute(cmd)
 
     def install_git(self):
