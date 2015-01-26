@@ -409,3 +409,8 @@ class BaseArgusTest(unittest.TestCase):
         return self.introspection_class(self.remote_client,
                                         self.server['id'],
                                         image=self.image)
+
+    @property
+    def metadata_type(self):
+        """Get the metadata type from the underlying image."""
+        return self.image.service_type

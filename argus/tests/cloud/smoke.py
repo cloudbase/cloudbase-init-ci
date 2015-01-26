@@ -36,8 +36,27 @@ def _get_dhcp_value(key):
             return value.strip()
 
 
+class PasswordSmokeTest(scenario.BaseArgusTest):
+
+    @test_util.requires_metadata('http')
+    def test_password_set(self):
+        # Test that the proper password was set.
+        remote_client = self.manager.get_remote_client(
+            self.image.created_user,
+            self.manager.instance_password())
+        # Pylint emits properly this error, but it doesn't understand
+        # that this class is used as a mixin later on (and will
+        # never understand these cases). So it's okay to disable
+        # the message here.
+        # pylint: disable=no-member
+
+        stdout = remote_client.run_command_verbose("echo 1")
+        self.assertEqual('1', stdout.strip())
+
+
 # pylint: disable=abstract-method
-class BaseSmokeTests(scenario.BaseArgusTest):
+class BaseSmokeTests(PasswordSmokeTest,
+                     scenario.BaseArgusTest):
     """Various smoke tests for testing cloudbaseinit.
 
     Each OS test version must implement the abstract methods provided here,
@@ -46,11 +65,6 @@ class BaseSmokeTests(scenario.BaseArgusTest):
     cloudbaseinit is fulfilled. OS specific tests should go in the
     specific subclass.
     """
-
-    @property
-    def metadata_type(self):
-        """Get the metadata type from the underlying image."""
-        return self.image.service_type
 
     def test_plugins_count(self):
         # Test that we have the expected numbers of plugins.
@@ -87,21 +101,6 @@ class BaseSmokeTests(scenario.BaseArgusTest):
             self.fail('DHCP NTP option was not configured.')
 
         self.assertEqual(expected_peers, peers)
-
-    @test_util.requires_metadata('http')
-    def test_password_set(self):
-        # Test that the proper password was set.
-        remote_client = self.manager.get_remote_client(
-            self.image.created_user,
-            self.manager.instance_password())
-        # Pylint emits properly this error, but it doesn't understand
-        # that this class is used as a mixin later on (and will
-        # never understand these cases). So it's okay to disable
-        # the message here.
-        # pylint: disable=no-member
-
-        stdout = remote_client.run_command_verbose("echo 1")
-        self.assertEqual('1', stdout.strip())
 
     def test_sshpublickeys_set(self):
         # Verify that we set the expected ssh keys.
