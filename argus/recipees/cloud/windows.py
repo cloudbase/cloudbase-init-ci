@@ -29,6 +29,8 @@ from argus import util
 
 CONF = util.get_config()
 LOG = util.get_logger()
+# escaped characters for powershell paths
+ESC = "( )"
 
 __all__ = (
     'WindowsCloudbaseinitRecipee',
@@ -63,20 +65,36 @@ def _get_git_link():
 class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
     """Recipee for preparing a Windows instance."""
 
-    def get_program_files(self):
-        """Get the location of program files from the instance."""
+    def get_cbinit_dir(self):
+        """Get the location of cloudbase-init from the instance."""
         stdout, _ = self._execute(
             'powershell "(Get-WmiObject  Win32_OperatingSystem).'
             'OSArchitecture"')
         architecture = stdout.strip()
 
         # Next, get the location.
+        locations = [self._execute('powershell "$ENV:ProgramFiles"')[0]]
         if architecture == '64-bit':
             location, _ = self._execute(
                 'powershell "${ENV:ProgramFiles(x86)}"')
-        else:
-            location, _ = self._execute('powershell "$ENV:ProgramFiles"')
-        return location.strip()
+            locations.append(location)
+
+        for location in locations:
+            # preprocess the path
+            location = _location = location.strip()
+            for char in ESC:
+                _location = _location.replace(char, "`{}".format(char))
+            # test its existence
+            status = self._execute(
+                'powershell Test-Path "{}\\Cloudbase` Solutions"'.format(
+                    _location))[0].strip().lower()
+            # return the path to the cloudbase-init installation
+            if status == "true":
+                return ntpath.join(
+                    location,
+                    "Cloudbase Solutions",
+                    "Cloudbase-Init"
+                )
 
     def wait_for_boot_completion(self):
         LOG.info("Waiting for boot completion")
@@ -129,16 +147,16 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
 
         LOG.info("Replacing cloudbaseinit's code.")
 
-        LOG.info("Getting program files location.")
+        LOG.info("Getting cloudbase-init location.")
         # Get the program files location.
-        program_files = self.get_program_files()
+        cbinit_dir = self.get_cbinit_dir()
 
         # Remove everything from the cloudbaseinit installation.
         LOG.info("Removing recursively cloudbaseinit.")
         cloudbaseinit = ntpath.join(
-            program_files, "Cloudbase Solutions",
-            "Cloudbase-Init",
-            # TODO(cpopa): take care of this when testing Python 3.
+            cbinit_dir,
+            # TODO(cpoieana): Take care of this when testing Python 3.
+            # Handle it with the switching between Python versions patch.
             "Python27",
             "Lib",
             "site-packages",

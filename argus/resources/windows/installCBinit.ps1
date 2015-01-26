@@ -46,15 +46,16 @@ try
     $Host.UI.RawUI.WindowTitle = "Downloading Cloudbase-Init..."
 
     $osArch = (Get-WmiObject  Win32_OperatingSystem).OSArchitecture
+    $programDirs = @($ENV:ProgramFiles)
+
     if($osArch -eq "64-bit")
     {
         $CloudbaseInitMsi = "CloudbaseInitSetup_Beta_x64.msi"
-        $programFilesDir = ${ENV:ProgramFiles(x86)}
+        $programDirs += ${ENV:ProgramFiles(x86)}
     }
     else
     {
         $CloudbaseInitMsi = "CloudbaseInitSetup_Beta_x86.msi"
-        $programFilesDir = $ENV:ProgramFiles
     }
 
     $CloudbaseInitMsiPath = "$ENV:Temp\$CloudbaseInitMsi"
@@ -71,6 +72,16 @@ try
     if ($p.ExitCode -ne 0)
     {
         throw "Installing $CloudbaseInitMsiPath failed. Log: $CloudbaseInitMsiLog"
+    }
+
+    $programFilesDir = 0
+    foreach ($programDir in $programDirs) {
+        if (Test-Path "$programDir\Cloudbase Solutions") {
+            $programFilesDir = $programDir
+        }
+    }
+    if (!$programFilesDir) {
+        throw "Cloudbase-init installed files not found in $programDirs"
     }
 
     setLocalScripts $programFilesDir
