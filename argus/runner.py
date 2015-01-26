@@ -25,6 +25,7 @@ from argus import util
 CONF = util.get_config()
 # Use this logger to log both to standard output and to argus log file.
 LOG = util.get_logger(name=__name__, format_string='%(message)s')
+LOG.propagate = False
 
 
 class _WritelnDecorator(object):
