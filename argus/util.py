@@ -170,21 +170,33 @@ def get_config():
     return config.parse_config(opts.conf)
 
 
-@run_once
-def get_logger():
-    """Get the default logger."""
-    logger = logging.getLogger('argus')
+def get_logger(name="argus", format_string=None):
+    """Obtain a new logger object.
+
+    The `name` parameter will be the name of the logger
+    and `format_string` will be the format it will
+    use for logging.
+    If it is not given, the the one given at command
+    line will be used, otherwise the default format.
+    """
+    logger = logging.getLogger(name)
     opts = parse_cli()
-    formatter = logging.Formatter(opts.logging_format or DEFAULT_FORMAT)
+    formatter = logging.Formatter(
+        format_string or opts.logging_format or DEFAULT_FORMAT)
 
-    if opts.logging_file:
-        file_handler = logging.FileHandler(opts.logging_file)
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+    if not logger.handlers:
+        # If the logger wasn't obtained another time,
+        # then it shouldn't have any loggers
 
-    stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setFormatter(formatter)
-    logger.addHandler(stdout_handler)
+        if opts.logging_file:
+            file_handler = logging.FileHandler(opts.logging_file)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        stdout_handler.setFormatter(formatter)
+        logger.addHandler(stdout_handler)
+
     logger.setLevel(logging.DEBUG)
     return logger
 

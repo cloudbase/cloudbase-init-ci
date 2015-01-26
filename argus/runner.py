@@ -23,6 +23,8 @@ from argus import util
 
 
 CONF = util.get_config()
+# Use this logger to log both to standard output and to argus log file.
+LOG = util.get_logger(name=__name__, format_string='%(message)s')
 
 
 class _WritelnDecorator(object):
@@ -39,6 +41,15 @@ class _WritelnDecorator(object):
         if arg:
             self.write(arg)
         self.write('\n')  # text-mode streams translate to \r\n if needed
+
+
+class _TestResult(unittest.TextTestResult):
+    def printErrorList(self, flavour, errors):
+        for test, err in errors:
+            LOG.info(self.separator1)
+            LOG.info("%s: %s", flavour, self.getDescription(test))
+            LOG.info(self.separator2)
+            LOG.info("%s", err)
 
 
 class Runner(object):
@@ -71,15 +82,14 @@ class Runner(object):
 
         time_taken = time.time() - start_time
 
-        self._stream.writeln("Ran %d test%s in %.3fs" %
-                             (tests_run,
-                              tests_run != 1 and "s" or "", time_taken))
-        self._stream.writeln()
+        LOG.info("Ran %d test%s in %.3fs",
+                 tests_run, tests_run != 1 and "s" or "", time_taken)
+        LOG.info("\n")
 
         if failures or errors:
-            self._stream.write("FAILED")
+            LOG.info("FAILED")
         else:
-            self._stream.write("OK")
+            LOG.info("OK")
 
         infos = []
 
@@ -97,9 +107,9 @@ class Runner(object):
             infos.append("unexpected successes=%d" % unexpected_successes)
 
         if infos:
-            self._stream.writeln(" (%s)" % (", ".join(infos),))
+            LOG.info(" (%s)", ", ".join(infos))
         else:
-            self._stream.write("\n")
+            LOG.info("\n")
 
 
 def _load_userdata(userdata):
@@ -120,8 +130,7 @@ def _load_metadata(metadata):
 
 
 def _build_scenario(scenario):
-    test_result = unittest.TextTestResult(
-        _WritelnDecorator(sys.stderr), None, 0)
+    test_result = _TestResult(_WritelnDecorator(sys.stdout), None, 0)
 
     if scenario.userdata:
         userdata = _load_userdata(scenario.userdata)
