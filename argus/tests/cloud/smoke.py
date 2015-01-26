@@ -66,11 +66,6 @@ class BaseSmokeTests(PasswordSmokeTest,
     specific subclass.
     """
 
-    @property
-    def metadata_type(self):
-        """Get the metadata type from the underlying image."""
-        return self.image.service_type
-
     def test_plugins_count(self):
         # Test that we have the expected numbers of plugins.
         plugins_count = self.introspection.get_plugins_count()
