@@ -38,7 +38,7 @@ def _get_dhcp_value(key):
 
 class PasswordSmokeTest(scenario.BaseArgusTest):
 
-    @test_util.requires_metadata('http')
+    @test_util.requires_service('http')
     def test_password_set(self):
         # Test that the proper password was set.
         remote_client = self.manager.get_remote_client(

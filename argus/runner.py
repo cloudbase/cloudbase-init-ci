@@ -149,6 +149,7 @@ def _build_scenario(scenario):
         metadata=metadata,
         userdata=userdata,
         image=scenario.image,
+        service_type=scenario.service_type,
         result=test_result)
 
 

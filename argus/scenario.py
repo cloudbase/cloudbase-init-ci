@@ -97,7 +97,7 @@ class BaseArgusScenario(object):
 
     def __init__(self, test_classes, recipee=None,
                  userdata=None, metadata=None,
-                 image=None, result=None):
+                 image=None, service_type=None, result=None):
         self._recipee = recipee
         self._userdata = userdata
         self._metadata = metadata
@@ -112,6 +112,7 @@ class BaseArgusScenario(object):
         self._floating_ip = None
         self._result = result or unittest.TestResult()
         self._image = image
+        self._service_type = service_type
 
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
@@ -294,6 +295,7 @@ class BaseArgusScenario(object):
                 for name in testnames:
                     suite.addTest(test_class(name,
                                              manager=self,
+                                             service_type=self._service_type,
                                              image=self._image))
             return suite.run(self._result)
         finally:
@@ -309,7 +311,8 @@ class BaseArgusScenario(object):
             instance_id=self._server['id'],
             api_manager=self._manager,
             remote_client=self.remote_client,
-            image=self._image).prepare()
+            image=self._image,
+            service_type=self._service_type).prepare()
 
     def instance_password(self):
         """Get the password posted by the instance."""
@@ -378,10 +381,12 @@ class BaseArgusTest(unittest.TestCase):
 
     introspection_class = None
 
-    def __init__(self, methodName='runTest', manager=None, image=None):
+    def __init__(self, methodName='runTest',
+                 manager=None, image=None, service_type=None):
         super(BaseArgusTest, self).__init__(methodName)
         self.manager = manager
         self.image = image
+        self.service_type = service_type
 
     # Export a couple of APIs from the underlying manager.
 
@@ -399,7 +404,7 @@ class BaseArgusTest(unittest.TestCase):
     def run_command_verbose(self):
         return self.manager.remote_client.run_command_verbose
 
-    @util.cached_property
+    @property
     def introspection(self):
         if not self.introspection_class:
             raise exceptions.ArgusError(
@@ -409,8 +414,3 @@ class BaseArgusTest(unittest.TestCase):
         return self.introspection_class(self.remote_client,
                                         self.server['id'],
                                         image=self.image)
-
-    @property
-    def metadata_type(self):
-        """Get the metadata type from the underlying image."""
-        return self.image.service_type

@@ -51,12 +51,13 @@ def parse_config(filename):
     cloudbaseinit = collections.namedtuple('cloudbaseinit',
                                            'expected_plugins_count')
     image = collections.namedtuple('image',
-                                   'name service_type default_ci_username '
+                                   'name default_ci_username '
                                    'default_ci_password image_ref flavor_ref '
                                    'group created_user os_type')
     scenario = collections.namedtuple('scenario',
                                       'name scenario test_classes recipee '
-                                      'userdata metadata image type')
+                                      'userdata metadata image type '
+                                      'service_type')
     conf = collections.namedtuple('conf',
                                   'argus cloudbaseinit images scenarios')
 
@@ -98,7 +99,6 @@ def parse_config(filename):
         if not key.startswith("image_"):
             continue
         image_name = key.partition("image_")[2]
-        service_type = _get_default(parser, key, 'service_type', 'http')
         ci_user = _get_default(parser, key, 'default_ci_username', 'CiAdmin')
         ci_password = _get_default(parser, key, 'default_ci_password',
                                    'Passw0rd')
@@ -107,7 +107,7 @@ def parse_config(filename):
         group = parser.get(key, 'group')
         created_user = parser.get(key, 'created_user')
         os_type = _get_default(parser, key, 'os_type', 'Windows')
-        images.append(image(image_name, service_type, ci_user, ci_password,
+        images.append(image(image_name, ci_user, ci_password,
                             image_ref, flavor_ref, group, created_user,
                             os_type))
 
@@ -128,8 +128,9 @@ def parse_config(filename):
         metadata = parser.get(key, 'metadata')
         image = images_names[parser.get(key, 'image')]
         scenario_type = _get_default(parser, key, 'type')
+        service_type = _get_default(parser, key, 'service_type', 'http')
         scenarios.append(scenario(scenario_name, scenario_class, test_classes,
                                   recipee, userdata, metadata, image,
-                                  scenario_type))
+                                  scenario_type, service_type))
 
     return conf(argus, cloudbaseinit, images, scenarios)

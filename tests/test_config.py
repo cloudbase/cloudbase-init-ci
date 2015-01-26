@@ -49,7 +49,6 @@ class TestConfig(unittest.TestCase):
         [image_8]
         default_ci_username = Admin
         default_ci_password = Passw0rd
-        service_type = configdrive
         image_ref = image_ref
         flavor_ref = flavor_ref
         group = 4
@@ -63,6 +62,7 @@ class TestConfig(unittest.TestCase):
         userdata = 6
         metadata = 7
         image = 8
+        service_type = configdrive
         """)
 
         parsed = config.parse_config(tmp)
@@ -83,7 +83,6 @@ class TestConfig(unittest.TestCase):
         self.assertIsInstance(parsed.images, list)
         self.assertEqual('Admin', parsed.images[0].default_ci_username)
         self.assertEqual('Passw0rd', parsed.images[0].default_ci_password)
-        self.assertEqual('configdrive', parsed.images[0].service_type)
         self.assertEqual('image_ref', parsed.images[0].image_ref)
         self.assertEqual('flavor_ref', parsed.images[0].flavor_ref)
         self.assertEqual('4', parsed.images[0].group)
@@ -96,3 +95,4 @@ class TestConfig(unittest.TestCase):
         self.assertEqual('6', parsed.scenarios[0].userdata)
         self.assertEqual('7', parsed.scenarios[0].metadata)
         self.assertEqual(parsed.images[0], parsed.scenarios[0].image)
+        self.assertEqual('configdrive', parsed.scenarios[0].service_type)

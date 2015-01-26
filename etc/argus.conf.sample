@@ -99,3 +99,7 @@ metadata = <none>
 # have the format 'image_<this_name>'. If it can't be
 # found in the conf, an error will be raised.
 image = <none>
+
+# The type of the service the cloudbaseinit will use.
+# Supported values are http, configdrive and ec2
+service_type = <none>

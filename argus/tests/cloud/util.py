@@ -24,7 +24,7 @@ from argus import util
 
 __all__ = (
     'skip_unless_dnsmasq_configured',
-    'requires_metadata',
+    'requires_service',
 )
 
 
@@ -59,15 +59,15 @@ def skip_unless_dnsmasq_configured(func):
     return unittest.skipUnless(_dnsmasq_configured(), msg)(func)
 
 
-def requires_metadata(metadata_type='http'):
+def requires_service(service_type='http'):
     """Expect that the underlying test uses the given service metadata."""
 
     def factory(func):
         @functools.wraps(func)
         def wrapper(self):
-            if self.metadata_type != metadata_type:
+            if self.service_type != service_type:
                 raise unittest.SkipTest(
-                    "Not the expected service metadata.""")
+                    "Not the expected service type.""")
             return func(self)
         return wrapper
     return factory
