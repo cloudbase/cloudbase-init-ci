@@ -65,22 +65,22 @@ Installing and running argus should follow the next steps:
    one image defined and used and the image must be uploaded in glance.
    The image section has a couple of options which needs to be completed:
 
-      - **default_ci_username**
+      * **default_ci_username**
 
         With what name argus should connect in the instance.
         For Windows images, argus will use the `WinRM`_ protocol,
         so make sure that the image has activated the HTTP port
         for this protocol.
 
-      - **default_ci_password**
+      * **default_ci_password**
 
         The password for the default_ci_username.
 
-      - **flavor_ref**
+      * **flavor_ref**
 
         A flavor which will be used as a template for the instance.
 
-      - **os_type**
+      * **os_type**
 
         The type of the OS that this image represents.
 
