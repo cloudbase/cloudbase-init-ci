@@ -1,7 +1,8 @@
 argus-ci
 ========
 
-[![build status](https://api.travis-ci.org/PCManticore/argus-ci.svg?branch=master)](https://travis-ci.org/PCManticore/argus-ci)
+.. image:: https://travis-ci.org/PCManticore/argus-ci.svg?branch=develop
+    :target: https://travis-ci.org/PCManticore/argus-ci
 
 
 argus-ci is a continuous integration framework, built atop of `Tempest`_
