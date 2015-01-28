@@ -236,7 +236,7 @@ class BaseArgusScenario(object):
 
     def _setup(self):
         # pylint: disable=attribute-defined-outside-init
-        LOG.info("Creating server.")
+        LOG.info("Creating server...")
         if self._userdata:
             userdata = base64.encodestring(self._userdata)
         else:
@@ -284,7 +284,7 @@ class BaseArgusScenario(object):
             stream.write(content)
 
     def _cleanup(self):
-        LOG.info("Cleaning up.")
+        LOG.info("Cleaning up...")
 
         if self._security_groups_rules:
             for rule in self._security_groups_rules:
@@ -324,7 +324,7 @@ class BaseArgusScenario(object):
             # save the output
             self._save_instance_output()
             # run the tests
-            LOG.info("Running tests.")
+            LOG.info("Running tests...")
             testloader = unittest.TestLoader()
             suite = unittest.TestSuite()
             for test_class in self._test_classes:
@@ -342,7 +342,7 @@ class BaseArgusScenario(object):
         if self._recipee is None:
             raise exceptions.ArgusError('recipee must be set')
 
-        LOG.info("Preparing instance.")
+        LOG.info("Preparing instance...")
         # pylint: disable=not-callable
         self._recipee(
             instance_id=self._server['id'],

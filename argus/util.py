@@ -43,12 +43,12 @@ class WinRemoteClient(remote_client.WinRemoteClient):
     def run_command_verbose(self, cmd):
         """Run the given command and log anything it returns."""
 
-        LOG.info("Running command %s", cmd)
+        LOG.info("Running command %s...", cmd)
         stdout, stderr, exit_code = self.run_remote_cmd(cmd)
 
-        LOG.info("The command returned the output %s", stdout)
-        LOG.info("The stderr of the command was %s", stderr)
-        LOG.info("The exit code of the command was %s", exit_code)
+        LOG.info("The command returned the output: %s", stdout)
+        LOG.info("The stderr of the command was: %s", stderr)
+        LOG.info("The exit code of the command was: %s", exit_code)
         return stdout
 
 
@@ -103,7 +103,7 @@ def trap_failure(func):
             # pylint: disable=unused-variable
             exc = sys.exc_info()  # NOQA
 
-            LOG.exception("Exception occurred for func %s", func)
+            LOG.exception("Exception occurred for func %s.", func)
             import pdb
             pdb.set_trace()
     return wrapper
