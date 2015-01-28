@@ -17,6 +17,9 @@ import abc
 import base64
 import os
 import unittest
+import sys
+
+_ORIG_EXCEPTHOOK = sys.excepthook
 
 import six
 from tempest import clients
@@ -41,10 +44,11 @@ STATUS_OK = [200]
 # https://github.com/openstack/tempest/blob/master/tempest/openstack/common/
 # log.py#L420
 # That's why we mock the logging.setup call to something which
-# won't affect us. This is another ugly hack, but unfixable
-# otherwise.
+# won't affect us. This will work everytime tempest thinks to call
+# log.setup. Just in case, reset the excepthook to the original one.
 from tempest.openstack.common import log
 log.setup = lambda *args, **kwargs: None
+sys.excepthook = _ORIG_EXCEPTHOOK
 
 
 # TODO(cpopa): this is really a horrible hack!
