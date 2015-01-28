@@ -132,7 +132,7 @@ def parse_cli():
     parser.add_argument('--failfast', action='store_true',
                         default=False,
                         help='Fail the tests on the first failure.')
-    parser.add_argument('--conf', type=str, default=None,
+    parser.add_argument('--conf', type=str, required=True,
                         help="Give a path to the argus conf. "
                              "It should be an .ini file format "
                              "with a section called [argus].")
