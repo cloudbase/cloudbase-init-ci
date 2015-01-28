@@ -20,11 +20,11 @@ occurred in an instance.
 
 A **scenario** is composed of the following things:
 
-   - a **recipee**. A recipee is a class which knows how to prepare
+   - a **recipe**. A recipe is a class which knows how to prepare
      an instance, by installing required stuff, enabling privileges
-     and so on. In the project, in ``argus.recipees.cloud`` there are
-     recipees used in production for testing cloudbaseinit. Similar
-     recipees can be provided.
+     and so on. In the project, in ``argus.recipes.cloud`` there are
+     recipes used in production for testing cloudbaseinit. Similar
+     recipes can be provided.
 
    - an **image**, which is uploaded in glance.
 
@@ -42,14 +42,14 @@ A **scenario** is composed of the following things:
 
 
 argus will spin a new VM, using the provided image and then will
-provision the new VM with the given recipee. After the recipee is
+provision the new VM with the given recipe. After the recipe is
 finished executing, the test classes are invoked, to validate what
 happened in the instance. The test classes are nothing but
 ``unittest.TestCase`` classes, which uses a remote introspection mechanism
 for working with the instance.
 
 argus is driven by a config file, which describes what scenarios,
-images and recipees are used. An example of such configuration file can be
+images and recipes are used. An example of such configuration file can be
 seen in the ``etc`` folder. This is actually a configuration used in
 production for testing cloudbaseinit.
 

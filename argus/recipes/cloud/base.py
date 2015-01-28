@@ -13,17 +13,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Base recipee for preparing instances for cloudbaseinit testing."""
+"""Base recipe for preparing instances for cloudbaseinit testing."""
 
 import abc
 
 import six
 
-from argus.recipees import base
+from argus.recipes import base
 from argus import util
 
 
-__all__ = ('BaseCloudbaseinitRecipee', )
+__all__ = ('BaseCloudbaseinitRecipe', )
 
 
 CONF = util.get_config()
@@ -31,8 +31,8 @@ LOG = util.get_logger()
 
 
 @six.add_metaclass(abc.ABCMeta)
-class BaseCloudbaseinitRecipee(base.BaseRecipee):
-    """Base recipee for testing an instance with Cloudbaseinit.
+class BaseCloudbaseinitRecipe(base.BaseRecipe):
+    """Base recipe for testing an instance with Cloudbaseinit.
 
     The method :meth:`~prepare` does all the necessary work for
     preparing a new instance. The executed steps are:

@@ -138,7 +138,7 @@ def parse_cli():
                              "with a section called [argus].")
     parser.add_argument("--git-command", type=str, default=None,
                         help="Pass a git command which should be interpreted "
-                             "by a recipee.")
+                             "by a recipe.")
     parser.add_argument("-p", "--pause", action="store_true",
                         help="Pause argus before doing any test.")
     parser.add_argument("--logging-format",

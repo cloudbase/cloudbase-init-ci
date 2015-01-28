@@ -13,9 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Contains base recipees functionality.
+"""Contains base recipes functionality.
 
-A recipee is a class which knows how to provision an instance,
+A recipe is a class which knows how to provision an instance,
 by installing and configuring it with what it's necessary.
 """
 
@@ -32,15 +32,15 @@ LOG = util.get_logger()
 
 
 __all__ = (
-    'BaseRecipee',
+    'BaseRecipe',
 )
 
 
 @six.add_metaclass(abc.ABCMeta)
-class BaseRecipee(object):
-    """Base class for a recipee.
+class BaseRecipe(object):
+    """Base class for a recipe.
 
-    A recipee is a way in which an instance can be provisioned with
+    A recipe is a way in which an instance can be provisioned with
     some easy steps.
     """
 

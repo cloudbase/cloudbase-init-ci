@@ -38,7 +38,8 @@ STATUS_OK = [200]
 # using the tempest logger. Unfortunately, we are not using
 # the tempest logger, so any uncaught error goes into nothingness.
 # The code which sets the excepthook is here:
-# https://github.com/openstack/tempest/blob/master/tempest/openstack/common/log.py#L420
+# https://github.com/openstack/tempest/blob/master/tempest/openstack/common/
+# log.py#L420
 # That's why we mock the logging.setup call to something which
 # won't affect us. This is another ugly hack, but unfixable
 # otherwise.
@@ -85,7 +86,7 @@ network.json.network_client.NetworkClientJSON.create_subnet = _create_subnet
 class BaseArgusScenario(object):
     """A scenario represents a complex testing environment
 
-    It is composed by a recipee for preparing an instance,
+    It is composed by a recipe for preparing an instance,
     userdata and metadata which are injected in the instance,
     an image which will be prepared and one or more test cases,
     which validates what happened in the instance.
@@ -98,10 +99,10 @@ class BaseArgusScenario(object):
     If nothing is given, it will default to `unittest.TestResult`.
     """
 
-    def __init__(self, test_classes, recipee=None,
+    def __init__(self, test_classes, recipe=None,
                  userdata=None, metadata=None,
                  image=None, service_type=None, result=None):
-        self._recipee = recipee
+        self._recipe = recipe
         self._userdata = userdata
         self._metadata = metadata
         self._test_classes = test_classes
@@ -312,7 +313,7 @@ class BaseArgusScenario(object):
     def run(self):
         """Run the tests from the underlying test class.
 
-        This will start a new instance and prepare it using the recipee.
+        This will start a new instance and prepare it using the recipe.
         It will return a list of test results.
         """
 
@@ -339,12 +340,12 @@ class BaseArgusScenario(object):
             self._cleanup()
 
     def _prepare_instance(self):
-        if self._recipee is None:
-            raise exceptions.ArgusError('recipee must be set')
+        if self._recipe is None:
+            raise exceptions.ArgusError('recipe must be set')
 
         LOG.info("Preparing instance...")
         # pylint: disable=not-callable
-        self._recipee(
+        self._recipe(
             instance_id=self._server['id'],
             api_manager=self._manager,
             remote_client=self.remote_client,
