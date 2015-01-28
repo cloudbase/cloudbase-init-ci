@@ -62,6 +62,12 @@ def _get_git_link():
     raise exceptions.ArgusError("git download link not found.")
 
 
+def _escape_path(path):
+    for char in ESC:
+        path = path.replace(char, "`{}".format(char))
+    return path
+
+
 class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
     """Recipee for preparing a Windows instance."""
 
@@ -81,9 +87,8 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
 
         for location in locations:
             # preprocess the path
-            location = _location = location.strip()
-            for char in ESC:
-                _location = _location.replace(char, "`{}".format(char))
+            location = location.strip()
+            _location = _escape_path(location)
             # test its existence
             status = self._execute(
                 'powershell Test-Path "{}\\Cloudbase` Solutions"'.format(
@@ -95,6 +100,16 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
                     "Cloudbase Solutions",
                     "Cloudbase-Init"
                 )
+
+    def get_python_dir(self):
+        """Find python directory from the cb-init installation."""
+        cbinit_dir = self.get_cbinit_dir()
+        command = 'dir "{}" /b'.format(cbinit_dir)
+        stdout = self._execute(command)[0].strip()
+        names = list(filter(None, stdout.splitlines()))
+        for name in names:
+            if "python" in name.lower():
+                return ntpath.join(cbinit_dir, name)
 
     def wait_for_boot_completion(self):
         LOG.info("Waiting for boot completion")
@@ -148,16 +163,13 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
         LOG.info("Replacing cloudbaseinit's code.")
 
         LOG.info("Getting cloudbase-init location.")
-        # Get the program files location.
-        cbinit_dir = self.get_cbinit_dir()
+        # Get cb-init python location.
+        python_dir = self.get_python_dir()
 
         # Remove everything from the cloudbaseinit installation.
         LOG.info("Removing recursively cloudbaseinit.")
         cloudbaseinit = ntpath.join(
-            cbinit_dir,
-            # TODO(cpoieana): Take care of this when testing Python 3.
-            # Handle it with the switching between Python versions patch.
-            "Python27",
+            python_dir,
             "Lib",
             "site-packages",
             "cloudbaseinit")
