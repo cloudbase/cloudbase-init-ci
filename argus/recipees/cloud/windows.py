@@ -112,7 +112,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
                 return ntpath.join(cbinit_dir, name)
 
     def wait_for_boot_completion(self):
-        LOG.info("Waiting for boot completion")
+        LOG.info("Waiting for boot completion...")
 
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
                     'where -Property Name -contains {0}).Name"'
@@ -123,7 +123,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
 
     def get_installation_script(self):
         """Get an insallation script for CloudbaseInit."""
-        LOG.info("Retrieve an installation script for CloudbaseInit")
+        LOG.info("Retrieve an installation script for CloudbaseInit.")
 
         cmd = ("powershell Invoke-webrequest -uri "
                "{}/windows/installCBinit.ps1 -outfile C:\\installcbinit.ps1"
@@ -132,7 +132,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
 
     def install_cbinit(self):
         """Run the installation script for CloudbaseInit."""
-        LOG.info("Run the downloaded installation script")
+        LOG.info("Run the downloaded installation script.")
 
         cmd = ('powershell "C:\\\\installcbinit.ps1 -serviceType {}"'
                .format(self._service_type))
@@ -140,7 +140,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
 
     def install_git(self):
         """Install git in the instance."""
-        LOG.info("Installing git.")
+        LOG.info("Installing git...")
 
         cmd = ("powershell Invoke-webrequest -uri "
                "{}/windows/install_git.ps1 -outfile C:\\\\install_git.ps1"
@@ -160,14 +160,14 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
             # Nothing to replace.
             return
 
-        LOG.info("Replacing cloudbaseinit's code.")
+        LOG.info("Replacing cloudbaseinit's code...")
 
-        LOG.info("Getting cloudbase-init location.")
+        LOG.info("Getting cloudbase-init location...")
         # Get cb-init python location.
         python_dir = self.get_python_dir()
 
         # Remove everything from the cloudbaseinit installation.
-        LOG.info("Removing recursively cloudbaseinit.")
+        LOG.info("Removing recursively cloudbaseinit...")
         cloudbaseinit = ntpath.join(
             python_dir,
             "Lib",
@@ -176,23 +176,23 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
         self._execute('rmdir "{}" /S /q'.format(cloudbaseinit))
 
         # Clone the repo
-        LOG.info("cloning the cloudbaseinit repo.")
+        LOG.info("Cloning the cloudbaseinit repo...")
         self._execute("git clone https://github.com/stackforge/"
                       "cloudbase-init C:\\cloudbaseinit")
 
         # Run the command provided at cli.
-        LOG.info("Applying cli patch.")
+        LOG.info("Applying cli patch...")
         self._execute("cd C:\\cloudbaseinit && {}".format(opts.git_command))
 
         # Replace the code, by moving the code from cloudbaseinit
         # to the installed location.
-        LOG.info("Replacing code.")
+        LOG.info("Replacing code...")
         self._execute('powershell "Copy-Item C:\\cloudbaseinit\\cloudbaseinit '
                       '\'{}\' -Recurse"'.format(cloudbaseinit))
 
     def sysprep(self):
         """Prepare the instance for the actual tests, by running sysprep."""
-        LOG.info("Running sysprep.")
+        LOG.info("Running sysprep...")
 
         cmd = ("powershell Invoke-webrequest -uri "
                "{}/windows/sysprep.ps1 -outfile 'C:\\sysprep.ps1'"
@@ -205,7 +205,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
 
         The function waits until all the plugins have been executed.
         """
-        LOG.info("Waiting for the finalization of CloudbaseInit execution")
+        LOG.info("Waiting for the finalization of CloudbaseInit execution...")
 
         # Test that this instance's cloudbaseinit run exists.
         key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` '
@@ -225,7 +225,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
     def wait_reboot(self):
         """Do a reboot and wait until the instance is up."""
 
-        LOG.info('Waiting for server status SHUTOFF because of sysprep')
+        LOG.info('Waiting for server status SHUTOFF because of sysprep...')
         self._api_manager.servers_client.wait_for_server_status(
             server_id=self._instance_id,
             status='SHUTOFF',
@@ -233,7 +233,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
 
         self._api_manager.servers_client.start(self._instance_id)
 
-        LOG.info('Waiting for server status ACTIVE')
+        LOG.info('Waiting for server status ACTIVE...')
         self._api_manager.servers_client.wait_for_server_status(
             server_id=self._instance_id,
             status='ACTIVE')

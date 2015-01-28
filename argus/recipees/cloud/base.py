@@ -89,7 +89,7 @@ class BaseCloudbaseinitRecipee(base.BaseRecipee):
         * install CloudbaseInit by running the previously downloaded file.
         * wait until the instance is up and running.
         """
-        LOG.info("Preparing instance %s", self._instance_id)
+        LOG.info("Preparing instance %s...", self._instance_id)
         self.wait_for_boot_completion()
         self.get_installation_script()
         self.install_cbinit()
@@ -102,7 +102,7 @@ class BaseCloudbaseinitRecipee(base.BaseRecipee):
         self.sysprep()
         self.wait_reboot()
         self.wait_cbinit_finalization()
-        LOG.info("Finished preparing instance %s", self._instance_id)
+        LOG.info("Finished preparing instance %s.", self._instance_id)
 
     if CONF.argus.debug:
         prepare = util.trap_failure(prepare)
