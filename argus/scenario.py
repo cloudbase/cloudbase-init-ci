@@ -31,6 +31,9 @@ from argus import util
 CONF = util.get_config()
 LOG = util.get_logger()
 
+SIZE = 128    # starting size as number of lines
+STATUS_OK = [200]
+
 # tempest sets its own excepthook, which will log the error
 # using the tempest logger. Unfortunately, we are not using
 # the tempest logger, so any uncaught error goes into nothingness.
@@ -250,6 +253,36 @@ class BaseArgusScenario(object):
         self._security_group = self._create_security_groups()
         self._prepare_instance()
 
+    def _save_instance_output(self):
+        # check CLI arguments
+        opts = util.parse_cli()
+        out_dir = opts.instance_output
+        if not out_dir:
+            return
+        try:
+            os.makedirs(out_dir)
+        except OSError:
+            pass
+        path = os.path.join(out_dir, "{}.log".format(self._server["id"]))
+        # try to obtain the entire content
+        size = SIZE
+        while True:
+            resp, content = self.instance_output(size)
+            if resp.status not in STATUS_OK:
+                LOG.error("Couldn't save console output <%d>.", resp.status)
+                return
+            if len(content.splitlines()) >= size:
+                size *= 2
+            else:
+                break
+        # write (or not) the content
+        if not content.strip():
+            LOG.warn("Empty console output; nothing to save.")
+            return
+        LOG.info("Saving instance console output to: %s", path)
+        with open(path, "wb") as stream:
+            stream.write(content)
+
     def _cleanup(self):
         LOG.info("Cleaning up.")
 
@@ -286,7 +319,11 @@ class BaseArgusScenario(object):
         self._prepare_run()
 
         try:
+            # prepare the instance
             self._setup()
+            # save the output
+            self._save_instance_output()
+            # run the tests
             LOG.info("Running tests.")
             testloader = unittest.TestLoader()
             suite = unittest.TestSuite()

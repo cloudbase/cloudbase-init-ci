@@ -159,6 +159,10 @@ def parse_cli():
                         help="Test only the scenarios with this type. "
                              "The type can be `smoke` or `deep`. By default, "
                              "all scenarios types are executed.")
+    parser.add_argument("-o", "--instance-output",
+                        metavar="DIRECTORY",
+                        help="Save the instance console output "
+                             "content in this path.")
     opts = parser.parse_args()
     return opts
 
