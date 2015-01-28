@@ -52,7 +52,7 @@ os_type = Windows
 [scenario_windows]
 
 # This section describes a scenario for testing.
-# It is composed of a test class, a recipee, user data, metadata
+# It is composed of a test class, a recipe, user data, metadata
 # and an image section, as well as a scenario class.
 #
 
@@ -72,9 +72,9 @@ scenario = <none>
 # e.g argus.tests.cloud.smoke.test_windows:WindowsSmokeTest
 test_classes = <none, none, ...>
 
-# The recipee which will be used to prepare this test's instance
-# This must be a qualified name, e.g. argus.recipees.cloud.windows:WindowsCloudbaseinitRecipee
-recipee = <none>
+# The recipe which will be used to prepare this test's instance
+# This must be a qualified name, e.g. argus.recipes.cloud.windows:WindowsCloudbaseinitRecipe
+recipe = <none>
 
 # A file location which contains the userdata which will
 # be sent into the instance.

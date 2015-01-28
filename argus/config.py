@@ -55,7 +55,7 @@ def parse_config(filename):
                                    'default_ci_password image_ref flavor_ref '
                                    'group created_user os_type')
     scenario = collections.namedtuple('scenario',
-                                      'name scenario test_classes recipee '
+                                      'name scenario test_classes recipe '
                                       'userdata metadata image type '
                                       'service_type')
     conf = collections.namedtuple('conf',
@@ -123,14 +123,14 @@ def parse_config(filename):
         test_classes = parser.get(key, 'test_classes')
 
         test_classes = parser.getlist(key, 'test_classes')
-        recipee = parser.get(key, 'recipee')
+        recipe = parser.get(key, 'recipe')
         userdata = parser.get(key, 'userdata')
         metadata = parser.get(key, 'metadata')
         image = images_names[parser.get(key, 'image')]
         scenario_type = _get_default(parser, key, 'type')
         service_type = _get_default(parser, key, 'service_type', 'http')
         scenarios.append(scenario(scenario_name, scenario_class, test_classes,
-                                  recipee, userdata, metadata, image,
+                                  recipe, userdata, metadata, image,
                                   scenario_type, service_type))
 
     return conf(argus, cloudbaseinit, images, scenarios)

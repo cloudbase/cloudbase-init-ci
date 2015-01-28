@@ -58,7 +58,7 @@ class TestConfig(unittest.TestCase):
         scenario = 3
         test_classes = 4,5, 6, 7,   8,
                        0,2
-        recipee = 5
+        recipe = 5
         userdata = 6
         metadata = 7
         image = 8
@@ -91,7 +91,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual('3', parsed.scenarios[0].scenario)
         self.assertEqual(['4', '5', '6', '7', '8', '0', '2'],
                          parsed.scenarios[0].test_classes)
-        self.assertEqual('5', parsed.scenarios[0].recipee)
+        self.assertEqual('5', parsed.scenarios[0].recipe)
         self.assertEqual('6', parsed.scenarios[0].userdata)
         self.assertEqual('7', parsed.scenarios[0].metadata)
         self.assertEqual(parsed.images[0], parsed.scenarios[0].image)

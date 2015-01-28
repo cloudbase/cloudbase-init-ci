@@ -140,12 +140,12 @@ def _build_scenario(scenario):
     metadata = _load_metadata(scenario.metadata)
     test_classes = list(map(util.load_qualified_object,
                             scenario.test_classes))
-    recipee = util.load_qualified_object(scenario.recipee)
+    recipe = util.load_qualified_object(scenario.recipe)
     scenario_class = util.load_qualified_object(scenario.scenario)
 
     return scenario_class(
         test_classes=test_classes,
-        recipee=recipee,
+        recipe=recipe,
         metadata=metadata,
         userdata=userdata,
         image=scenario.image,

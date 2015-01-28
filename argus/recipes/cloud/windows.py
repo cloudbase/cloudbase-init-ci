@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Windows cloudbaseinit recipees."""
+"""Windows cloudbaseinit recipes."""
 
 import contextlib
 import ntpath
@@ -24,7 +24,7 @@ import six
 from six.moves import urllib  # pylint: disable=import-error
 
 from argus import exceptions
-from argus.recipees.cloud import base
+from argus.recipes.cloud import base
 from argus import util
 
 CONF = util.get_config()
@@ -33,7 +33,7 @@ LOG = util.get_logger()
 ESC = "( )"
 
 __all__ = (
-    'WindowsCloudbaseinitRecipee',
+    'WindowsCloudbaseinitRecipe',
 )
 
 
@@ -68,8 +68,8 @@ def _escape_path(path):
     return path
 
 
-class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
-    """Recipee for preparing a Windows instance."""
+class WindowsCloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
+    """Recipe for preparing a Windows instance."""
 
     def get_cbinit_dir(self):
         """Get the location of cloudbase-init from the instance."""
