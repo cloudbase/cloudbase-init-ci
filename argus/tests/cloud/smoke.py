@@ -20,6 +20,8 @@ from argus.tests.cloud import util as test_util
 CONF = util.get_config()
 DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
 
+LOG = util.get_logger()
+
 
 def _get_dhcp_value(key):
     """Get the value of an override from the dnsmasq-config file.
@@ -34,6 +36,30 @@ def _get_dhcp_value(key):
             _, _, option_value = line.strip().partition("=")
             _, _, value = option_value.partition(",")
             return value.strip()
+
+
+class PasswordRescueSmokeTest(scenario.BaseArgusTest):
+
+    def _run_remote_command(self, cmd):
+        remote_client = self.manager.get_remote_client(
+            self.image.created_user,
+            self.manager.instance_password())
+        stdout = remote_client.run_command_verbose(cmd)
+        return stdout
+
+    @test_util.requires_service('http')
+    def test_password_set(self):
+        stdout = self._run_remote_command("echo 1")
+        self.assertEqual('1', stdout.strip())
+
+        self.manager.rescue_server()
+        self.manager.prepare_instance()
+        stdout = self._run_remote_command("echo 2")
+        self.assertEqual('2', stdout.strip())
+
+        self.manager.unrescue_server()
+        stdout = self._run_remote_command("echo 3")
+        self.assertEqual('3', stdout.strip())
 
 
 class PasswordSmokeTest(scenario.BaseArgusTest):

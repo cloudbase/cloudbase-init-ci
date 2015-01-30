@@ -256,7 +256,7 @@ class BaseArgusScenario(object):
             meta=self._metadata)
         self._floating_ip = self._assign_floating_ip()
         self._security_group = self._create_security_groups()
-        self._prepare_instance()
+        self.prepare_instance()
 
     def _save_instance_output(self):
         # check CLI arguments
@@ -343,7 +343,7 @@ class BaseArgusScenario(object):
         finally:
             self._cleanup()
 
-    def _prepare_instance(self):
+    def prepare_instance(self):
         if self._recipe is None:
             raise exceptions.ArgusError('recipe must be set')
 
@@ -416,6 +416,22 @@ class BaseWindowsScenario(BaseArgusScenario):
                                     transport_protocol=protocol)
 
     remote_client = util.cached_property(get_remote_client, 'remote_client')
+
+
+class RescueWindowsScenario(BaseWindowsScenario):
+    """Instance rescue Windows-based scenario."""
+
+    def rescue_server(self):
+        admin_pass = self._image.default_ci_password
+        self._servers_client.rescue_server(self._server['id'],
+                                           adminPass=admin_pass)
+        self._servers_client.wait_for_server_status(self._server['id'],
+                                                    'RESCUE')
+
+    def unrescue_server(self):
+        self._servers_client.unrescue_server(self._server['id'])
+        self._servers_client.wait_for_server_status(self._server['id'],
+                                                    'ACTIVE')
 
 
 class BaseArgusTest(unittest.TestCase):
