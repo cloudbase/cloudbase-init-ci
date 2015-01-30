@@ -100,7 +100,6 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         if opts.pause:
             six.moves.input("Press Enter to continue...")
         self.sysprep()
-        self.wait_reboot()
         self.wait_cbinit_finalization()
         LOG.info("Finished preparing instance %s.", self._instance_id)
 
