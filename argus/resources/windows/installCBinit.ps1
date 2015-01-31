@@ -41,8 +41,22 @@ function activateWindows([string]$programFiles) {
     ((Get-Content $path) + $value) | Set-content $path
 }
 
-try
-{
+function Set-CloudbaseInitServiceStartupPolicy {
+    #Cloudbase Init service must start only after the sysprep has rebooted the
+    #the Windows machine.
+    #In order to achieve this, the service is first disabled and reenabled
+    #using SetupComplete.cmd script.
+    #https://technet.microsoft.com/en-us/library/cc766314%28v=ws.10%29.aspx
+    
+    mkdir "${ENV:SystemRoot}\Setup\Scripts"
+    cmd /c 'sc config cloudbase-init start= demand'
+    Set-Content -Value "sc config cloudbase-init start= auto && net start cloudbase-init" `
+                -Path "${ENV:SystemRoot}\Setup\Scripts\SetupComplete.cmd"
+}
+
+
+try {
+
     $Host.UI.RawUI.WindowTitle = "Downloading Cloudbase-Init..."
 
     $osArch = (Get-WmiObject  Win32_OperatingSystem).OSArchitecture
@@ -91,10 +105,9 @@ try
     {
         setService $programFilesDir
     }
-}
 
-catch
-{
+    Set-CloudbaseInitServiceStartupPolicy
+} catch {
     $host.ui.WriteErrorLine($_.Exception.ToString())
     $x = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     throw
