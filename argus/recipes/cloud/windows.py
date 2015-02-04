@@ -24,13 +24,12 @@ import six
 from six.moves import urllib  # pylint: disable=import-error
 
 from argus import exceptions
+from argus.introspection.cloud import windows as introspection
 from argus.recipes.cloud import base
 from argus import util
 
 CONF = util.get_config()
 LOG = util.get_logger()
-# escaped characters for powershell paths
-ESC = "( )"
 
 __all__ = (
     'WindowsCloudbaseinitRecipe',
@@ -63,54 +62,8 @@ def _get_git_link():
     raise exceptions.ArgusError("git download link not found.")
 
 
-def _escape_path(path):
-    for char in ESC:
-        path = path.replace(char, "`{}".format(char))
-    return path
-
-
 class WindowsCloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     """Recipe for preparing a Windows instance."""
-
-    def get_cbinit_dir(self):
-        """Get the location of cloudbase-init from the instance."""
-        stdout, _ = self._execute(
-            'powershell "(Get-WmiObject  Win32_OperatingSystem).'
-            'OSArchitecture"')
-        architecture = stdout.strip()
-
-        # Next, get the location.
-        locations = [self._execute('powershell "$ENV:ProgramFiles"')[0]]
-        if architecture == '64-bit':
-            location, _ = self._execute(
-                'powershell "${ENV:ProgramFiles(x86)}"')
-            locations.append(location)
-
-        for location in locations:
-            # preprocess the path
-            location = location.strip()
-            _location = _escape_path(location)
-            # test its existence
-            status = self._execute(
-                'powershell Test-Path "{}\\Cloudbase` Solutions"'.format(
-                    _location))[0].strip().lower()
-            # return the path to the cloudbase-init installation
-            if status == "true":
-                return ntpath.join(
-                    location,
-                    "Cloudbase Solutions",
-                    "Cloudbase-Init"
-                )
-
-    def get_python_dir(self):
-        """Find python directory from the cb-init installation."""
-        cbinit_dir = self.get_cbinit_dir()
-        command = 'dir "{}" /b'.format(cbinit_dir)
-        stdout = self._execute(command)[0].strip()
-        names = list(filter(None, stdout.splitlines()))
-        for name in names:
-            if "python" in name.lower():
-                return ntpath.join(cbinit_dir, name)
 
     def wait_for_boot_completion(self):
         LOG.info("Waiting for boot completion...")
@@ -165,7 +118,7 @@ class WindowsCloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         LOG.info("Getting cloudbase-init location...")
         # Get cb-init python location.
-        python_dir = self.get_python_dir()
+        python_dir = introspection.get_python_dir(self._execute)
 
         # Remove everything from the cloudbaseinit installation.
         LOG.info("Removing recursively cloudbaseinit...")
