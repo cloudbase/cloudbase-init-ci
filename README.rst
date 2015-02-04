@@ -6,7 +6,7 @@ argus-ci
 
 
 argus-ci is a continuous integration framework, built atop of `Tempest`_
-and `OpenStack`_. It's original purpose is to be a CI for the
+and `OpenStack`_. Its original purpose is to be a CI for the
 `cloudbaseinit`_ project, but it's pretty decoupled and can be used
 for other testing purposes.
 
