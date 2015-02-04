@@ -102,6 +102,8 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         opts = util.parse_cli()
         if opts.pause:
             six.moves.input("Press Enter to continue...")
+
+        self.pre_sysprep()
         self.sysprep()
         self.wait_reboot()
         self.wait_cbinit_finalization()
