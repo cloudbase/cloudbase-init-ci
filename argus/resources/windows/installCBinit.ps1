@@ -6,7 +6,7 @@ param
 $ErrorActionPreference = "Stop"
 
 
-function setLocalScripts([string]$programFiels) {
+function setLocalScripts([string]$programFilesDir) {
     $path = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
 
     # Write the locations of the scripts in the cloudbase-init configuration file.
