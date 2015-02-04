@@ -34,6 +34,7 @@ ESC = "( )"
 
 __all__ = (
     'WindowsCloudbaseinitRecipe',
+    'WindowsCloudbaseinitScriptRecipe',
 )
 
 
@@ -190,14 +191,6 @@ class WindowsCloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         self._execute('powershell "Copy-Item C:\\cloudbaseinit\\cloudbaseinit '
                       '\'{}\' -Recurse"'.format(cloudbaseinit))
 
-    def pre_sysprep(self):
-        LOG.info("Doing last step before sysprepping.")
-
-        cmd = ("powershell Invoke-WebRequest -uri "
-               "{}/windows/test_exe.exe -outfile "
-               "'C:\\Scripts\\test_exe.exe'".format(CONF.argus.resources))
-        self._execute(cmd)
-
     def sysprep(self):
         """Prepare the instance for the actual tests, by running sysprep."""
         LOG.info("Running sysprep...")
@@ -245,3 +238,16 @@ class WindowsCloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         self._api_manager.servers_client.wait_for_server_status(
             server_id=self._instance_id,
             status='ACTIVE')
+
+
+class WindowsCloudbaseinitScriptRecipe(WindowsCloudbaseinitRecipe):
+    """A recipe which adds support for testing .exe scripts."""
+
+    def pre_sysprep(self):
+        LOG.info("Doing last step before sysprepping.")
+
+        cmd = ("powershell Invoke-WebRequest -uri "
+               "{}/windows/test_exe.exe -outfile "
+               "'C:\\Scripts\\test_exe.exe'".format(CONF.argus.resources))
+        self._execute(cmd)
+

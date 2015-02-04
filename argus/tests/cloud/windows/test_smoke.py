@@ -92,7 +92,7 @@ class TestWindowsSmoke(smoke.BaseSmokeTests):
         self.assertEqual('IP ADDRESS AVAILABILITY', start_trigger)
 
 
-class TestWindowsMultipartUserdataSmoke(TestWindowsSmoke):
+class TestWindowsScriptsUserdataSmoke(TestWindowsSmoke):
     """This test is tied up to a particular userdata:
 
        resources/windows/multipart_userdata
