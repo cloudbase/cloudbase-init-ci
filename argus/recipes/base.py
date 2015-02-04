@@ -52,7 +52,7 @@ class BaseRecipe(object):
         self._image = image
         self._service_type = service_type
 
-    def _execute(self, cmd):
+    def _execute_with_stderr(self, cmd):
         """Execute the given command and fail when the command fails."""
         stdout, stderr, return_code = self._remote_client.run_remote_cmd(cmd)
         if return_code:
@@ -62,6 +62,10 @@ class BaseRecipe(object):
                 .format(command=cmd,
                         return_code=return_code))
         return stdout, stderr
+
+    def _execute(self, cmd):
+        """Execute and return only the stdout."""
+        return self._execute_with_stderr(cmd)[0]
 
     def _run_cmd_until_condition(self, cmd, cond, retry_count=None,
                                  retry_count_interval=5):
@@ -83,7 +87,7 @@ class BaseRecipe(object):
         count = 0
         while True:
             try:
-                std_out, std_err = self._execute(cmd)
+                std_out, std_err = self._execute_with_stderr(cmd)
             except Exception:  # pylint: disable=broad-except
                 LOG.debug("Command %r failed while waiting for condition.",
                           cmd)
