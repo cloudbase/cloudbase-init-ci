@@ -67,6 +67,9 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     def install_git(self):
         """Install git in the instance."""
 
+    def pre_sysprep(self):
+        """Run finalization code before sysprepping."""
+
     @abc.abstractmethod
     def sysprep(self):
         """Do the final steps after installing cloudbaseinit.
@@ -99,6 +102,8 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         opts = util.parse_cli()
         if opts.pause:
             six.moves.input("Press Enter to continue...")
+
+        self.pre_sysprep()
         self.sysprep()
         self.wait_reboot()
         self.wait_cbinit_finalization()
