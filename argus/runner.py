@@ -144,6 +144,7 @@ def _build_scenario(scenario):
     scenario_class = util.load_qualified_object(scenario.scenario)
 
     return scenario_class(
+        name=scenario.name,
         test_classes=test_classes,
         recipe=recipe,
         metadata=metadata,

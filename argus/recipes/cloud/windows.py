@@ -250,4 +250,3 @@ class WindowsCloudbaseinitScriptRecipe(WindowsCloudbaseinitRecipe):
                "{}/windows/test_exe.exe -outfile "
                "'C:\\Scripts\\test_exe.exe'".format(CONF.argus.resources))
         self._execute(cmd)
-

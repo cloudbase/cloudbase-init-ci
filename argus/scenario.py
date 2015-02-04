@@ -103,9 +103,10 @@ class BaseArgusScenario(object):
     If nothing is given, it will default to `unittest.TestResult`.
     """
 
-    def __init__(self, test_classes, recipe=None,
+    def __init__(self, test_classes, name=None, recipe=None,
                  userdata=None, metadata=None,
                  image=None, service_type=None, result=None):
+        self._name = name
         self._recipe = recipe
         self._userdata = userdata
         self._metadata = metadata
@@ -241,7 +242,7 @@ class BaseArgusScenario(object):
 
     def _setup(self):
         # pylint: disable=attribute-defined-outside-init
-        LOG.info("Creating server...")
+        LOG.info("Creating server for scenario %s...", self._name)
         if self._userdata:
             userdata = base64.encodestring(self._userdata)
         else:
