@@ -126,10 +126,16 @@ class WindowsInstanceIntrospection(introspection.BaseInstanceIntrospection):
                 "powershell " + remote_script)
             return stdout.strip()
 
-    def instance_shell_script_executed(self):
-        command = 'powershell "Test-Path C:\\Scripts\\shell.output"'
-        stdout = self.remote_client.run_command_verbose(command)
+    def _file_exist(self, filepath):
+        stdout = self.remote_client.run_command_verbose(
+            'powershell "Test-Path {}"'.format(filepath))
         return stdout.strip() == 'True'
+
+    def instance_shell_script_executed(self):
+        return self._file_exist("C:\\Scripts\\shell.output")
+
+    def instance_exe_script_executed(self):
+        return self._file_exist("C:\\Scripts\\exe.output")
 
     def get_group_members(self, group):
         cmd = "net localgroup {}".format(group)

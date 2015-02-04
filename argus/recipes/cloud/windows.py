@@ -190,6 +190,14 @@ class WindowsCloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         self._execute('powershell "Copy-Item C:\\cloudbaseinit\\cloudbaseinit '
                       '\'{}\' -Recurse"'.format(cloudbaseinit))
 
+    def pre_sysprep(self):
+        LOG.info("Doing last step before sysprepping.")
+
+        cmd = ("powershell Invoke-WebRequest -uri "
+               "{}/windows/test_exe.exe -outfile "
+               "'C:\\Scripts\\test_exe.exe' ")
+        self._execute(cmd)
+
     def sysprep(self):
         """Prepare the instance for the actual tests, by running sysprep."""
         LOG.info("Running sysprep...")
