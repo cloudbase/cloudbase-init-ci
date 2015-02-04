@@ -80,8 +80,17 @@ class PasswordSmokeTest(scenario.BaseArgusTest):
         self.assertEqual('1', stdout.strip())
 
 
+class CreatedUserTest(scenario.BaseArgusTest):
+
+    def test_username_created(self):
+        # Verify that the expected created user exists.
+        exists = self.introspection.username_exists(self.image.created_user)
+        self.assertTrue(exists)
+
+
 # pylint: disable=abstract-method
-class BaseSmokeTests(PasswordSmokeTest,
+class BaseSmokeTests(CreatedUserTest,
+                     PasswordSmokeTest,
                      scenario.BaseArgusTest):
     """Various smoke tests for testing cloudbaseinit.
 
@@ -104,11 +113,6 @@ class BaseSmokeTests(PasswordSmokeTest,
         datastore_size = image['OS-EXT-IMG-SIZE:size']
         disk_size = self.introspection.get_disk_size()
         self.assertGreater(disk_size, datastore_size)
-
-    def test_username_created(self):
-        # Verify that the expected created user exists.
-        exists = self.introspection.username_exists(self.image.created_user)
-        self.assertTrue(exists)
 
     def test_hostname_set(self):
         # Test that the hostname was properly set.

@@ -147,3 +147,4 @@ class TestEC2Userdata(scenario.BaseArgusTest):
         names = self.introspection.list_location("C:\\")
         self.assertIn(file_name, names)
         self.assertIn(directory_name, names)
+

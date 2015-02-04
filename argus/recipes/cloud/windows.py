@@ -35,6 +35,7 @@ ESC = "( )"
 __all__ = (
     'WindowsCloudbaseinitRecipe',
     'WindowsCloudbaseinitScriptRecipe',
+    'WindowsCloudbaseinitCreateUserRecipe',
 )
 
 
@@ -251,3 +252,18 @@ class WindowsCloudbaseinitScriptRecipe(WindowsCloudbaseinitRecipe):
                "'C:\\Scripts\\test_exe.exe'".format(CONF.argus.resources))
         self._execute(cmd)
 
+
+class WindowsCloudbaseinitCreateUserRecipe(WindowsCloudbaseinitRecipe):
+    """A recipe for creating the user created by cloudbaseinit.
+
+    The purpose is to use this recipe for testing that cloudbaseinit
+    works, even when the user which should be created already exists.
+    """
+
+    def pre_sysprep(self):
+        cmd = ("powershell Invoke-webrequest -uri "
+               "{}/windows/create_user.ps1 -outfile C:\\\\create_user.ps1"
+               .format(CONF.argus.resources))
+        self._execute(cmd)
+
+        self._execute('powershell "C:\\\\create_user.ps1"')
