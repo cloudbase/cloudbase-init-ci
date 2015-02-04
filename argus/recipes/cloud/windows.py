@@ -195,7 +195,7 @@ class WindowsCloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         cmd = ("powershell Invoke-WebRequest -uri "
                "{}/windows/test_exe.exe -outfile "
-               "'C:\\Scripts\\test_exe.exe' ")
+               "'C:\\Scripts\\test_exe.exe'".format(CONF.argus.resources))
         self._execute(cmd)
 
     def sysprep(self):
