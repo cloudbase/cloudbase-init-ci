@@ -18,10 +18,6 @@
 from argus import scenario
 from argus.tests.cloud import smoke
 from argus.tests.cloud import util as test_util
-from argus import util
-
-
-CONF = util.get_config()
 
 
 def _parse_licenses(output):
