@@ -37,7 +37,7 @@ def _parse_licenses(output):
     return licenses
 
 
-class TestWindowsSmoke(smoke.BaseSmokeTests):
+class TestSmoke(smoke.BaseSmokeTests):
 
     def test_service_display_name(self):
         cmd = ('powershell (Get-Service "| where -Property Name '
@@ -85,7 +85,7 @@ class TestWindowsSmoke(smoke.BaseSmokeTests):
         self.assertEqual('IP ADDRESS AVAILABILITY', start_trigger)
 
 
-class TestWindowsScriptsUserdataSmoke(TestWindowsSmoke):
+class TestScriptsUserdataSmoke(TestSmoke):
     """This test is tied up to a particular userdata:
 
        resources/windows/multipart_userdata

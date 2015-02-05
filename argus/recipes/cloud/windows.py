@@ -32,9 +32,9 @@ CONF = util.get_config()
 LOG = util.get_logger()
 
 __all__ = (
-    'WindowsCloudbaseinitRecipe',
-    'WindowsCloudbaseinitScriptRecipe',
-    'WindowsCloudbaseinitCreateUserRecipe',
+    'CloudbaseinitRecipe',
+    'CloudbaseinitScriptRecipe',
+    'CloudbaseinitCreateUserRecipe',
 )
 
 
@@ -63,7 +63,7 @@ def _get_git_link():
     raise exceptions.ArgusError("git download link not found.")
 
 
-class WindowsCloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
+class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     """Recipe for preparing a Windows instance."""
 
     def wait_for_boot_completion(self):
@@ -194,7 +194,7 @@ class WindowsCloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             status='ACTIVE')
 
 
-class WindowsCloudbaseinitScriptRecipe(WindowsCloudbaseinitRecipe):
+class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):
     """A recipe which adds support for testing .exe scripts."""
 
     def pre_sysprep(self):
@@ -206,7 +206,7 @@ class WindowsCloudbaseinitScriptRecipe(WindowsCloudbaseinitRecipe):
         self._execute(cmd)
 
 
-class WindowsCloudbaseinitCreateUserRecipe(WindowsCloudbaseinitRecipe):
+class CloudbaseinitCreateUserRecipe(CloudbaseinitRecipe):
     """A recipe for creating the user created by cloudbaseinit.
 
     The purpose is to use this recipe for testing that cloudbaseinit

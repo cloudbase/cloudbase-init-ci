@@ -109,7 +109,7 @@ def get_python_dir(execute_function):
             return ntpath.join(cbinit_dir, name)
 
 
-class WindowsInstanceIntrospection(base.BaseInstanceIntrospection):
+class InstanceIntrospection(base.BaseInstanceIntrospection):
     """Utilities for introspecting a Windows instance."""
 
     def get_plugins_count(self):
