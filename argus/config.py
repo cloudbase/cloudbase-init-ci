@@ -57,7 +57,7 @@ def parse_config(filename):
     scenario = collections.namedtuple('scenario',
                                       'name scenario test_classes recipe '
                                       'userdata metadata image type '
-                                      'service_type')
+                                      'service_type introspection')
     conf = collections.namedtuple('conf',
                                   'argus cloudbaseinit images scenarios')
 
@@ -129,8 +129,10 @@ def parse_config(filename):
         image = images_names[parser.get(key, 'image')]
         scenario_type = _get_default(parser, key, 'type')
         service_type = _get_default(parser, key, 'service_type', 'http')
+        introspection = parser.get(key, 'introspection')
         scenarios.append(scenario(scenario_name, scenario_class, test_classes,
                                   recipe, userdata, metadata, image,
-                                  scenario_type, service_type))
+                                  scenario_type, service_type,
+                                  introspection))
 
     return conf(argus, cloudbaseinit, images, scenarios)

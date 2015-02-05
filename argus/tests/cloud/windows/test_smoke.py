@@ -15,7 +15,6 @@
 
 """Smoke tests for the cloudbaseinit."""
 
-from argus.introspection.cloud import windows as introspection
 from argus import scenario
 from argus.tests.cloud import smoke
 from argus.tests.cloud import util as test_util
@@ -43,8 +42,6 @@ def _parse_licenses(output):
 
 
 class TestWindowsSmoke(smoke.BaseSmokeTests):
-
-    introspection_class = introspection.WindowsInstanceIntrospection
 
     def test_service_display_name(self):
         cmd = ('powershell (Get-Service "| where -Property Name '
@@ -101,8 +98,6 @@ class TestWindowsScriptsUserdataSmoke(TestWindowsSmoke):
     but inherits from it in order to test the same things.
     """
 
-    introspection_class = introspection.WindowsInstanceIntrospection
-
     def test_cloudconfig_userdata(self):
         # Verify that the cloudconfig part handler plugin executed correctly.
         files = self.introspection.get_cloudconfig_executed_plugins()
@@ -138,8 +133,6 @@ class TestWindowsScriptsUserdataSmoke(TestWindowsSmoke):
 
 
 class TestEC2Userdata(scenario.BaseArgusTest):
-
-    introspection_class = introspection.WindowsInstanceIntrospection
 
     def test_ec2_script(self):
         file_name = "ec2file.txt"

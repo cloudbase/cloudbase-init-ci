@@ -142,6 +142,7 @@ def _build_scenario(scenario):
                             scenario.test_classes))
     recipe = util.load_qualified_object(scenario.recipe)
     scenario_class = util.load_qualified_object(scenario.scenario)
+    introspection = util.load_qualified_object(scenario.introspection)
 
     return scenario_class(
         name=scenario.name,
@@ -151,6 +152,7 @@ def _build_scenario(scenario):
         userdata=userdata,
         image=scenario.image,
         service_type=scenario.service_type,
+        introspection=introspection,
         result=test_result)
 
 

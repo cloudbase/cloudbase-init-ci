@@ -63,6 +63,7 @@ class TestConfig(unittest.TestCase):
         metadata = 7
         image = 8
         service_type = configdrive
+        introspection = something
         """)
 
         parsed = config.parse_config(tmp)
@@ -96,3 +97,4 @@ class TestConfig(unittest.TestCase):
         self.assertEqual('7', parsed.scenarios[0].metadata)
         self.assertEqual(parsed.images[0], parsed.scenarios[0].image)
         self.assertEqual('configdrive', parsed.scenarios[0].service_type)
+        self.assertEqual('something', parsed.scenarios[0].introspection)

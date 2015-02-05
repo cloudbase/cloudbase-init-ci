@@ -105,7 +105,8 @@ class BaseArgusScenario(object):
 
     def __init__(self, test_classes, name=None, recipe=None,
                  userdata=None, metadata=None,
-                 image=None, service_type=None, result=None):
+                 image=None, service_type=None,
+                 result=None, introspection=None):
         self._name = name
         self._recipe = recipe
         self._userdata = userdata
@@ -122,6 +123,7 @@ class BaseArgusScenario(object):
         self._result = result or unittest.TestResult()
         self._image = image
         self._service_type = service_type
+        self._introspection = introspection
 
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
@@ -336,10 +338,12 @@ class BaseArgusScenario(object):
             for test_class in self._test_classes:
                 testnames = testloader.getTestCaseNames(test_class)
                 for name in testnames:
-                    suite.addTest(test_class(name,
-                                             manager=self,
-                                             service_type=self._service_type,
-                                             image=self._image))
+                    suite.addTest(
+                        test_class(name,
+                                   manager=self,
+                                   service_type=self._service_type,
+                                   introspection=self._introspection,
+                                   image=self._image))
             return suite.run(self._result)
         finally:
             self._cleanup()
@@ -438,14 +442,16 @@ class RescueWindowsScenario(BaseWindowsScenario):
 class BaseArgusTest(unittest.TestCase):
     """Test class which offers support for parametrization of the manager."""
 
-    introspection_class = None
-
     def __init__(self, methodName='runTest',
-                 manager=None, image=None, service_type=None):
+                 manager=None, image=None,
+                 service_type=None, introspection=None):
         super(BaseArgusTest, self).__init__(methodName)
         self.manager = manager
         self.image = image
         self.service_type = service_type
+        self.introspection = introspection(self.remote_client,
+                                           self.server['id'],
+                                           image=self.image)
 
     # Export a couple of APIs from the underlying manager.
 
@@ -462,14 +468,3 @@ class BaseArgusTest(unittest.TestCase):
     @property
     def run_command_verbose(self):
         return self.manager.remote_client.run_command_verbose
-
-    @property
-    def introspection(self):
-        if not self.introspection_class:
-            raise exceptions.ArgusError(
-                'introspection_class must be set')
-
-        # pylint: disable=not-callable
-        return self.introspection_class(self.remote_client,
-                                        self.server['id'],
-                                        image=self.image)

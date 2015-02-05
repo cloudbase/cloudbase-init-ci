@@ -103,3 +103,7 @@ image = <none>
 # The type of the service the cloudbaseinit will use.
 # Supported values are http, configdrive and ec2
 service_type = <none>
+
+# A qualified name for an introspection class, which will
+# be used by tests as ``.introspection``
+introspection = <none>
