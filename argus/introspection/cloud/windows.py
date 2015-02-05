@@ -109,15 +109,28 @@ def get_python_dir(execute_function):
             return ntpath.join(cbinit_dir, name)
 
 
+def get_cbinit_key(execute_function):
+    """Get the proper registry key for Cloudbase-init."""
+    key = ("HKLM:SOFTWARE\\Cloudbase` Solutions\\"
+           "Cloudbase-init")
+    key_x64 = ("HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` Solutions\\"
+               "Cloudbase-init")
+    cmd = 'powershell "Test-Path {}"'.format(key)
+    if execute_function(cmd).strip().lower() == "true":
+        return key
+    return key_x64
+
+
 class InstanceIntrospection(base.BaseInstanceIntrospection):
     """Utilities for introspecting a Windows instance."""
 
     def get_plugins_count(self):
-        key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` Solutions\\'
-               'Cloudbase-init\\{0}\\Plugins'
-               .format(self.instance))
+        exec_func = self.remote_client.run_command_verbose
+        key = "{0}\\{1}\\Plugins".format(
+            get_cbinit_key(exec_func),
+            self.instance)
         cmd = 'powershell (Get-Item %s).ValueCount' % key
-        stdout = self.remote_client.run_command_verbose(cmd)
+        stdout = exec_func(cmd)
         return int(stdout)
 
     def get_disk_size(self):

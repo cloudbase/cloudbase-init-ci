@@ -163,9 +163,12 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         LOG.info("Waiting for the finalization of CloudbaseInit execution...")
 
         # Test that this instance's cloudbaseinit run exists.
-        key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` '
-               'Solutions\\Cloudbase-init\\{0}'
-               .format(self._instance_id))
+        self._run_cmd_until_condition(
+            "echo 1",
+            lambda out: out.strip() == "1"
+        )
+        head = introspection.get_cbinit_key(self._execute)
+        key = "{0}\\{1}".format(head, self._instance_id)
         self._run_cmd_until_condition(
             'powershell Test-Path "{0}"'.format(key),
             lambda out: out.strip() == 'True')
