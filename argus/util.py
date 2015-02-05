@@ -222,12 +222,11 @@ def load_qualified_object(obj):
 
 
 class ProxyLogger(object):
-
     """Proxy class for the logging object.
 
     This comes in hand when using argus as a library,
-    so there is no need to provide required
-    CLI arguments necessary by the argparse.
+    so there is no need to provide required CLI arguments,
+    just to import argus.util.
     """
 
     def __init__(self):
@@ -240,6 +239,5 @@ class ProxyLogger(object):
         obj = getattr(self._logger, attr)
         self.__dict__[attr] = obj
         return obj
-
 
 LOG = ProxyLogger()
