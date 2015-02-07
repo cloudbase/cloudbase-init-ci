@@ -56,6 +56,12 @@ os_type = Windows
 # and an image section, as well as a scenario class.
 #
 
+# The scenarios can be inherited, which means that attributes will
+# be looked into the parent, if any, if they don't exist in the current scenario.
+# To specify a parent for a scenario, use this syntax:
+#
+# [scenario inherits base_scenario]
+
 # Mark the type of this scenario. Scenarios can have types such as
 # `smoke`, `deep` or no type at all. Scenarios can be filtered
 # according to their type, through `--test-scenario-type` flag

@@ -34,7 +34,7 @@ class TestConfig(unittest.TestCase):
     # TODO(cpopa): more tests should be added here
 
     def test_parse_config(self):
-        tmp = self._create_file("""
+        self._test_parse_config("""
         [argus]
         resources = a
         debug = False
@@ -55,6 +55,7 @@ class TestConfig(unittest.TestCase):
         created_user = 5
 
         [scenario_windows]
+        type = smoke
         scenario = 3
         test_classes = 4,5, 6, 7,   8,
                        0,2
@@ -65,6 +66,47 @@ class TestConfig(unittest.TestCase):
         service_type = configdrive
         introspection = something
         """)
+
+    def test_parse_config_inheritance(self):
+        self._test_parse_config("""
+        [argus]
+        resources = a
+        debug = False
+        path_to_private_key = b
+        file_log = c
+        log_format = d
+        dns_nameservers = a,b
+
+        [cloudbaseinit]
+        expected_plugins_count = 4
+
+        [image_8]
+        default_ci_username = Admin
+        default_ci_password = Passw0rd
+        image_ref = image_ref
+        flavor_ref = flavor_ref
+        group = 4
+        created_user = 5
+
+        [base_scenario]
+
+        type = smoke
+        scenario = 2
+        test_classes = 4,5,6,7,8,0,2
+        recipe = 5
+        userdata = 6
+        metadata = 7
+        introspection = something
+
+        [scenario_windows inherits base_scenario]
+        type = smoke
+        scenario = 3
+        image = 8
+        service_type = configdrive
+        """)
+
+    def _test_parse_config(self, config_text):
+        tmp = self._create_file(textwrap.dedent(config_text))
 
         parsed = config.parse_config(tmp)
         self.assertTrue({'argus',
@@ -98,3 +140,4 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(parsed.images[0], parsed.scenarios[0].image)
         self.assertEqual('configdrive', parsed.scenarios[0].service_type)
         self.assertEqual('something', parsed.scenarios[0].introspection)
+        self.assertEqual('smoke', parsed.scenarios[0].type)
