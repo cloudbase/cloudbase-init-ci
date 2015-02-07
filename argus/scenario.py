@@ -17,6 +17,9 @@ import abc
 import base64
 import os
 import unittest
+import sys
+
+_ORIG_EXCEPTHOOK = sys.excepthook
 
 import six
 from tempest import clients
@@ -31,16 +34,21 @@ from argus import util
 CONF = util.get_config()
 LOG = util.get_logger()
 
+SIZE = 128    # starting size as number of lines
+STATUS_OK = [200]
+
 # tempest sets its own excepthook, which will log the error
 # using the tempest logger. Unfortunately, we are not using
 # the tempest logger, so any uncaught error goes into nothingness.
 # The code which sets the excepthook is here:
-# https://github.com/openstack/tempest/blob/master/tempest/openstack/common/log.py#L420
+# https://github.com/openstack/tempest/blob/master/tempest/openstack/common/
+# log.py#L420
 # That's why we mock the logging.setup call to something which
-# won't affect us. This is another ugly hack, but unfixable
-# otherwise.
+# won't affect us. This will work everytime tempest thinks to call
+# log.setup. Just in case, reset the excepthook to the original one.
 from tempest.openstack.common import log
 log.setup = lambda *args, **kwargs: None
+sys.excepthook = _ORIG_EXCEPTHOOK
 
 
 # TODO(cpopa): this is really a horrible hack!
@@ -82,10 +90,10 @@ network.json.network_client.NetworkClientJSON.create_subnet = _create_subnet
 class BaseArgusScenario(object):
     """A scenario represents a complex testing environment
 
-    It is composed by a recipee for preparing an instance,
+    It is composed by a recipe for preparing an instance,
     userdata and metadata which are injected in the instance,
-    an image which will be prepared, and test case, which
-    validates what happened in the instance.
+    an image which will be prepared and one or more test cases,
+    which validates what happened in the instance.
 
     To run the scenario, it is sufficient to call :meth:`run`.
 
@@ -95,13 +103,15 @@ class BaseArgusScenario(object):
     If nothing is given, it will default to `unittest.TestResult`.
     """
 
-    def __init__(self, test_class, recipee=None,
+    def __init__(self, test_classes, name=None, recipe=None,
                  userdata=None, metadata=None,
-                 image=None, result=None):
-        self._recipee = recipee
+                 image=None, service_type=None,
+                 result=None, introspection=None):
+        self._name = name
+        self._recipe = recipe
         self._userdata = userdata
         self._metadata = metadata
-        self._test_class = test_class
+        self._test_classes = test_classes
         # Internal created objects
         self._server = None
         self._keypair = None
@@ -112,6 +122,8 @@ class BaseArgusScenario(object):
         self._floating_ip = None
         self._result = result or unittest.TestResult()
         self._image = image
+        self._service_type = service_type
+        self._introspection = introspection
 
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
@@ -232,20 +244,55 @@ class BaseArgusScenario(object):
 
     def _setup(self):
         # pylint: disable=attribute-defined-outside-init
-        LOG.info("Creating server.")
+        LOG.info("Creating server for scenario %s...", self._name)
+        if self._userdata:
+            userdata = base64.encodestring(self._userdata)
+        else:
+            userdata = None
+
         self._keypair = self._create_keypair()
         self._server = self._create_server(
             wait_until='ACTIVE',
             key_name=self._keypair['name'],
             disk_config='AUTO',
-            user_data=base64.encodestring(self._userdata),
+            user_data=userdata,
             meta=self._metadata)
         self._floating_ip = self._assign_floating_ip()
         self._security_group = self._create_security_groups()
-        self._prepare_instance()
+        self.prepare_instance()
+
+    def _save_instance_output(self):
+        # check CLI arguments
+        opts = util.parse_cli()
+        out_dir = opts.instance_output
+        if not out_dir:
+            return
+        try:
+            os.makedirs(out_dir)
+        except OSError:
+            pass
+        path = os.path.join(out_dir, "{}.log".format(self._server["id"]))
+        # try to obtain the entire content
+        size = SIZE
+        while True:
+            resp, content = self.instance_output(size)
+            if resp.status not in STATUS_OK:
+                LOG.error("Couldn't save console output <%d>.", resp.status)
+                return
+            if len(content.splitlines()) >= size:
+                size *= 2
+            else:
+                break
+        # write (or not) the content
+        if not content.strip():
+            LOG.warn("Empty console output; nothing to save.")
+            return
+        LOG.info("Saving instance console output to: %s", path)
+        with open(path, "wb") as stream:
+            stream.write(content)
 
     def _cleanup(self):
-        LOG.info("Cleaning up.")
+        LOG.info("Cleaning up...")
 
         if self._security_groups_rules:
             for rule in self._security_groups_rules:
@@ -273,37 +320,46 @@ class BaseArgusScenario(object):
     def run(self):
         """Run the tests from the underlying test class.
 
-        This will start a new instance and prepare it using the recipee.
+        This will start a new instance and prepare it using the recipe.
         It will return a list of test results.
         """
 
         self._prepare_run()
 
         try:
+            # prepare the instance
             self._setup()
-            LOG.info("Running tests.")
+            # save the output
+            self._save_instance_output()
+            # run the tests
+            LOG.info("Running tests...")
             testloader = unittest.TestLoader()
-            testnames = testloader.getTestCaseNames(self._test_class)
             suite = unittest.TestSuite()
-            for name in testnames:
-                suite.addTest(self._test_class(name,
-                                               manager=self,
-                                               image=self._image))
+            for test_class in self._test_classes:
+                testnames = testloader.getTestCaseNames(test_class)
+                for name in testnames:
+                    suite.addTest(
+                        test_class(name,
+                                   manager=self,
+                                   service_type=self._service_type,
+                                   introspection=self._introspection,
+                                   image=self._image))
             return suite.run(self._result)
         finally:
             self._cleanup()
 
-    def _prepare_instance(self):
-        if self._recipee is None:
-            raise exceptions.ArgusError('recipee must be set')
+    def prepare_instance(self):
+        if self._recipe is None:
+            raise exceptions.ArgusError('recipe must be set')
 
-        LOG.info("Preparing instance.")
+        LOG.info("Preparing instance...")
         # pylint: disable=not-callable
-        self._recipee(
+        self._recipe(
             instance_id=self._server['id'],
             api_manager=self._manager,
             remote_client=self.remote_client,
-            image=self._image).prepare()
+            image=self._image,
+            service_type=self._service_type).prepare()
 
     def instance_password(self):
         """Get the password posted by the instance."""
@@ -367,15 +423,35 @@ class BaseWindowsScenario(BaseArgusScenario):
     remote_client = util.cached_property(get_remote_client, 'remote_client')
 
 
+class RescueWindowsScenario(BaseWindowsScenario):
+    """Instance rescue Windows-based scenario."""
+
+    def rescue_server(self):
+        admin_pass = self._image.default_ci_password
+        self._servers_client.rescue_server(self._server['id'],
+                                           adminPass=admin_pass)
+        self._servers_client.wait_for_server_status(self._server['id'],
+                                                    'RESCUE')
+
+    def unrescue_server(self):
+        self._servers_client.unrescue_server(self._server['id'])
+        self._servers_client.wait_for_server_status(self._server['id'],
+                                                    'ACTIVE')
+
+
 class BaseArgusTest(unittest.TestCase):
     """Test class which offers support for parametrization of the manager."""
 
-    introspection_class = None
-
-    def __init__(self, methodName='runTest', manager=None, image=None):
+    def __init__(self, methodName='runTest',
+                 manager=None, image=None,
+                 service_type=None, introspection=None):
         super(BaseArgusTest, self).__init__(methodName)
         self.manager = manager
         self.image = image
+        self.service_type = service_type
+        self.introspection = introspection(self.remote_client,
+                                           self.server['id'],
+                                           image=self.image)
 
     # Export a couple of APIs from the underlying manager.
 
@@ -392,14 +468,3 @@ class BaseArgusTest(unittest.TestCase):
     @property
     def run_command_verbose(self):
         return self.manager.remote_client.run_command_verbose
-
-    @util.cached_property
-    def introspection(self):
-        if not self.introspection_class:
-            raise exceptions.ArgusError(
-                'introspection_class must be set')
-
-        # pylint: disable=not-callable
-        return self.introspection_class(self.remote_client,
-                                        self.server['id'],
-                                        image=self.image)

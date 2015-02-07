@@ -81,3 +81,10 @@ class BaseInstanceIntrospection(object):
     @abc.abstractmethod
     def list_location(self, location):
         """Return the list of files and folder from the given location."""
+
+    @abc.abstractmethod
+    def get_cloudconfig_executed_plugins(self):
+        """Get a dictionary of files, created by the cloud-config plugin.
+
+        The values are the actual file content.
+        """

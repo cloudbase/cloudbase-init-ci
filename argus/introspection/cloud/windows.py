@@ -23,11 +23,12 @@ import tempfile
 
 from tempest.common.utils import data_utils
 
-from argus.tests.cloud import introspection
+from argus.introspection.cloud import base
 from argus import util
 
 
-CONF = util.get_config()
+# escaped characters for powershell paths
+ESC = "( )"
 
 
 @contextlib.contextmanager
@@ -60,15 +61,76 @@ def _get_ntp_peers(output):
     return list(filter(None, map(str.strip, peers)))
 
 
-class WindowsInstanceIntrospection(introspection.BaseInstanceIntrospection):
+def _escape_path(path):
+    for char in ESC:
+        path = path.replace(char, "`{}".format(char))
+    return path
+
+
+def _get_cbinit_dir(execute_function):
+    """Get the location of cloudbase-init from the instance."""
+    stdout = execute_function(
+        'powershell "(Get-WmiObject  Win32_OperatingSystem).'
+        'OSArchitecture"')
+    architecture = stdout.strip()
+
+    # Next, get the location.
+    locations = [execute_function('powershell "$ENV:ProgramFiles"')]
+    if architecture == '64-bit':
+        location = execute_function(
+            'powershell "${ENV:ProgramFiles(x86)}"')
+        locations.append(location)
+
+    for location in locations:
+        # preprocess the path
+        location = location.strip()
+        _location = _escape_path(location)
+        # test its existence
+        status = execute_function(
+            'powershell Test-Path "{}\\Cloudbase` Solutions"'.format(
+                _location)).strip().lower()
+        # return the path to the cloudbase-init installation
+        if status == "true":
+            return ntpath.join(
+                location,
+                "Cloudbase Solutions",
+                "Cloudbase-Init"
+            )
+
+
+def get_python_dir(execute_function):
+    """Find python directory from the cb-init installation."""
+    cbinit_dir = _get_cbinit_dir(execute_function)
+    command = 'dir "{}" /b'.format(cbinit_dir)
+    stdout = execute_function(command).strip()
+    names = list(filter(None, stdout.splitlines()))
+    for name in names:
+        if "python" in name.lower():
+            return ntpath.join(cbinit_dir, name)
+
+
+def get_cbinit_key(execute_function):
+    """Get the proper registry key for Cloudbase-init."""
+    key = ("HKLM:SOFTWARE\\Cloudbase` Solutions\\"
+           "Cloudbase-init")
+    key_x64 = ("HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` Solutions\\"
+               "Cloudbase-init")
+    cmd = 'powershell "Test-Path {}"'.format(key)
+    if execute_function(cmd).strip().lower() == "true":
+        return key
+    return key_x64
+
+
+class InstanceIntrospection(base.BaseInstanceIntrospection):
     """Utilities for introspecting a Windows instance."""
 
     def get_plugins_count(self):
-        key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` Solutions\\'
-               'Cloudbase-init\\{0}\\Plugins'
-               .format(self.instance))
+        exec_func = self.remote_client.run_command_verbose
+        key = "{0}\\{1}\\Plugins".format(
+            get_cbinit_key(exec_func),
+            self.instance)
         cmd = 'powershell (Get-Item %s).ValueCount' % key
-        stdout = self.remote_client.run_command_verbose(cmd)
+        stdout = exec_func(cmd)
         return int(stdout)
 
     def get_disk_size(self):
@@ -126,10 +188,16 @@ class WindowsInstanceIntrospection(introspection.BaseInstanceIntrospection):
                 "powershell " + remote_script)
             return stdout.strip()
 
-    def instance_shell_script_executed(self):
-        command = 'powershell "Test-Path C:\\Scripts\\shell.output"'
-        stdout = self.remote_client.run_command_verbose(command)
+    def _file_exist(self, filepath):
+        stdout = self.remote_client.run_command_verbose(
+            'powershell "Test-Path {}"'.format(filepath))
         return stdout.strip() == 'True'
+
+    def instance_shell_script_executed(self):
+        return self._file_exist("C:\\Scripts\\shell.output")
+
+    def instance_exe_script_executed(self):
+        return self._file_exist("C:\\Scripts\\exe.output")
 
     def get_group_members(self, group):
         cmd = "net localgroup {}".format(group)
@@ -161,3 +229,16 @@ class WindowsInstanceIntrospection(introspection.BaseInstanceIntrospection):
             raise ValueError("Unable to get the triggers for the "
                              "given service.")
         return (match.group(1).strip(), match.group(2).strip())
+
+    def get_cloudconfig_executed_plugins(self):
+        expected = {
+            'b64', 'b64_1',
+            'gzip', 'gzip_1',
+            'gzip_base64', 'gzip_base64_1', 'gzip_base64_2'
+        }
+        files = {}
+        for basefile in expected:
+            path = os.path.join("C:\\", basefile)
+            content = self.get_instance_file_content(path)
+            files[basefile] = content.strip()
+        return files

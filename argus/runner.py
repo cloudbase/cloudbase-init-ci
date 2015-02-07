@@ -13,17 +13,19 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import json
+import os
 import sys
 import time
 import unittest
 
-from argus.recipees.cloud import windows
-from argus import scenario
-from argus.tests.cloud.windows import test_smoke
 from argus import util
 
 
 CONF = util.get_config()
+# Use this logger to log both to standard output and to argus log file.
+LOG = util.get_logger(name=__name__, format_string='%(message)s')
+LOG.propagate = False
 
 
 class _WritelnDecorator(object):
@@ -40,6 +42,15 @@ class _WritelnDecorator(object):
         if arg:
             self.write(arg)
         self.write('\n')  # text-mode streams translate to \r\n if needed
+
+
+class _TestResult(unittest.TextTestResult):
+    def printErrorList(self, flavour, errors):
+        for test, err in errors:
+            LOG.info(self.separator1)
+            LOG.info("%s: %s", flavour, self.getDescription(test))
+            LOG.info(self.separator2)
+            LOG.info("%s", err)
 
 
 class Runner(object):
@@ -72,15 +83,14 @@ class Runner(object):
 
         time_taken = time.time() - start_time
 
-        self._stream.writeln("Ran %d test%s in %.3fs" %
-                             (tests_run,
-                              tests_run != 1 and "s" or "", time_taken))
-        self._stream.writeln()
+        LOG.info("Ran %d test%s in %.3fs",
+                 tests_run, tests_run != 1 and "s" or "", time_taken)
+        LOG.info("\n")
 
         if failures or errors:
-            self._stream.write("FAILED")
+            LOG.info("FAILED")
         else:
-            self._stream.write("OK")
+            LOG.info("OK")
 
         infos = []
 
@@ -98,26 +108,89 @@ class Runner(object):
             infos.append("unexpected successes=%d" % unexpected_successes)
 
         if infos:
-            self._stream.writeln(" (%s)" % (", ".join(infos),))
+            LOG.info(" (%s)", ", ".join(infos))
         else:
-            self._stream.write("\n")
-        return result
+            LOG.info("\n")
+
+
+def _load_userdata(userdata):
+    userdata, is_argus, part = userdata.partition("argus.")
+    if is_argus:
+        userdata = util.get_resource(part.replace(".", "/"))
+    else:
+        with open(userdata, 'rb') as stream:
+            userdata = stream.read()
+    return userdata
+
+
+def _load_metadata(metadata):
+    if os.path.isfile(metadata):
+        with open(metadata) as stream:
+            return json.load(stream)
+    return json.loads(metadata)
+
+
+def _build_scenario(scenario):
+    test_result = _TestResult(_WritelnDecorator(sys.stdout), None, 0)
+
+    if scenario.userdata:
+        userdata = _load_userdata(scenario.userdata)
+    else:
+        userdata = None
+    metadata = _load_metadata(scenario.metadata)
+    test_classes = list(map(util.load_qualified_object,
+                            scenario.test_classes))
+    recipe = util.load_qualified_object(scenario.recipe)
+    scenario_class = util.load_qualified_object(scenario.scenario)
+    introspection = util.load_qualified_object(scenario.introspection)
+
+    return scenario_class(
+        name=scenario.name,
+        test_classes=test_classes,
+        recipe=recipe,
+        metadata=metadata,
+        userdata=userdata,
+        image=scenario.image,
+        service_type=scenario.service_type,
+        introspection=introspection,
+        result=test_result)
+
+
+def _filter_scenarios(scenarios):
+    """Filter the given scenarios according to some rules.
+
+    The rules are passed at command line and the following
+    rules are known:
+
+      * os_type
+
+          Use a scenario only if the image has this OS.
+          Multiple OSes can be filtered.
+
+      * test_type: Use a scenario only if it uses a particular test type.
+    """
+    opts = util.parse_cli()
+
+    # Filter by OS type
+    os_types = opts.test_os_types
+    if os_types:
+        scenarios = [scenario for scenario in scenarios
+                     if scenario.image.os_type in os_types]
+
+    # Filter by test_type
+    scenario_type = opts.test_scenario_type
+    if scenario_type:
+        scenarios = [scenario for scenario in scenarios
+                     if scenario.type and scenario.type == scenario_type]
+    return scenarios
 
 
 def run_scenarios():
-    metadata = {
-        'network_config': str({'content_path': 'random_value_test_random'})}
-    userdata = util.get_resource('windows/multipart_metadata')
-    test_result = unittest.TextTestResult(
-        _WritelnDecorator(sys.stderr), None, 0)
+    """Run all the defined scenarios in the configuration file.
 
-    scenarios = [
-        scenario.BaseWindowsScenario(
-            test_class=test_smoke.TestWindowsSmoke,
-            recipee=windows.WindowsCloudbaseinitRecipee,
-            userdata=userdata,
-            metadata=metadata,
-            image=CONF.images[0],
-            result=test_result),
-    ]
-    Runner(scenarios).run()
+    The function will filter all scenarios according to the requested OSes
+    and test type. By default, all scenarios are executed.
+    """
+    scenarios = _filter_scenarios(CONF.scenarios)
+    scenario_classes = map(_build_scenario, scenarios)
+    Runner(scenario_classes).run()

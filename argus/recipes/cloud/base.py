@@ -13,17 +13,17 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Base recipee for preparing instances for cloudbaseinit testing."""
+"""Base recipe for preparing instances for cloudbaseinit testing."""
 
 import abc
 
 import six
 
-from argus.recipees import base
+from argus.recipes import base
 from argus import util
 
 
-__all__ = ('BaseCloudbaseinitRecipee', )
+__all__ = ('BaseCloudbaseinitRecipe', )
 
 
 CONF = util.get_config()
@@ -31,8 +31,8 @@ LOG = util.get_logger()
 
 
 @six.add_metaclass(abc.ABCMeta)
-class BaseCloudbaseinitRecipee(base.BaseRecipee):
-    """Base recipee for testing an instance with Cloudbaseinit.
+class BaseCloudbaseinitRecipe(base.BaseRecipe):
+    """Base recipe for testing an instance with Cloudbaseinit.
 
     The method :meth:`~prepare` does all the necessary work for
     preparing a new instance. The executed steps are:
@@ -67,6 +67,9 @@ class BaseCloudbaseinitRecipee(base.BaseRecipee):
     def install_git(self):
         """Install git in the instance."""
 
+    def pre_sysprep(self):
+        """Run finalization code before sysprepping."""
+
     @abc.abstractmethod
     def sysprep(self):
         """Do the final steps after installing cloudbaseinit.
@@ -89,7 +92,7 @@ class BaseCloudbaseinitRecipee(base.BaseRecipee):
         * install CloudbaseInit by running the previously downloaded file.
         * wait until the instance is up and running.
         """
-        LOG.info("Preparing instance %s", self._instance_id)
+        LOG.info("Preparing instance %s...", self._instance_id)
         self.wait_for_boot_completion()
         self.get_installation_script()
         self.install_cbinit()
@@ -99,10 +102,11 @@ class BaseCloudbaseinitRecipee(base.BaseRecipee):
         opts = util.parse_cli()
         if opts.pause:
             six.moves.input("Press Enter to continue...")
+
+        self.pre_sysprep()
         self.sysprep()
-        self.wait_reboot()
         self.wait_cbinit_finalization()
-        LOG.info("Finished preparing instance %s", self._instance_id)
+        LOG.info("Finished preparing instance %s.", self._instance_id)
 
     if CONF.argus.debug:
         prepare = util.trap_failure(prepare)

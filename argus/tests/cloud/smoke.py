@@ -13,42 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import unittest
-
 from argus import scenario
 from argus import util
+from argus.tests.cloud import util as test_util
 
 CONF = util.get_config()
 DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
-DHCP_AGENT = '/etc/neutron/dhcp_agent.ini'
 
-
-@util.run_once
-def _dnsmasq_configured():
-    """Verify that the dnsmasq_config_file was set and it exists.
-
-    Without it, tests for MTU or NTP will fail, since their plugins
-    are relying on DHCP to provide this information.
-    """
-    if not os.path.exists(DHCP_AGENT):
-        return False
-    with open(DHCP_AGENT) as stream:
-        for line in stream:
-            if not line.startswith('dnsmasq_config_file'):
-                continue
-            _, _, dnsmasq_file = line.partition("=")
-            if dnsmasq_file.strip() == DNSMASQ_NEUTRON:
-                return True
-    return False
-
-
-def skip_unless_dnsmasq_configured(func):
-    msg = (
-        "Test will fail if the `dhcp-option-force` option "
-        "was not configured by the `dnsmasq_config_file` "
-        "from neutron/dhcp-agent.ini.")
-    return unittest.skipUnless(_dnsmasq_configured(), msg)(func)
+LOG = util.get_logger()
 
 
 def _get_dhcp_value(key):
@@ -66,8 +38,60 @@ def _get_dhcp_value(key):
             return value.strip()
 
 
+class PasswordRescueSmokeTest(scenario.BaseArgusTest):
+
+    def _run_remote_command(self, cmd):
+        remote_client = self.manager.get_remote_client(
+            self.image.created_user,
+            self.manager.instance_password())
+        stdout = remote_client.run_command_verbose(cmd)
+        return stdout
+
+    @test_util.requires_service('http')
+    def test_password_set(self):
+        stdout = self._run_remote_command("echo 1")
+        self.assertEqual('1', stdout.strip())
+
+        self.manager.rescue_server()
+        self.manager.prepare_instance()
+        stdout = self._run_remote_command("echo 2")
+        self.assertEqual('2', stdout.strip())
+
+        self.manager.unrescue_server()
+        stdout = self._run_remote_command("echo 3")
+        self.assertEqual('3', stdout.strip())
+
+
+class PasswordSmokeTest(scenario.BaseArgusTest):
+
+    @test_util.requires_service('http')
+    def test_password_set(self):
+        # Test that the proper password was set.
+        remote_client = self.manager.get_remote_client(
+            self.image.created_user,
+            self.manager.instance_password())
+        # Pylint emits properly this error, but it doesn't understand
+        # that this class is used as a mixin later on (and will
+        # never understand these cases). So it's okay to disable
+        # the message here.
+        # pylint: disable=no-member
+
+        stdout = remote_client.run_command_verbose("echo 1")
+        self.assertEqual('1', stdout.strip())
+
+
+class CreatedUserTest(scenario.BaseArgusTest):
+
+    def test_username_created(self):
+        # Verify that the expected created user exists.
+        exists = self.introspection.username_exists(self.image.created_user)
+        self.assertTrue(exists)
+
+
 # pylint: disable=abstract-method
-class BaseSmokeTests(scenario.BaseArgusTest):
+class BaseSmokeTests(CreatedUserTest,
+                     PasswordSmokeTest,
+                     scenario.BaseArgusTest):
     """Various smoke tests for testing cloudbaseinit.
 
     Each OS test version must implement the abstract methods provided here,
@@ -86,14 +110,9 @@ class BaseSmokeTests(scenario.BaseArgusTest):
     def test_disk_expanded(self):
         # Test the disk expanded properly.
         image = self.manager.get_image_ref()
-        datastore_size = image[1]['OS-EXT-IMG-SIZE:size']
+        datastore_size = image['OS-EXT-IMG-SIZE:size']
         disk_size = self.introspection.get_disk_size()
         self.assertGreater(disk_size, datastore_size)
-
-    def test_username_created(self):
-        # Verify that the expected created user exists.
-        exists = self.introspection.username_exists(self.image.created_user)
-        self.assertTrue(exists)
 
     def test_hostname_set(self):
         # Test that the hostname was properly set.
@@ -103,7 +122,7 @@ class BaseSmokeTests(scenario.BaseArgusTest):
         self.assertEqual(instance_hostname,
                          str(server['name'][:15]).lower())
 
-    @skip_unless_dnsmasq_configured
+    @test_util.skip_unless_dnsmasq_configured
     def test_ntp_properly_configured(self):
         # Verify that the expected NTP peers are active.
         peers = self.introspection.get_instance_ntp_peers()
@@ -113,20 +132,6 @@ class BaseSmokeTests(scenario.BaseArgusTest):
 
         self.assertEqual(expected_peers, peers)
 
-    def test_password_set(self):
-        # Test that the proper password was set.
-        remote_client = self.manager.get_remote_client(
-            self.image.created_user,
-            self.manager.instance_password())
-        # Pylint emits properly this error, but it doesn't understand
-        # that this class is used as a mixin later on (and will
-        # never understand these cases). So it's okay to disable
-        # the message here.
-        # pylint: disable=no-member
-
-        stdout = remote_client.run_command_verbose("echo 1")
-        self.assertEqual('1', stdout.strip())
-
     def test_sshpublickeys_set(self):
         # Verify that we set the expected ssh keys.
         authorized_keys = self.introspection.get_instance_keys_path()
@@ -134,14 +139,7 @@ class BaseSmokeTests(scenario.BaseArgusTest):
             authorized_keys).replace('\r\n', '\n')
         self.assertEqual(self.manager.public_key(), public_key)
 
-    def test_userdata(self):
-        # Verify that we executed the expected number of
-        # user data plugins.
-        userdata_executed_plugins = (
-            self.introspection.get_userdata_executed_plugins())
-        self.assertEqual(4, userdata_executed_plugins)
-
-    @skip_unless_dnsmasq_configured
+    @test_util.skip_unless_dnsmasq_configured
     def test_mtu(self):
         # Verify that we have the expected MTU in the instance.
         mtu = self.introspection.get_instance_mtu()
@@ -154,33 +152,10 @@ class BaseSmokeTests(scenario.BaseArgusTest):
         instance_traceback = self.introspection.get_cloudbaseinit_traceback()
         self.assertEqual('', instance_traceback)
 
-    def test_local_scripts_executed(self):
-        # Verify that the shell script we provided as local script
-        # was executed.
-        self.assertTrue(self.introspection.instance_shell_script_executed())
-
     def test_user_belongs_to_group(self):
         # Check that the created user belongs to the specified local groups
         members = self.introspection.get_group_members(self.image.group)
         self.assertIn(self.image.created_user, members)
-
-    def test_cloudconfig_userdata(self):
-        # Verify that the cloudconfig part handler plugin executed correctly.
-        files = self.introspection.list_location("C:\\")
-        expected = {
-            'b64', 'b64_1',
-            'gzip', 'gzip_1',
-            'gzip_base64', 'gzip_base64_1', 'gzip_base64_2'
-        }
-        self.assertTrue(expected.issubset(set(files)),
-                        "The expected set is not subset of {}"
-                        .format(files))
-        for basefile in expected:
-            path = os.path.join("C:\\", basefile)
-            content = self.introspection.get_instance_file_content(path)
-            # The content of the cloudconfig files is '42', encoded
-            # in various forms.
-            self.assertEqual('42', content.strip())
 
     def test_get_console_output(self):
         # Verify that the product emits messages to the console output.

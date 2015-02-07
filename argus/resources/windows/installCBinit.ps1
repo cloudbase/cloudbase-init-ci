@@ -6,7 +6,7 @@ param
 $ErrorActionPreference = "Stop"
 
 
-function setLocalScripts([string]$programFiels) {
+function setLocalScripts([string]$programFilesDir) {
     $path = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
 
     # Write the locations of the scripts in the cloudbase-init configuration file.
@@ -41,20 +41,35 @@ function activateWindows([string]$programFiles) {
     ((Get-Content $path) + $value) | Set-content $path
 }
 
-try
-{
+function Set-CloudbaseInitServiceStartupPolicy {
+    #Cloudbase Init service must start only after the sysprep has rebooted the
+    #the Windows machine.
+    #In order to achieve this, the service is first disabled and reenabled
+    #using SetupComplete.cmd script.
+    #https://technet.microsoft.com/en-us/library/cc766314%28v=ws.10%29.aspx
+    
+    mkdir "${ENV:SystemRoot}\Setup\Scripts"
+    cmd /c 'sc config cloudbase-init start= demand'
+    Set-Content -Value "sc config cloudbase-init start= auto && net start cloudbase-init" `
+                -Path "${ENV:SystemRoot}\Setup\Scripts\SetupComplete.cmd"
+}
+
+
+try {
+
     $Host.UI.RawUI.WindowTitle = "Downloading Cloudbase-Init..."
 
     $osArch = (Get-WmiObject  Win32_OperatingSystem).OSArchitecture
+    $programDirs = @($ENV:ProgramFiles)
+
     if($osArch -eq "64-bit")
     {
         $CloudbaseInitMsi = "CloudbaseInitSetup_Beta_x64.msi"
-        $programFilesDir = ${ENV:ProgramFiles(x86)}
+        $programDirs += ${ENV:ProgramFiles(x86)}
     }
     else
     {
         $CloudbaseInitMsi = "CloudbaseInitSetup_Beta_x86.msi"
-        $programFilesDir = $ENV:ProgramFiles
     }
 
     $CloudbaseInitMsiPath = "$ENV:Temp\$CloudbaseInitMsi"
@@ -73,6 +88,16 @@ try
         throw "Installing $CloudbaseInitMsiPath failed. Log: $CloudbaseInitMsiLog"
     }
 
+    $programFilesDir = 0
+    foreach ($programDir in $programDirs) {
+        if (Test-Path "$programDir\Cloudbase Solutions") {
+            $programFilesDir = $programDir
+        }
+    }
+    if (!$programFilesDir) {
+        throw "Cloudbase-init installed files not found in $programDirs"
+    }
+
     setLocalScripts $programFilesDir
     activateWindows $programFilesDir
 
@@ -80,10 +105,9 @@ try
     {
         setService $programFilesDir
     }
-}
 
-catch
-{
+    Set-CloudbaseInitServiceStartupPolicy
+} catch {
     $host.ui.WriteErrorLine($_.Exception.ToString())
     $x = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     throw

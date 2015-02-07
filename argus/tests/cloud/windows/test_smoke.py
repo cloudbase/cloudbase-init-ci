@@ -15,12 +15,9 @@
 
 """Smoke tests for the cloudbaseinit."""
 
+from argus import scenario
 from argus.tests.cloud import smoke
-from argus.tests.cloud.windows import introspection
-from argus import util
-
-
-CONF = util.get_config()
+from argus.tests.cloud import util as test_util
 
 
 def _parse_licenses(output):
@@ -40,9 +37,7 @@ def _parse_licenses(output):
     return licenses
 
 
-class TestWindowsSmoke(smoke.BaseSmokeTests):
-
-    introspection_class = introspection.WindowsInstanceIntrospection
+class TestSmoke(smoke.BaseSmokeTests):
 
     def test_service_display_name(self):
         cmd = ('powershell (Get-Service "| where -Property Name '
@@ -51,7 +46,7 @@ class TestWindowsSmoke(smoke.BaseSmokeTests):
         stdout = self.run_command_verbose(cmd)
         self.assertEqual("Cloud Initialization Service\r\n", str(stdout))
 
-    @smoke.skip_unless_dnsmasq_configured
+    @test_util.skip_unless_dnsmasq_configured
     def test_ntp_service_running(self):
         # Test that the NTP service is started.
         cmd = ('powershell (Get-Service "| where -Property Name '
@@ -59,13 +54,6 @@ class TestWindowsSmoke(smoke.BaseSmokeTests):
         stdout = self.run_command_verbose(cmd)
 
         self.assertEqual("Running\r\n", str(stdout))
-
-    def test_local_scripts_executed(self):
-        super(TestWindowsSmoke, self).test_local_scripts_executed()
-
-        command = 'powershell "Test-Path C:\\Scripts\\powershell.output"'
-        stdout = self.remote_client.run_command_verbose(command)
-        self.assertEqual('True', stdout.strip())
 
     def test_licensing(self):
         # Check that the instance OS was licensed properly.
@@ -89,9 +77,62 @@ class TestWindowsSmoke(smoke.BaseSmokeTests):
         stdout = remote_client.run_command_verbose('echo 1')
         self.assertEqual('1', stdout.strip())
 
-    @smoke.skip_unless_dnsmasq_configured
+    @test_util.skip_unless_dnsmasq_configured
     def test_w32time_triggers(self):
         # Test that w32time has network availability triggers, not
         # domain joined triggers
         start_trigger, _ = self.introspection.get_service_triggers('w32time')
         self.assertEqual('IP ADDRESS AVAILABILITY', start_trigger)
+
+
+class TestScriptsUserdataSmoke(TestSmoke):
+    """This test is tied up to a particular userdata:
+
+       resources/windows/multipart_userdata
+
+    Because of this, it is separated from the actual Windows smoke tests,
+    but inherits from it in order to test the same things.
+    """
+
+    def test_cloudconfig_userdata(self):
+        # Verify that the cloudconfig part handler plugin executed correctly.
+        files = self.introspection.get_cloudconfig_executed_plugins()
+        expected = {
+            'b64', 'b64_1',
+            'gzip', 'gzip_1',
+            'gzip_base64', 'gzip_base64_1', 'gzip_base64_2'
+        }
+        self.assertTrue(expected.issubset(set(files)),
+                        "The expected set is not subset of {}"
+                        .format(files))
+
+        # The content of the cloudconfig files is '42', encoded
+        # in various forms. This is known in advance, so the
+        # multipart is tied with this test.
+        self.assertEqual(set(files.values()), {'42'})
+
+    def test_userdata(self):
+        # Verify that we executed the expected number of
+        # user data plugins.
+        userdata_executed_plugins = (
+            self.introspection.get_userdata_executed_plugins())
+        self.assertEqual(4, userdata_executed_plugins)
+
+    def test_local_scripts_executed(self):
+        # Verify that the shell script we provided as local script
+        # was executed.
+        self.assertTrue(self.introspection.instance_shell_script_executed())
+        self.assertTrue(self.introspection.instance_exe_script_executed())
+        command = 'powershell "Test-Path C:\\Scripts\\powershell.output"'
+        stdout = self.remote_client.run_command_verbose(command)
+        self.assertEqual('True', stdout.strip())
+
+
+class TestEC2Userdata(scenario.BaseArgusTest):
+
+    def test_ec2_script(self):
+        file_name = "ec2file.txt"
+        directory_name = "ec2dir"
+        names = self.introspection.list_location("C:\\")
+        self.assertIn(file_name, names)
+        self.assertIn(directory_name, names)

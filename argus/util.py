@@ -15,6 +15,7 @@
 
 import argparse
 import base64
+import importlib
 import logging
 import pkgutil
 import subprocess
@@ -32,6 +33,7 @@ __all__ = (
     'run_once',
     'get_resource',
     'cached_property',
+    'load_qualified_object',
 )
 
 DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -41,12 +43,12 @@ class WinRemoteClient(remote_client.WinRemoteClient):
     def run_command_verbose(self, cmd):
         """Run the given command and log anything it returns."""
 
-        LOG.info("Running command %s", cmd)
+        LOG.info("Running command %s...", cmd)
         stdout, stderr, exit_code = self.run_remote_cmd(cmd)
 
-        LOG.info("The command returned the output %s", stdout)
-        LOG.info("The stderr of the command was %s", stderr)
-        LOG.info("The exit code of the command was %s", exit_code)
+        LOG.info("The command returned the output: %s", stdout)
+        LOG.info("The stderr of the command was: %s", stderr)
+        LOG.info("The exit code of the command was: %s", exit_code)
         return stdout
 
 
@@ -101,7 +103,7 @@ def trap_failure(func):
             # pylint: disable=unused-variable
             exc = sys.exc_info()  # NOQA
 
-            LOG.exception("Exception occurred for func %s", func)
+            LOG.exception("Exception occurred for func %s.", func)
             import pdb
             pdb.set_trace()
     return wrapper
@@ -130,15 +132,37 @@ def parse_cli():
     parser.add_argument('--failfast', action='store_true',
                         default=False,
                         help='Fail the tests on the first failure.')
-    parser.add_argument('--conf', type=str, default=None,
+    parser.add_argument('--conf', type=str, required=True,
                         help="Give a path to the argus conf. "
                              "It should be an .ini file format "
                              "with a section called [argus].")
     parser.add_argument("--git-command", type=str, default=None,
                         help="Pass a git command which should be interpreted "
-                             "by a recipee.")
+                             "by a recipe.")
     parser.add_argument("-p", "--pause", action="store_true",
                         help="Pause argus before doing any test.")
+    parser.add_argument("--logging-format",
+                        type=str, default=DEFAULT_FORMAT,
+                        help="The logging format argus should use.")
+    parser.add_argument("--logging-file",
+                        type=str, default="argus.log",
+                        help="The logging file argus should use.")
+    parser.add_argument("--test-os-types",
+                        type=str, nargs="*",
+                        help="Test only those scenarios with these OS types. "
+                             "By default, all scenarios are executed. "
+                             "For instance, to run only the Windows and "
+                             "FreeBSD scenarios, use "
+                             "`--test-os-types Windows,FreeBSD`")
+    parser.add_argument("--test-scenario-type",
+                        type=str,
+                        help="Test only the scenarios with this type. "
+                             "The type can be `smoke` or `deep`. By default, "
+                             "all scenarios types are executed.")
+    parser.add_argument("-o", "--instance-output",
+                        metavar="DIRECTORY",
+                        help="Save the instance console output "
+                             "content in this path.")
     opts = parser.parse_args()
     return opts
 
@@ -150,22 +174,70 @@ def get_config():
     return config.parse_config(opts.conf)
 
 
-@run_once
-def get_logger():
-    """Get the default logger."""
-    logger = logging.getLogger('argus')
-    conf = get_config()
-    formatter = logging.Formatter(conf.argus.log_format or DEFAULT_FORMAT)
+def get_logger(name="argus", format_string=None):
+    """Obtain a new logger object.
 
-    if conf.argus.file_log:
-        file_handler = logging.FileHandler(conf.argus.file_log)
-        file_handler.setFormatter(formatter)
-        logger.addHandler(file_handler)
+    The `name` parameter will be the name of the logger
+    and `format_string` will be the format it will
+    use for logging.
+    If it is not given, the the one given at command
+    line will be used, otherwise the default format.
+    """
+    logger = logging.getLogger(name)
+    opts = parse_cli()
+    formatter = logging.Formatter(
+        format_string or opts.logging_format or DEFAULT_FORMAT)
 
-    stdout_handler = logging.StreamHandler(sys.stdout)
-    stdout_handler.setFormatter(formatter)
-    logger.addHandler(stdout_handler)
+    if not logger.handlers:
+        # If the logger wasn't obtained another time,
+        # then it shouldn't have any loggers
+
+        if opts.logging_file:
+            file_handler = logging.FileHandler(opts.logging_file)
+            file_handler.setFormatter(formatter)
+            logger.addHandler(file_handler)
+
+        stdout_handler = logging.StreamHandler(sys.stdout)
+        stdout_handler.setFormatter(formatter)
+        logger.addHandler(stdout_handler)
+
     logger.setLevel(logging.DEBUG)
     return logger
 
-LOG = get_logger()
+
+def load_qualified_object(obj):
+    """Load a qualified object name.
+
+    The name must be in the format module:qualname syntax.
+    """
+    mod_name, has_attrs, attrs = obj.partition(":")
+    obj = module = importlib.import_module(mod_name)
+
+    if has_attrs:
+        parts = attrs.split(".")
+        obj = module
+        for part in parts:
+            obj = getattr(obj, part)
+    return obj
+
+
+class ProxyLogger(object):
+    """Proxy class for the logging object.
+
+    This comes in hand when using argus as a library,
+    so there is no need to provide required CLI arguments,
+    just to import argus.util.
+    """
+
+    def __init__(self):
+        self._logger = None
+
+    def __getattr__(self, attr):
+        # single instantiation on access only
+        if not self._logger:
+            self._logger = get_logger()
+        obj = getattr(self._logger, attr)
+        self.__dict__[attr] = obj
+        return obj
+
+LOG = ProxyLogger()

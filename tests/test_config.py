@@ -46,20 +46,31 @@ class TestConfig(unittest.TestCase):
         [cloudbaseinit]
         expected_plugins_count = 4
 
-        [image_0]
+        [image_8]
         default_ci_username = Admin
         default_ci_password = Passw0rd
-        service_type = configdrive
         image_ref = image_ref
         flavor_ref = flavor_ref
         group = 4
         created_user = 5
+
+        [scenario_windows]
+        scenario = 3
+        test_classes = 4,5, 6, 7,   8,
+                       0,2
+        recipe = 5
+        userdata = 6
+        metadata = 7
+        image = 8
+        service_type = configdrive
+        introspection = something
         """)
 
         parsed = config.parse_config(tmp)
         self.assertTrue({'argus',
                          'images',
-                         'cloudbaseinit'}.issubset(set(dir(parsed))))
+                         'cloudbaseinit',
+                         'scenarios'}.issubset(set(dir(parsed))))
 
         self.assertEqual('a', parsed.argus.resources)
         self.assertFalse(parsed.argus.debug)
@@ -73,9 +84,17 @@ class TestConfig(unittest.TestCase):
         self.assertIsInstance(parsed.images, list)
         self.assertEqual('Admin', parsed.images[0].default_ci_username)
         self.assertEqual('Passw0rd', parsed.images[0].default_ci_password)
-        self.assertEqual('configdrive', parsed.images[0].service_type)
         self.assertEqual('image_ref', parsed.images[0].image_ref)
         self.assertEqual('flavor_ref', parsed.images[0].flavor_ref)
         self.assertEqual('4', parsed.images[0].group)
         self.assertEqual('5', parsed.images[0].created_user)
 
+        self.assertEqual('3', parsed.scenarios[0].scenario)
+        self.assertEqual(['4', '5', '6', '7', '8', '0', '2'],
+                         parsed.scenarios[0].test_classes)
+        self.assertEqual('5', parsed.scenarios[0].recipe)
+        self.assertEqual('6', parsed.scenarios[0].userdata)
+        self.assertEqual('7', parsed.scenarios[0].metadata)
+        self.assertEqual(parsed.images[0], parsed.scenarios[0].image)
+        self.assertEqual('configdrive', parsed.scenarios[0].service_type)
+        self.assertEqual('something', parsed.scenarios[0].introspection)

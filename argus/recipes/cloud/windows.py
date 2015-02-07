@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Windows cloudbaseinit recipees."""
+"""Windows cloudbaseinit recipes."""
 
 import contextlib
 import ntpath
@@ -24,14 +24,17 @@ import six
 from six.moves import urllib  # pylint: disable=import-error
 
 from argus import exceptions
-from argus.recipees.cloud import base
+from argus.introspection.cloud import windows as introspection
+from argus.recipes.cloud import base
 from argus import util
 
 CONF = util.get_config()
 LOG = util.get_logger()
 
 __all__ = (
-    'WindowsCloudbaseinitRecipee',
+    'CloudbaseinitRecipe',
+    'CloudbaseinitScriptRecipe',
+    'CloudbaseinitCreateUserRecipe',
 )
 
 
@@ -60,26 +63,11 @@ def _get_git_link():
     raise exceptions.ArgusError("git download link not found.")
 
 
-class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
-    """Recipee for preparing a Windows instance."""
-
-    def get_program_files(self):
-        """Get the location of program files from the instance."""
-        stdout, _ = self._execute(
-            'powershell "(Get-WmiObject  Win32_OperatingSystem).'
-            'OSArchitecture"')
-        architecture = stdout.strip()
-
-        # Next, get the location.
-        if architecture == '64-bit':
-            location, _ = self._execute(
-                'powershell "${ENV:ProgramFiles(x86)}"')
-        else:
-            location, _ = self._execute('powershell "$ENV:ProgramFiles"')
-        return location.strip()
+class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
+    """Recipe for preparing a Windows instance."""
 
     def wait_for_boot_completion(self):
-        LOG.info("Waiting for boot completion")
+        LOG.info("Waiting for boot completion...")
 
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
                     'where -Property Name -contains {0}).Name"'
@@ -90,7 +78,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
 
     def get_installation_script(self):
         """Get an insallation script for CloudbaseInit."""
-        LOG.info("Retrieve an installation script for CloudbaseInit")
+        LOG.info("Retrieve an installation script for CloudbaseInit.")
 
         cmd = ("powershell Invoke-webrequest -uri "
                "{}/windows/installCBinit.ps1 -outfile C:\\installcbinit.ps1"
@@ -99,15 +87,15 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
 
     def install_cbinit(self):
         """Run the installation script for CloudbaseInit."""
-        LOG.info("Run the downloaded installation script")
+        LOG.info("Run the downloaded installation script.")
 
         cmd = ('powershell "C:\\\\installcbinit.ps1 -serviceType {}"'
-               .format(self._image.service_type))
+               .format(self._service_type))
         self._execute(cmd)
 
     def install_git(self):
         """Install git in the instance."""
-        LOG.info("Installing git.")
+        LOG.info("Installing git...")
 
         cmd = ("powershell Invoke-webrequest -uri "
                "{}/windows/install_git.ps1 -outfile C:\\\\install_git.ps1"
@@ -127,42 +115,39 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
             # Nothing to replace.
             return
 
-        LOG.info("Replacing cloudbaseinit's code.")
+        LOG.info("Replacing cloudbaseinit's code...")
 
-        LOG.info("Getting program files location.")
-        # Get the program files location.
-        program_files = self.get_program_files()
+        LOG.info("Getting cloudbase-init location...")
+        # Get cb-init python location.
+        python_dir = introspection.get_python_dir(self._execute)
 
         # Remove everything from the cloudbaseinit installation.
-        LOG.info("Removing recursively cloudbaseinit.")
+        LOG.info("Removing recursively cloudbaseinit...")
         cloudbaseinit = ntpath.join(
-            program_files, "Cloudbase Solutions",
-            "Cloudbase-Init",
-            # TODO(cpopa): take care of this when testing Python 3.
-            "Python27",
+            python_dir,
             "Lib",
             "site-packages",
             "cloudbaseinit")
         self._execute('rmdir "{}" /S /q'.format(cloudbaseinit))
 
         # Clone the repo
-        LOG.info("cloning the cloudbaseinit repo.")
+        LOG.info("Cloning the cloudbaseinit repo...")
         self._execute("git clone https://github.com/stackforge/"
                       "cloudbase-init C:\\cloudbaseinit")
 
         # Run the command provided at cli.
-        LOG.info("Applying cli patch.")
+        LOG.info("Applying cli patch...")
         self._execute("cd C:\\cloudbaseinit && {}".format(opts.git_command))
 
         # Replace the code, by moving the code from cloudbaseinit
         # to the installed location.
-        LOG.info("Replacing code.")
+        LOG.info("Replacing code...")
         self._execute('powershell "Copy-Item C:\\cloudbaseinit\\cloudbaseinit '
                       '\'{}\' -Recurse"'.format(cloudbaseinit))
 
     def sysprep(self):
         """Prepare the instance for the actual tests, by running sysprep."""
-        LOG.info("Running sysprep.")
+        LOG.info("Running sysprep...")
 
         cmd = ("powershell Invoke-webrequest -uri "
                "{}/windows/sysprep.ps1 -outfile 'C:\\sysprep.ps1'"
@@ -175,12 +160,15 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
 
         The function waits until all the plugins have been executed.
         """
-        LOG.info("Waiting for the finalization of CloudbaseInit execution")
+        LOG.info("Waiting for the finalization of CloudbaseInit execution...")
 
         # Test that this instance's cloudbaseinit run exists.
-        key = ('HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` '
-               'Solutions\\Cloudbase-init\\{0}'
-               .format(self._instance_id))
+        self._run_cmd_until_condition(
+            "echo 1",
+            lambda out: out.strip() == "1"
+        )
+        head = introspection.get_cbinit_key(self._execute)
+        key = "{0}\\{1}".format(head, self._instance_id)
         self._run_cmd_until_condition(
             'powershell Test-Path "{0}"'.format(key),
             lambda out: out.strip() == 'True')
@@ -195,7 +183,7 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
     def wait_reboot(self):
         """Do a reboot and wait until the instance is up."""
 
-        LOG.info('Waiting for server status SHUTOFF because of sysprep')
+        LOG.info('Waiting for server status SHUTOFF because of sysprep...')
         self._api_manager.servers_client.wait_for_server_status(
             server_id=self._instance_id,
             status='SHUTOFF',
@@ -203,7 +191,37 @@ class WindowsCloudbaseinitRecipee(base.BaseCloudbaseinitRecipee):
 
         self._api_manager.servers_client.start(self._instance_id)
 
-        LOG.info('Waiting for server status ACTIVE')
+        LOG.info('Waiting for server status ACTIVE...')
         self._api_manager.servers_client.wait_for_server_status(
             server_id=self._instance_id,
             status='ACTIVE')
+
+
+class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):
+    """A recipe which adds support for testing .exe scripts."""
+
+    def pre_sysprep(self):
+        LOG.info("Doing last step before sysprepping.")
+
+        cmd = ("powershell Invoke-WebRequest -uri "
+               "{}/windows/test_exe.exe -outfile "
+               "'C:\\Scripts\\test_exe.exe'".format(CONF.argus.resources))
+        self._execute(cmd)
+
+
+class CloudbaseinitCreateUserRecipe(CloudbaseinitRecipe):
+    """A recipe for creating the user created by cloudbaseinit.
+
+    The purpose is to use this recipe for testing that cloudbaseinit
+    works, even when the user which should be created already exists.
+    """
+
+    def pre_sysprep(self):
+        LOG.info("Creating the user %s...", self._image.created_user)
+        cmd = ("powershell Invoke-webrequest -uri "
+               "{}/windows/create_user.ps1 -outfile C:\\\\create_user.ps1"
+               .format(CONF.argus.resources))
+        self._execute(cmd)
+
+        self._execute('powershell "C:\\\\create_user.ps1 -user {}"'.format(
+            self._image.created_user))
