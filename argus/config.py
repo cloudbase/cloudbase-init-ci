@@ -15,6 +15,7 @@
 
 import collections
 import itertools
+import operator
 
 import six
 
@@ -33,6 +34,66 @@ def _get_default(parser, section, option, default=None):
         return parser.get(section, option)
     except six.moves.configparser.NoOptionError:
         return default
+
+
+class _Option(object):
+    def __init__(self, option, method='get', default=None):
+        self._option = option
+        self._method = method
+        self._default = default
+
+    def __get__(self, instance, owner=None):
+        # pylint: disable=protected-access
+        return instance._get_option(self._option,
+                                    self._method,
+                                    self._default)
+
+
+class _ScenarioSection(object):
+    """Parser for a scenario section.
+
+    This parser handles the parsing of scenario sections,
+    taking in account their parents, if any.
+    To specify a parent for a scenario, use this syntax:
+
+       [scenario inherits base_scenario]
+    """
+
+    def __init__(self, section_key, parser):
+        self._parser = parser
+        self._parent = None
+        self._key = section_key
+        self.scenario_name = None
+
+        name, attr, parent = section_key.partition(" inherits ")
+        if attr:
+            self._parent = parent.strip()
+        self.scenario_name = name.strip().partition("scenario_")[2]
+
+    def _get_option(self, option, method='get', default=None):
+        local_getter = operator.methodcaller(method, self._key, option)
+        parent_getter = operator.methodcaller(method, self._parent, option)
+        try:
+            return local_getter(self._parser)
+        except six.moves.configparser.NoOptionError:
+            if self._parent:
+                try:
+                    return parent_getter(self._parser)
+                except six.moves.configparser.NoOptionError:
+                    if default:
+                        return default
+            raise
+
+    scenario_class = _Option(option='scenario')
+    test_classes = _Option(option='test_classes',
+                           method='getlist')
+    recipe = _Option(option='recipe')
+    userdata = _Option(option='userdata')
+    metadata = _Option(option='metadata')
+    image = _Option(option='image')
+    scenario_type = _Option(option='type')
+    service_type = _Option(option='service_type', default='http')
+    introspection = _Option(option='introspection')
 
 
 def parse_config(filename):
@@ -117,22 +178,18 @@ def parse_config(filename):
     for key in parser.sections():
         if not key.startswith("scenario_"):
             continue
+        section = _ScenarioSection(key, parser)
+        image = images_names[section.image]
 
-        scenario_class = parser.get(key, 'scenario')
-        scenario_name = key.partition("scenario_")[2]
-        test_classes = parser.get(key, 'test_classes')
-
-        test_classes = parser.getlist(key, 'test_classes')
-        recipe = parser.get(key, 'recipe')
-        userdata = parser.get(key, 'userdata')
-        metadata = parser.get(key, 'metadata')
-        image = images_names[parser.get(key, 'image')]
-        scenario_type = _get_default(parser, key, 'type')
-        service_type = _get_default(parser, key, 'service_type', 'http')
-        introspection = parser.get(key, 'introspection')
-        scenarios.append(scenario(scenario_name, scenario_class, test_classes,
-                                  recipe, userdata, metadata, image,
-                                  scenario_type, service_type,
-                                  introspection))
+        scenarios.append(scenario(section.scenario_name,
+                                  section.scenario_class,
+                                  section.test_classes,
+                                  section.recipe,
+                                  section.userdata,
+                                  section.metadata,
+                                  image,
+                                  section.scenario_type,
+                                  section.service_type,
+                                  section.introspection))
 
     return conf(argus, cloudbaseinit, images, scenarios)
