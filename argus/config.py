@@ -56,7 +56,7 @@ class _ScenarioSection(object):
     taking in account their parents, if any.
     To specify a parent for a scenario, use this syntax:
 
-       [scenario inherits base_scenario]
+       [scenario : base_scenario]
     """
 
     def __init__(self, section_key, parser):
@@ -65,7 +65,7 @@ class _ScenarioSection(object):
         self._key = section_key
         self.scenario_name = None
 
-        name, attr, parent = section_key.partition(" inherits ")
+        name, attr, parent = section_key.partition(":")
         if attr:
             self._parent = parent.strip()
         self.scenario_name = name.strip().partition("scenario_")[2]
