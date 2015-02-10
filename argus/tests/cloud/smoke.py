@@ -110,6 +110,8 @@ class BaseSmokeTests(CreatedUserTest,
     def test_disk_expanded(self):
         # Test the disk expanded properly.
         image = self.manager.get_image_ref()
+        if isinstance(image, tuple):
+            image = image[1]
         datastore_size = image['OS-EXT-IMG-SIZE:size']
         disk_size = self.introspection.get_disk_size()
         self.assertGreater(disk_size, datastore_size)
