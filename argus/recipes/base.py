@@ -58,8 +58,8 @@ class BaseRecipe(object):
         stdout, stderr, return_code = self._remote_client.run_remote_cmd(cmd)
         if return_code:
             raise exceptions.ArgusError(
-                "command {command!r} failed with "
-                "return code {return_code!r}"
+                "Command {command!r} failed with "
+                "return code {return_code!r}."
                 .format(command=cmd,
                         return_code=return_code))
         return stdout, stderr
@@ -92,7 +92,7 @@ class BaseRecipe(object):
                 count += 1
                 if retry_count and count >= retry_count:
                     raise exceptions.ArgusTimeoutError(
-                        "command {!r} failed too many times"
+                        "Command {!r} failed too many times."
                         .format(cmd))
                 time.sleep(retry_count_interval)
 

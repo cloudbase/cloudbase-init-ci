@@ -67,7 +67,7 @@ class WinRemoteClient(object):
             if exit_code:
                 raise exceptions.ArgusError(
                     "Executing command {command!r} failed with "
-                    "exit code {exit_code!r} and output {output!r}"
+                    "exit code {exit_code!r} and output {output!r}."
                     .format(command=command,
                             exit_code=exit_code,
                             output=stdout))

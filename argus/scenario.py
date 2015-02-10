@@ -160,7 +160,7 @@ class BaseArgusScenario(object):
             return self._isolated_creds.get_admin_creds()
         except NotImplementedError:
             raise exceptions.ArgusError(
-                'Admin Credentials are not available')
+                'Admin Credentials are not available.')
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         _, server = self._servers_client.create_server(
@@ -350,7 +350,7 @@ class BaseArgusScenario(object):
 
     def prepare_instance(self):
         if self._recipe is None:
-            raise exceptions.ArgusError('recipe must be set')
+            raise exceptions.ArgusError('Recipe must be set.')
 
         LOG.info("Preparing instance...")
         # pylint: disable=not-callable

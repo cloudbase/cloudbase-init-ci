@@ -67,7 +67,7 @@ def requires_service(service_type='http'):
         def wrapper(self):
             if self.service_type != service_type:
                 raise unittest.SkipTest(
-                    "Not the expected service type.""")
+                    "Not the expected service type.")
             return func(self)
         return wrapper
     return factory

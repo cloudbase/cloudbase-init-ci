@@ -60,7 +60,7 @@ def _get_git_link():
         if not href.endswith('.exe'):
             continue
         return href
-    raise exceptions.ArgusError("git download link not found.")
+    raise exceptions.ArgusError("Git download link not found.")
 
 
 class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
