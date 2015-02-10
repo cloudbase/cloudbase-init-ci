@@ -65,7 +65,7 @@ def decrypt_password(private_key, password):
     out, err = proc.communicate(unencoded)
     proc.stdin.close()
     if proc.returncode:
-        raise Exception("Failed calling openssl with error: {!r}"
+        raise Exception("Failed calling openssl with error: {!r}."
                         .format(err))
     return out
 
