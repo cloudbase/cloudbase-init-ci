@@ -98,7 +98,7 @@ class TestConfig(unittest.TestCase):
         metadata = 7
         introspection = something
 
-        [scenario_windows inherits base_scenario]
+        [scenario_windows : base_scenario]
         type = smoke
         scenario = 3
         image = 8

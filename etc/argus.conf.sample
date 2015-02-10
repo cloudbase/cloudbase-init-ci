@@ -60,7 +60,7 @@ os_type = Windows
 # be looked into the parent, if any, if they don't exist in the current scenario.
 # To specify a parent for a scenario, use this syntax:
 #
-# [scenario inherits base_scenario]
+# [scenario : base_scenario]
 
 # Mark the type of this scenario. Scenarios can have types such as
 # `smoke`, `deep` or no type at all. Scenarios can be filtered
