@@ -163,7 +163,7 @@ class BaseArgusScenario(object):
                 'Admin Credentials are not available.')
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
-        _, server = self._servers_client.create_server(
+        server = self._servers_client.create_server(
             data_utils.rand_name(self.__class__.__name__ + "-instance"),
             self._image.image_ref,
             self._image.flavor_ref,
@@ -172,14 +172,14 @@ class BaseArgusScenario(object):
         return server
 
     def _create_keypair(self):
-        _, keypair = self._keypairs_client.create_keypair(
+        keypair = self._keypairs_client.create_keypair(
             self.__class__.__name__ + "-key")
         with open(CONF.argus.path_to_private_key, 'w') as stream:
             stream.write(keypair['private_key'])
         return keypair
 
     def _assign_floating_ip(self):
-        _, floating_ip = self._floating_ips_client.create_floating_ip()
+        floating_ip = self._floating_ips_client.create_floating_ip()
 
         self._floating_ips_client.associate_floating_ip_to_server(
             floating_ip['ip'], self._server['id'])
@@ -225,14 +225,14 @@ class BaseArgusScenario(object):
             },
         ]
         for ruleset in rulesets:
-            _, sg_rule = _client.create_security_group_rule(secgroup_id,
-                                                            **ruleset)
+            sg_rule = _client.create_security_group_rule(secgroup_id,
+                                                         **ruleset)
             yield sg_rule
 
     def _create_security_groups(self):
         sg_name = data_utils.rand_name(self.__class__.__name__)
         sg_desc = sg_name + " description"
-        _, secgroup = self._security_groups_client.create_security_group(
+        secgroup = self._security_groups_client.create_security_group(
             sg_name, sg_desc)
 
         # Add rules to the security group
