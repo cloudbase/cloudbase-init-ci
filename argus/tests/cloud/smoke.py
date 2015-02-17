@@ -110,8 +110,6 @@ class BaseSmokeTests(CreatedUserTest,
     def test_disk_expanded(self):
         # Test the disk expanded properly.
         image = self.manager.get_image_ref()
-        if isinstance(image, tuple):
-            image = image[1]
         datastore_size = image['OS-EXT-IMG-SIZE:size']
         disk_size = self.introspection.get_disk_size()
         self.assertGreater(disk_size, datastore_size)
@@ -119,7 +117,7 @@ class BaseSmokeTests(CreatedUserTest,
     def test_hostname_set(self):
         # Test that the hostname was properly set.
         instance_hostname = self.introspection.get_instance_hostname()
-        server = self.manager.instance_server()[1]
+        server = test_util.get_dict(self.manager.instance_server())
 
         self.assertEqual(instance_hostname,
                          str(server['name'][:15]).lower())
