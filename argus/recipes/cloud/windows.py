@@ -35,6 +35,7 @@ __all__ = (
     'CloudbaseinitRecipe',
     'CloudbaseinitScriptRecipe',
     'CloudbaseinitCreateUserRecipe',
+    'CloudbaseinitSpecializeRecipe',
 )
 
 
@@ -225,3 +226,20 @@ class CloudbaseinitCreateUserRecipe(CloudbaseinitRecipe):
 
         self._execute('powershell "C:\\\\create_user.ps1 -user {}"'.format(
             self._image.created_user))
+
+
+class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
+    """A recipe for testing errors in specialize part.
+
+    We'll need to test the specialize part as well and
+    this recipe ensures us that something will fail there,
+    in order to see if argus catches that error.
+    """
+
+    def pre_sysprep(self):
+        LOG.info("Preparing cloudbaseinit for failure.")
+        python_dir = introspection.get_python_dir(self._execute)
+        path = os.path.join(python_dir, "Lib", "site-packages",
+                            "cloudbaseinit", "plugins", "common",
+                            "mtu.py")
+        self._execute('rm "{}"'.format(path))
