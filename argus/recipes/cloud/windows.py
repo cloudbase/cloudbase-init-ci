@@ -94,6 +94,22 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                .format(self._service_type))
         self._execute(cmd)
 
+        self._grab_cbinit_installation_log()
+
+    def _grab_cbinit_installation_log(self):
+        """Obtain the installation logs."""
+        LOG.info("Obtaining the installation logs.")
+        if not self._output_directory:
+            LOG.warning("The output directory wasn't given, "
+                        "the log will not be grabbed.")
+            return
+
+        content = self._remote_client.read_file("C:\\installation.log")
+        path = os.path.join(self._output_directory,
+                            "installation-{}.log".format(self._instance_id))
+        with open(path, 'w') as stream:
+            stream.write(content)
+
     def install_git(self):
         """Install git in the instance."""
         LOG.info("Installing git...")

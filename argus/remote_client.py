@@ -123,3 +123,8 @@ class WinRemoteClient(object):
 
             commands.append(remote_command)
         self._run_commands(commands)
+
+    def read_file(self, filepath):
+        """Get the content of the given file."""
+        cmd = 'powershell Get-Content "{}"'.format(filepath)
+        return self.run_remote_cmd(cmd)[0]
