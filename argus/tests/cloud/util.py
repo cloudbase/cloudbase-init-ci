@@ -25,7 +25,6 @@ from argus import util
 __all__ = (
     'skip_unless_dnsmasq_configured',
     'requires_service',
-    'get_dict',
 )
 
 
@@ -72,10 +71,3 @@ def requires_service(service_type='http'):
             return func(self)
         return wrapper
     return factory
-
-
-def get_dict(response_body):
-    """Get the dict-like object from a manager response."""
-    if isinstance(response_body, tuple):
-        response_body = response_body[1]
-    return response_body
