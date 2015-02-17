@@ -82,10 +82,10 @@ try {
 
     $serialPortName = @(Get-WmiObject Win32_SerialPort)[0].DeviceId
 
-    $p = Start-Process -Wait
-                       -PassThru
-                       -Verb runas
-                       -FilePath msiexec
+    $p = Start-Process -Wait `
+                       -PassThru `
+                       -Verb runas `
+                       -FilePath msiexec `
                        -ArgumentList "/i $CloudbaseInitMsiPath /qn /l*v $CloudbaseInitMsiLog LOGGINGSERIALPORTNAME=$serialPortName"
     if ($p.ExitCode -ne 0)
     {
