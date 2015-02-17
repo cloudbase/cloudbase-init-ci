@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 try
 {
 
-    $osArch = (Get-WmiObject  Win32_OperatingSystem).OSArchitecture
+    $osArch = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
     if($osArch -eq "64-bit")
     {
         $programFilesDir = ${ENV:ProgramFiles(x86)}
@@ -12,7 +12,8 @@ try
     {
         $programFilesDir = $ENV:ProgramFiles
     }
-        $Host.UI.RawUI.WindowTitle = "Running Sysprep..."
+
+    $Host.UI.RawUI.WindowTitle = "Running Sysprep..."
     $unattendedXmlPath = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\Unattend.xml"
     & "$ENV:SystemRoot\System32\Sysprep\Sysprep.exe" `/generalize `/oobe `/reboot `/unattend:"$unattendedXmlPath"
 }

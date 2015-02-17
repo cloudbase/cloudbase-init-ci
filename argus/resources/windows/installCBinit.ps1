@@ -6,8 +6,8 @@ param
 $ErrorActionPreference = "Stop"
 
 
-function setLocalScripts([string]$programFilesDir) {
-    $path = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
+function Set-LocalScripts([string]$ProgramFilesDir) {
+    $path = "$ProgramFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
 
     # Write the locations of the scripts in the cloudbase-init configuration file.
     $home_drive = ${ENV:HOMEDRIVE}
@@ -22,22 +22,22 @@ function setLocalScripts([string]$programFilesDir) {
 }
 
 
-function setService([string]$programFiles) {
-    $path = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
+function Set-Service([string]$ProgramFiles) {
+    $path = "$ProgramFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
 
     if ($serviceType -eq 'http') {
         $value = "metadata_services=cloudbaseinit.metadata.services.httpservice.HttpService"
     } elseif ($serviceType -eq 'configdrive') {
         $value = "metadata_services=cloudbaseinit.metadata.services.configdrive.ConfigDriveService"
     } elseif ($serviceType -eq 'ec2') {
-            $value = "metadata_services=cloudbaseinit.metadata.services.ec2service.EC2Service"
+        $value = "metadata_services=cloudbaseinit.metadata.services.ec2service.EC2Service"
     }
     ((Get-Content $path) + $value) | Set-content $path
 }
 
-function activateWindows([string]$programFiles) {
+function Set-WindowsActivation([string]$ProgramFiles) {
     $value = "activate_windows=True"
-    $path = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
+    $path = "$ProgramFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
     ((Get-Content $path) + $value) | Set-content $path
 }
 
@@ -59,7 +59,7 @@ try {
 
     $Host.UI.RawUI.WindowTitle = "Downloading Cloudbase-Init..."
 
-    $osArch = (Get-WmiObject  Win32_OperatingSystem).OSArchitecture
+    $osArch = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
     $programDirs = @($ENV:ProgramFiles)
 
     if($osArch -eq "64-bit")
@@ -82,28 +82,32 @@ try {
 
     $serialPortName = @(Get-WmiObject Win32_SerialPort)[0].DeviceId
 
-    $p = Start-Process -Wait -PassThru -Verb runas -FilePath msiexec -ArgumentList "/i $CloudbaseInitMsiPath /qn /l*v $CloudbaseInitMsiLog LOGGINGSERIALPORTNAME=$serialPortName"
+    $p = Start-Process -Wait
+                       -PassThru
+                       -Verb runas
+                       -FilePath msiexec
+                       -ArgumentList "/i $CloudbaseInitMsiPath /qn /l*v $CloudbaseInitMsiLog LOGGINGSERIALPORTNAME=$serialPortName"
     if ($p.ExitCode -ne 0)
     {
         throw "Installing $CloudbaseInitMsiPath failed. Log: $CloudbaseInitMsiLog"
     }
 
-    $programFilesDir = 0
+    $ProgramFilesDir = 0
     foreach ($programDir in $programDirs) {
         if (Test-Path "$programDir\Cloudbase Solutions") {
-            $programFilesDir = $programDir
+            $ProgramFilesDir = $programDir
         }
     }
-    if (!$programFilesDir) {
+    if (!$ProgramFilesDir) {
         throw "Cloudbase-init installed files not found in $programDirs"
     }
 
-    setLocalScripts $programFilesDir
-    activateWindows $programFilesDir
+    Set-LocalScripts $ProgramFilesDir
+    Set-WindowsActivation $ProgramFilesDir
 
     if ($serviceType)
     {
-        setService $programFilesDir
+        Set-Service $ProgramFilesDir
     }
 
     Set-CloudbaseInitServiceStartupPolicy
