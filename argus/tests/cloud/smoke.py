@@ -117,7 +117,7 @@ class BaseSmokeTests(CreatedUserTest,
     def test_hostname_set(self):
         # Test that the hostname was properly set.
         instance_hostname = self.introspection.get_instance_hostname()
-        server = test_util.get_dict(self.manager.instance_server())
+        server = self.manager.instance_server()
 
         self.assertEqual(instance_hostname,
                          str(server['name'][:15]).lower())
