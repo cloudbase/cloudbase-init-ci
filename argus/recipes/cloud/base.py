@@ -79,6 +79,10 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         """
 
     @abc.abstractmethod
+    def replace_install(self):
+        """Do whatever is necessary to replace the installation."""
+
+    @abc.abstractmethod
     def replace_code(self):
         """Do whatever is necessary to replace the code for cloudbaseinit."""
 
@@ -96,6 +100,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         self.wait_for_boot_completion()
         self.get_installation_script()
         self.install_cbinit()
+        self.replace_install()
         self.install_git()
         self.replace_code()
         # pause the process until user is satisfied with his changes
