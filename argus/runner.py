@@ -161,7 +161,7 @@ def _build_scenario(scenario):
         service_type=scenario.service_type,
         introspection=introspection,
         result=test_result,
-        output_directory=cli_opts)
+        output_directory=cli_opts.instance_output)
 
 
 def _filter_scenarios(scenarios):
