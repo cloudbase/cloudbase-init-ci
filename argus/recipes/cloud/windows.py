@@ -35,6 +35,7 @@ __all__ = (
     'CloudbaseinitRecipe',
     'CloudbaseinitScriptRecipe',
     'CloudbaseinitCreateUserRecipe',
+    'CloudbaseinitSpecializeRecipe',
 )
 
 
@@ -158,22 +159,9 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     def wait_cbinit_finalization(self):
         """Wait for the finalization of CloudbaseInit.
 
-        The function waits until all the plugins have been executed.
+        The function waits until cloudbaseinit fininished.
         """
         LOG.info("Waiting for the finalization of CloudbaseInit execution...")
-
-        # Test that this instance's cloudbaseinit run exists.
-
-        def execute(cmd):
-            return self._execute_with_retry(cmd)[0]
-
-        head = introspection.get_cbinit_key(execute)
-        key = "{0}\\{1}".format(head, self._instance_id)
-        self._run_cmd_until_condition(
-            'powershell Test-Path "{0}"'.format(key),
-            lambda out: out.strip() == 'True')
-
-        # Test the number of executed cloudbaseinit plugins.
         wait_cmd = ('powershell (Get-Service "| where -Property Name '
                     '-match cloudbase-init").Status')
         self._run_cmd_until_condition(
@@ -225,3 +213,22 @@ class CloudbaseinitCreateUserRecipe(CloudbaseinitRecipe):
 
         self._execute('powershell "C:\\\\create_user.ps1 -user {}"'.format(
             self._image.created_user))
+
+
+class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
+    """A recipe for testing errors in specialize part.
+
+    We'll need to test the specialize part as well and
+    this recipe ensures us that something will fail there,
+    in order to see if argus catches that error.
+    """
+
+    def pre_sysprep(self):
+        LOG.info("Preparing cloudbaseinit for failure.")
+        python_dir = introspection.get_python_dir(self._execute)
+        path = ntpath.join(python_dir, "Lib", "site-packages",
+                           "cloudbaseinit", "plugins", "common",
+                           "mtu.py")
+        self._execute('del "{}"'.format(path))
+        # *.pyc
+        self._execute('del "{}c"'.format(path))
