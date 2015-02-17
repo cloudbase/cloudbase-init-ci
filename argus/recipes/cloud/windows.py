@@ -239,7 +239,9 @@ class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
     def pre_sysprep(self):
         LOG.info("Preparing cloudbaseinit for failure.")
         python_dir = introspection.get_python_dir(self._execute)
-        path = os.path.join(python_dir, "Lib", "site-packages",
-                            "cloudbaseinit", "plugins", "common",
-                            "mtu.py")
-        self._execute('rm "{}"'.format(path))
+        path = ntpath.join(python_dir, "Lib", "site-packages",
+                           "cloudbaseinit", "plugins", "common",
+                           "mtu.py")
+        self._execute('del "{}"'.format(path))
+        # *.pyc
+        self._execute('del "{}c"'.format(path))

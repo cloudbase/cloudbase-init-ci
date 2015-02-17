@@ -140,6 +140,6 @@ class TestEC2Userdata(scenario.BaseArgusTest):
 
 class TestCatchingSpecialize(scenario.BaseArgusTest):
 
-   def test_traceback_occurred(self):
+    def test_traceback_occurred(self):
         instance_traceback = self.introspection.get_cloudbaseinit_traceback()
         self.assertIn('ImportError: No module named mtu', instance_traceback)
