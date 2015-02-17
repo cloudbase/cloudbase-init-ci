@@ -162,7 +162,8 @@ def parse_cli():
     parser.add_argument("-o", "--instance-output",
                         metavar="DIRECTORY",
                         help="Save the instance console output "
-                             "content in this path.")
+                             "content in this path. If this is given, "
+                             "it can be reused for other files as well.")
     opts = parser.parse_args()
     return opts
 

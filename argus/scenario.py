@@ -16,8 +16,8 @@
 import abc
 import base64
 import os
-import unittest
 import sys
+import unittest
 
 _ORIG_EXCEPTHOOK = sys.excepthook
 
@@ -106,7 +106,8 @@ class BaseArgusScenario(object):
     def __init__(self, test_classes, name=None, recipe=None,
                  userdata=None, metadata=None,
                  image=None, service_type=None,
-                 result=None, introspection=None):
+                 result=None, introspection=None,
+                 output_directory=None):
         self._name = name
         self._recipe = recipe
         self._userdata = userdata
@@ -124,6 +125,7 @@ class BaseArgusScenario(object):
         self._image = image
         self._service_type = service_type
         self._introspection = introspection
+        self._output_directory = output_directory
 
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
@@ -262,16 +264,11 @@ class BaseArgusScenario(object):
         self.prepare_instance()
 
     def _save_instance_output(self):
-        # check CLI arguments
-        opts = util.parse_cli()
-        out_dir = opts.instance_output
-        if not out_dir:
+        if not self._output_directory:
             return
-        try:
-            os.makedirs(out_dir)
-        except OSError:
-            pass
-        path = os.path.join(out_dir, "{}.log".format(self._server["id"]))
+
+        path = os.path.join(self._output_directory,
+                            "{}.log".format(self._server["id"]))
         # try to obtain the entire content
         size = SIZE
         while True:
@@ -359,7 +356,8 @@ class BaseArgusScenario(object):
             api_manager=self._manager,
             remote_client=self.remote_client,
             image=self._image,
-            service_type=self._service_type).prepare()
+            service_type=self._service_type,
+            output_directory=self._output_directory).prepare()
 
     def instance_password(self):
         """Get the password posted by the instance."""

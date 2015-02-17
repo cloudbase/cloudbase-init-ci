@@ -45,12 +45,13 @@ class BaseRecipe(object):
     """
 
     def __init__(self, instance_id, api_manager, remote_client, image,
-                 service_type):
+                 service_type, output_directory=None):
         self._api_manager = api_manager
         self._instance_id = instance_id
         self._remote_client = remote_client
         self._image = image
         self._service_type = service_type
+        self._output_directory = output_directory
 
     def _execute_with_stderr(self, cmd):
         """Execute the given command and fail when the command fails."""

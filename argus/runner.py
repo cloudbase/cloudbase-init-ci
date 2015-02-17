@@ -131,6 +131,13 @@ def _load_metadata(metadata):
 
 
 def _build_scenario(scenario):
+    cli_opts = util.parse_cli()
+    if cli_opts.instance_output:
+        try:
+            os.makedirs(cli_opts.instance_output)
+        except OSError:
+            pass
+
     test_result = _TestResult(_WritelnDecorator(sys.stdout), None, 0)
 
     if scenario.userdata:
@@ -153,7 +160,8 @@ def _build_scenario(scenario):
         image=scenario.image,
         service_type=scenario.service_type,
         introspection=introspection,
-        result=test_result)
+        result=test_result,
+        output_directory=cli_opts)
 
 
 def _filter_scenarios(scenarios):

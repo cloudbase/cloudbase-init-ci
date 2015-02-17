@@ -74,7 +74,7 @@ try {
 
     $CloudbaseInitMsiPath = "$ENV:Temp\$CloudbaseInitMsi"
     $CloudbaseInitMsiUrl = "http://www.cloudbase.it/downloads/$CloudbaseInitMsi"
-    $CloudbaseInitMsiLog = "$ENV:Temp\CloudbaseInitSetup_Beta.log"
+    $CloudbaseInitMsiLog = "C:\\installation.log"
 
     (new-object System.Net.WebClient).DownloadFile($CloudbaseInitMsiUrl, $CloudbaseInitMsiPath)
 
