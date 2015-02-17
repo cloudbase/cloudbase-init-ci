@@ -159,22 +159,9 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     def wait_cbinit_finalization(self):
         """Wait for the finalization of CloudbaseInit.
 
-        The function waits until all the plugins have been executed.
+        The function waits until cloudbaseinit fininished.
         """
         LOG.info("Waiting for the finalization of CloudbaseInit execution...")
-
-        # Test that this instance's cloudbaseinit run exists.
-
-        def execute(cmd):
-            return self._execute_with_retry(cmd)[0]
-
-        head = introspection.get_cbinit_key(execute)
-        key = "{0}\\{1}".format(head, self._instance_id)
-        self._run_cmd_until_condition(
-            'powershell Test-Path "{0}"'.format(key),
-            lambda out: out.strip() == 'True')
-
-        # Test the number of executed cloudbaseinit plugins.
         wait_cmd = ('powershell (Get-Service "| where -Property Name '
                     '-match cloudbase-init").Status')
         self._run_cmd_until_condition(
