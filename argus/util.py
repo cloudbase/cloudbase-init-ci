@@ -173,7 +173,7 @@ def parse_cli():
 def get_config():
     """Get the argus config object."""
     opts = parse_cli()
-    return config.parse_config(opts.conf)
+    return config.ConfigurationParser(opts.conf).conf
 
 
 def get_logger(name="argus", format_string=None):

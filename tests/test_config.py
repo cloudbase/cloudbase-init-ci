@@ -108,7 +108,7 @@ class TestConfig(unittest.TestCase):
     def _test_parse_config(self, config_text):
         tmp = self._create_file(textwrap.dedent(config_text))
 
-        parsed = config.parse_config(tmp)
+        parsed = config.ConfigurationParser(tmp).conf
         self.assertTrue({'argus',
                          'images',
                          'cloudbaseinit',
