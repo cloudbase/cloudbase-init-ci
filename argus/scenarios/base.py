@@ -108,7 +108,7 @@ class BaseArgusScenario(object):
                  userdata=None, metadata=None,
                  image=None, service_type=None,
                  result=None, introspection=None,
-                 output_directory=None):
+                 output_directory=None, environment=None):
         self._name = name
         self._recipe = recipe
         self._userdata = userdata
@@ -127,6 +127,7 @@ class BaseArgusScenario(object):
         self._service_type = service_type
         self._introspection = introspection
         self._output_directory = output_directory
+        self._environment = environment
 
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
@@ -315,24 +316,19 @@ class BaseArgusScenario(object):
 
         self._isolated_creds.clear_isolated_creds()
 
-    def _pre_scenario(self):
-        """Hook method which will be called before starting a scenario."""
-
-    def _post_scenario(self):
-        """Hook method which will be called after finishing a scenario."""
-
     def run(self):
         """Run the tests from the underlying test class.
 
         This will start a new instance and prepare it using the recipe.
         It will return a list of test results.
         """
-
-        self._pre_scenario()
+        if self._environment:
+            self._environment.prepare_environment()
         try:
             self._run()
         finally:
-            self._post_scenario()
+            if self._environment:
+                self._environment.cleanup_environment()
 
     def _run(self):
         self._prepare_run()

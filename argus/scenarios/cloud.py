@@ -18,17 +18,7 @@ from argus.scenarios import base
 from argus import util
 
 
-# pylint: disable=abstract-method
-class BaseCloudTestScenario(base.BaseArgusScenario):
-
-    def _pre_scenario(self):
-        pass
-
-    def _post_scenario(self):
-        pass
-
-
-class BaseWindowsScenario(BaseCloudTestScenario):
+class BaseWindowsScenario(base.BaseArgusScenario):
     """Base class for Windows-based scenarios."""
 
     def get_remote_client(self, username=None, password=None,
