@@ -20,6 +20,9 @@ import operator
 import six
 
 
+_SENTINEL = object()
+
+
 class _ConfigParser(six.moves.configparser.ConfigParser):
     def getlist(self, section, option):
         value = self.get(section, option)
@@ -70,7 +73,7 @@ class _ScenarioSection(object):
             self._parent = parent.strip()
         self.scenario_name = name.strip().partition("scenario_")[2]
 
-    def _get_option(self, option, method='get', default=None):
+    def _get_option(self, option, method='get', default=_SENTINEL):
         local_getter = operator.methodcaller(method, self._key, option)
         parent_getter = operator.methodcaller(method, self._parent, option)
         try:
@@ -80,8 +83,9 @@ class _ScenarioSection(object):
                 try:
                     return parent_getter(self._parser)
                 except six.moves.configparser.NoOptionError:
-                    if default:
-                        return default
+                    pass
+            if default is not _SENTINEL:
+                return default
             raise
 
     scenario_class = _Option(option='scenario')
@@ -94,6 +98,7 @@ class _ScenarioSection(object):
     scenario_type = _Option(option='type')
     service_type = _Option(option='service_type', default='http')
     introspection = _Option(option='introspection')
+    environment = _Option(option='environment', default=None)
 
 
 class ConfigurationParser(object):
@@ -102,6 +107,56 @@ class ConfigurationParser(object):
         self._filename = filename
         self._parser = _ConfigParser()
         self._parser.read(self._filename)
+
+    @property
+    def environments(self):
+        """Get a list of environments.
+
+        An environment configuration should
+        look like this::
+
+           [devstack_config]
+
+           config_file = /etc/nova/nova.conf
+           default.configdrive = 34
+           nova.test = 24
+
+           [environment_1]
+
+           preparer = fully.qualified:Name
+           config = devstack_config
+           start_commands = ...
+                            ...
+                            ...
+           stop_commands = ...
+                           ...
+        """
+        environment = collections.namedtuple(
+            'environment',
+            'name config preparer start_commands stop_commands')
+
+        environments = []
+        for key in self._parser.sections():
+            if not key.startswith("environment_"):
+                continue
+
+            config_name = self._parser.get(key, 'config')
+            preparer = self._parser.get(key, 'preparer')
+
+            # The config is in fact another section.
+            config = dict(self._parser.items(config_name))
+            # Collect namespaces sections a la default.test.value=3
+            values = collections.defaultdict(dict)
+            values['config_file'] = config.pop('config_file')
+            for opt_name, opt_value in config.items():
+                section, subkey = opt_name.split(".", 1)
+                values[section][subkey] = opt_value
+
+            start_commands = self._parser.getlist(key, 'start_commands')
+            stop_commands = self._parser.getlist(key, 'stop_commands')
+            environments.append(environment(key, values, preparer,
+                                            start_commands, stop_commands))
+        return environments
 
     @property
     def argus(self):
@@ -176,15 +231,20 @@ class ConfigurationParser(object):
         scenario = collections.namedtuple('scenario',
                                           'name scenario test_classes recipe '
                                           'userdata metadata image type '
-                                          'service_type introspection')
+                                          'service_type introspection '
+                                          'environment')
         images_names = {image.name: image for image in self.images}
+        environment_names = {
+            environment.name: environment
+            for environment in self.environments
+        }
         scenarios = []
         for key in self._parser.sections():
             if not key.startswith("scenario_"):
                 continue
             section = _ScenarioSection(key, self._parser)
             image = images_names[section.image]
-
+            environment = environment_names.get(section.environment)
             scenarios.append(scenario(section.scenario_name,
                                       section.scenario_class,
                                       section.test_classes,
@@ -194,12 +254,13 @@ class ConfigurationParser(object):
                                       image,
                                       section.scenario_type,
                                       section.service_type,
-                                      section.introspection))
+                                      section.introspection,
+                                      environment))
         return scenarios
 
     @property
     def conf(self):
-        conf = collections.namedtuple('conf',
-                                      'argus cloudbaseinit images scenarios')
+        conf = collections.namedtuple(
+            'conf', 'argus cloudbaseinit images scenarios')
         return conf(self.argus, self.cloudbaseinit,
                     self.images, self.scenarios)
