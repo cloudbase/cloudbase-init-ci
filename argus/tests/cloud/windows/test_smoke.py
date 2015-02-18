@@ -15,7 +15,7 @@
 
 """Smoke tests for the cloudbaseinit."""
 
-from argus import scenario
+from argus.tests import base
 from argus.tests.cloud import smoke
 from argus.tests.cloud import util as test_util
 
@@ -128,7 +128,7 @@ class TestScriptsUserdataSmoke(TestSmoke):
         self.assertEqual('True', stdout.strip())
 
 
-class TestEC2Userdata(scenario.BaseArgusTest):
+class TestEC2Userdata(base.BaseArgusTest):
 
     def test_ec2_script(self):
         file_name = "ec2file.txt"
@@ -138,7 +138,7 @@ class TestEC2Userdata(scenario.BaseArgusTest):
         self.assertIn(directory_name, names)
 
 
-class TestCatchingSpecialize(scenario.BaseArgusTest):
+class TestCatchingSpecialize(base.BaseArgusTest):
 
     def test_traceback_occurred(self):
         instance_traceback = self.introspection.get_cloudbaseinit_traceback()
