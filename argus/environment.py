@@ -64,6 +64,25 @@ class DevstackEnvironmentPreparer(BaseEnvironmentPreparer):
             args = shlex.split(command)
             subprocess.call(args, shell=False)
 
+    @staticmethod
+    def _wait_for_services():
+        # Wait until the services are up again
+        LOG.info("Waiting for the services to be up again...")
+
+        command = [
+            "openstack", "compute", "service", "list",
+            "-f", "csv", "-c", "State", "--quote", "none"
+        ]
+        while True:
+            popen = subprocess.Popen(command, stdout=subprocess.PIPE)
+            stdout, _ = popen.communicate()
+            stdout = stdout.decode()
+            # The first one is the column
+            statuses = stdout.splitlines()[1:]
+            if all(entry == "up"
+                   for entry in statuses):
+                break
+
     def _stop_devstack(self):
         self._run_commands(self._stop_commands)
 
@@ -80,6 +99,8 @@ class DevstackEnvironmentPreparer(BaseEnvironmentPreparer):
             self._start_devstack()
         except Exception:
             LOG.exception("Failed starting devstack")
+
+        self._wait_for_services()
 
     def prepare_environment(self):
         LOG.info("Preparing to patch devstack configuration files.")
