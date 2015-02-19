@@ -172,7 +172,7 @@ def _build_scenario(scenario):
         introspection=introspection,
         result=test_result,
         output_directory=cli_opts.instance_output,
-        environment=environment_preparer)
+        environment_preparer=environment_preparer)
 
 
 def _filter_scenarios(scenarios):

@@ -108,7 +108,8 @@ class BaseArgusScenario(object):
                  userdata=None, metadata=None,
                  image=None, service_type=None,
                  result=None, introspection=None,
-                 output_directory=None, environment=None):
+                 output_directory=None,
+                 environment_preparer=None):
         self._name = name
         self._recipe = recipe
         self._userdata = userdata
@@ -127,7 +128,7 @@ class BaseArgusScenario(object):
         self._service_type = service_type
         self._introspection = introspection
         self._output_directory = output_directory
-        self._environment = environment
+        self._environment_preparer = environment_preparer
 
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
@@ -322,13 +323,13 @@ class BaseArgusScenario(object):
         This will start a new instance and prepare it using the recipe.
         It will return a list of test results.
         """
-        if self._environment:
-            self._environment.prepare_environment()
+        if self._environment_preparer:
+            self._environment_preparer.prepare_environment()
         try:
             return self._run()
         finally:
-            if self._environment:
-                self._environment.cleanup_environment()
+            if self._environment_preparer:
+                self._environment_preparer.cleanup_environment()
 
     def _run(self):
         self._prepare_run()
