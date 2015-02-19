@@ -325,7 +325,7 @@ class BaseArgusScenario(object):
         if self._environment:
             self._environment.prepare_environment()
         try:
-            self._run()
+            return self._run()
         finally:
             if self._environment:
                 self._environment.cleanup_environment()
