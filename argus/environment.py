@@ -47,13 +47,7 @@ class BaseEnvironmentPreparer(object):
         pass
 
 
-class DevstackEnvironmentPreparer(BaseEnvironmentPreparer):
-    """An environment preparer for devstack hosts.
-
-    This preparer knows how to patch a configuration file
-    and how to start and stop the devstack services which are
-    running on the host.
-    """
+class BaseOpenstackEnvironmentPreparer(BaseEnvironmentPreparer):
 
     def __init__(self, config_file, config_opts,
                  start_commands, stop_commands):
@@ -66,6 +60,60 @@ class DevstackEnvironmentPreparer(BaseEnvironmentPreparer):
         for command in commands:
             args = shlex.split(command)
             subprocess.call(args, shell=False)
+
+    @abc.abstractmethod
+    def _wait_for_nova_services(self):
+        pass
+
+    @abc.abstractmethod
+    def _wait_for_api(self):
+        pass
+
+    def _stop_environment(self):
+        self._run_commands(self._stop_commands)
+
+    def _start_environment(self):
+        self._run_commands(self._start_commands)
+
+    def _restart_environment(self):
+        try:
+            self._stop_environment()
+        except Exception:
+            LOG.exception("Failed stopping devstack")
+
+        try:
+            self._start_environment()
+        except Exception:
+            LOG.exception("Failed starting devstack")
+
+        self._wait_for_nova_services()
+        self._wait_for_api()
+
+    def prepare_environment(self):
+        LOG.info("Preparing to patch devstack configuration files.")
+        self._patcher.patch()
+
+        LOG.info("Patching done, restarting devstack services.")
+        self._restart_environment()
+
+    def cleanup_environment(self):
+        LOG.info("Unpatching devstack configuration files.")
+        self._patcher.unpatch()
+
+        LOG.info("Restarting devstack.")
+        self._restart_environment()
+
+
+class DevstackEnvironmentPreparer(BaseOpenstackEnvironmentPreparer):
+    """An environment preparer for devstack hosts.
+
+    This preparer knows how to patch a configuration file
+    and how to start and stop the devstack services which are
+    running on the host.
+    """
+    # The following are staticmethods, disable this warning
+    # since the parent methods are actual methods.
+    # pylint: disable=arguments-differ
 
     @staticmethod
     def _wait_for_nova_services():
@@ -102,37 +150,3 @@ class DevstackEnvironmentPreparer(BaseEnvironmentPreparer):
                 break
             except Exception:
                 time.sleep(1)
-
-    def _stop_devstack(self):
-        self._run_commands(self._stop_commands)
-
-    def _start_devstack(self):
-        self._run_commands(self._start_commands)
-
-    def _restart_devstack(self):
-        try:
-            self._stop_devstack()
-        except Exception:
-            LOG.exception("Failed stopping devstack")
-
-        try:
-            self._start_devstack()
-        except Exception:
-            LOG.exception("Failed starting devstack")
-
-        self._wait_for_nova_services()
-        self._wait_for_api()
-
-    def prepare_environment(self):
-        LOG.info("Preparing to patch devstack configuration files.")
-        self._patcher.patch()
-
-        LOG.info("Patching done, restarting devstack services.")
-        self._restart_devstack()
-
-    def cleanup_environment(self):
-        LOG.info("Unpatching devstack configuration files.")
-        self._patcher.unpatch()
-
-        LOG.info("Restarting devstack.")
-        self._restart_devstack()
