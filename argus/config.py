@@ -34,6 +34,7 @@ class _ConfigParser(six.moves.configparser.ConfigParser):
     # Don't lowercase.
     optionxform = str
 
+
 def _get_default(parser, section, option, default=None):
     try:
         return parser.get(section, option)
@@ -104,6 +105,7 @@ class _ScenarioSection(object):
 
 
 class ConfigurationParser(object):
+    """A parser class which knows how to parse argus configurations."""
 
     def __init__(self, filename):
         self._filename = filename
