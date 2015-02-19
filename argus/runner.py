@@ -151,6 +151,14 @@ def _build_scenario(scenario):
     scenario_class = util.load_qualified_object(scenario.scenario)
     introspection = util.load_qualified_object(scenario.introspection)
 
+    environment_preparer = None
+    if scenarion.environment:
+        environment_preparer = util.load_qualified_object(
+            scenario.environment.preparer)
+        preparer = environment_preparer(
+            scenarion.environment.config_file,
+            **scenarion.environment.config)
+
     return scenario_class(
         name=scenario.name,
         test_classes=test_classes,
@@ -161,7 +169,8 @@ def _build_scenario(scenario):
         service_type=scenario.service_type,
         introspection=introspection,
         result=test_result,
-        output_directory=cli_opts.instance_output)
+        output_directory=cli_opts.instance_output,
+        environment=environment_preparer)
 
 
 def _filter_scenarios(scenarios):
