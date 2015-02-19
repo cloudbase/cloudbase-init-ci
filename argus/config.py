@@ -31,6 +31,8 @@ class _ConfigParser(six.moves.configparser.ConfigParser):
                  for value in values)
         return list(itertools.chain.from_iterable(iters))
 
+    # Don't lowercase.
+    optionxform = str
 
 def _get_default(parser, section, option, default=None):
     try:
