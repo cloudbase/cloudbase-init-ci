@@ -48,7 +48,7 @@ class BaseEnvironmentPreparer(object):
 
 
 class BaseOpenstackEnvironmentPreparer(BaseEnvironmentPreparer):
-   """Base class for Openstack related environment preparers.
+    """Base class for Openstack related environment preparers.
 
     This class knows how to patch a configuration file and
     how to start and stop the environment scripts / services.
