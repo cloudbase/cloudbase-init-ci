@@ -279,7 +279,7 @@ class ConfigurationPatcher(object):
                 opts = self._opts[section]
                 for opt, value in opts.items():
                     LOG.info("Patching file %s on section %r, with "
-                             "entry %r=%r",
+                             "entry %s=%s",
                              self._config_file, section, opt, value)
 
                     parser.set(section, opt, str(value))
