@@ -152,12 +152,12 @@ def _build_scenario(scenario):
     introspection = util.load_qualified_object(scenario.introspection)
 
     environment_preparer = None
-    if scenarion.environment:
+    if scenario.environment:
         environment_preparer = util.load_qualified_object(
             scenario.environment.preparer)
-        preparer = environment_preparer(
-            scenarion.environment.config_file,
-            **scenarion.environment.config)
+        environment_preparer = environment_preparer(
+            scenario.environment.config_file,
+            **scenario.environment.config)
 
     return scenario_class(
         name=scenario.name,
