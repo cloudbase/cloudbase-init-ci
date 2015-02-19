@@ -157,7 +157,9 @@ def _build_scenario(scenario):
             scenario.environment.preparer)
         environment_preparer = environment_preparer(
             scenario.environment.config.config_file,
-            **scenario.environment.config.values)
+            scenario.environment.config.values,
+            scenario.environment.start_commands,
+            scenario.environment.stop_commands)
 
     return scenario_class(
         name=scenario.name,
