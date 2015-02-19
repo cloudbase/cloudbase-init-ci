@@ -16,6 +16,7 @@
 import argparse
 import base64
 import importlib
+import itertools
 import logging
 import pkgutil
 import subprocess
@@ -172,7 +173,7 @@ def parse_cli():
 def get_config():
     """Get the argus config object."""
     opts = parse_cli()
-    return config.parse_config(opts.conf)
+    return config.ConfigurationParser(opts.conf).conf
 
 
 def get_logger(name="argus", format_string=None):
@@ -240,5 +241,61 @@ class ProxyLogger(object):
         obj = getattr(self._logger, attr)
         self.__dict__[attr] = obj
         return obj
+
+
+class ConfigurationPatcher(object):
+    """Simple configuration patcher for .ini style configs.
+
+    This class can be used to modify values of a configuration
+    file with other predefined options. It also has support
+    for reverting the changes.
+
+    >>> patcher = ConfigurationPatcher('a.ini', DEFAULT={'a': '1'})
+    >>> patcher.patch() # the file was modified
+    >>> patcher.unpatch() # the file is as the original
+
+    It also supports context management protocol:
+
+    >>> with patcher: # the file is modified
+        ...
+    # the file was unpatched
+    >>>
+    """
+
+    def __init__(self, config_file, **opts):
+        self._config_file = config_file
+        self._opts = opts
+        self._original_content = None
+
+    def patch(self):
+        with open(self._config_file) as stream:
+            self._original_content = stream.read()
+
+        parser = six.moves.configparser.ConfigParser()
+        parser.read(self._config_file)
+        for section in itertools.chain(parser.sections(), ['DEFAULT']):
+            if section in self._opts:
+                # Needs to be patched
+                opts = self._opts[section]
+                for opt, value in opts.items():
+                    LOG.info("Patching file %s on section %r, with "
+                             "entry %s=%s",
+                             self._config_file, section, opt, value)
+
+                    parser.set(section, opt, str(value))
+        with open(self._config_file, 'w') as stream:
+            parser.write(stream)
+
+    def unpatch(self):
+        with open(self._config_file, 'w') as stream:
+            stream.write(self._original_content)
+
+    def __enter__(self):
+        self.patch()
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.unpatch()
+
 
 LOG = ProxyLogger()

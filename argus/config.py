@@ -20,6 +20,9 @@ import operator
 import six
 
 
+_SENTINEL = object()
+
+
 class _ConfigParser(six.moves.configparser.ConfigParser):
     def getlist(self, section, option):
         value = self.get(section, option)
@@ -27,6 +30,9 @@ class _ConfigParser(six.moves.configparser.ConfigParser):
         iters = (map(str.strip, filter(None, value.split(",")))
                  for value in values)
         return list(itertools.chain.from_iterable(iters))
+
+    # Don't lowercase.
+    optionxform = str
 
 
 def _get_default(parser, section, option, default=None):
@@ -70,7 +76,7 @@ class _ScenarioSection(object):
             self._parent = parent.strip()
         self.scenario_name = name.strip().partition("scenario_")[2]
 
-    def _get_option(self, option, method='get', default=None):
+    def _get_option(self, option, method='get', default=_SENTINEL):
         local_getter = operator.methodcaller(method, self._key, option)
         parent_getter = operator.methodcaller(method, self._parent, option)
         try:
@@ -80,8 +86,9 @@ class _ScenarioSection(object):
                 try:
                     return parent_getter(self._parser)
                 except six.moves.configparser.NoOptionError:
-                    if default:
-                        return default
+                    pass
+            if default is not _SENTINEL:
+                return default
             raise
 
     scenario_class = _Option(option='scenario')
@@ -94,102 +101,177 @@ class _ScenarioSection(object):
     scenario_type = _Option(option='type')
     service_type = _Option(option='service_type', default='http')
     introspection = _Option(option='introspection')
+    environment = _Option(option='environment', default=None)
 
 
-def parse_config(filename):
-    """Parse the given config file.
+class ConfigurationParser(object):
+    """A parser class which knows how to parse argus configurations."""
 
-    It will return a object with four attributes, ``argus``
-    for general argus options, ``cloudbaseinit`` for options
-    related to cloudbaseinit, scenarios for the list of scenarios
-    and ``images``, a list of image objects with some attributes
-    exported, such as ``image_ref`` and so on.
-    """
-    # pylint: disable=too-many-locals
-    argus = collections.namedtuple('argus',
-                                   'resources debug path_to_private_key '
-                                   'file_log log_format dns_nameservers')
-    cloudbaseinit = collections.namedtuple('cloudbaseinit',
-                                           'expected_plugins_count')
-    image = collections.namedtuple('image',
-                                   'name default_ci_username '
-                                   'default_ci_password image_ref flavor_ref '
-                                   'group created_user os_type')
-    scenario = collections.namedtuple('scenario',
-                                      'name scenario test_classes recipe '
-                                      'userdata metadata image type '
-                                      'service_type introspection')
-    conf = collections.namedtuple('conf',
-                                  'argus cloudbaseinit images scenarios')
+    def __init__(self, filename):
+        self._filename = filename
+        self._parser = _ConfigParser()
+        self._parser.read(self._filename)
 
-    parser = _ConfigParser()
-    parser.read(filename)
+    def _parse_environment(self, key):
+        values_factory = collections.namedtuple(
+            'values_factory',
+            'config_file values')
+        config_name = self._parser.get(key, 'config')
+        preparer = self._parser.get(key, 'preparer')
 
-    # Get the argus section
-    resources = _get_default(
-        parser, 'argus', 'resources',
-        'https://raw.githubusercontent.com/PCManticore/'
-        'argus-ci/master/argus/resources')
-    debug = parser.getboolean('argus', 'debug')
-    path_to_private_key = parser.get('argus', 'path_to_private_key')
-    file_log = _get_default(parser, 'argus', 'file_log')
-    log_format = _get_default(parser, 'argus', 'log_format')
-    dns_nameservers = _get_default(
-        parser, 'argus', 'dns_nameservers',
-        ['8.8.8.8', '8.8.4.4'])
-    if not isinstance(dns_nameservers, list):
-        # pylint: disable=no-member
-        dns_nameservers = dns_nameservers.split(",")
+        # The config is in fact another section.
+        config = dict(self._parser.items(config_name))
+        # Collect namespaces sections a la default.test.value=3
+        values = collections.defaultdict(dict)
+        config_file = config.pop('config_file')
+        for opt_name, opt_value in config.items():
+            section, subkey = opt_name.split(".", 1)
+            values[section][subkey] = opt_value
+        values = values_factory(config_file, values)
 
-    argus = argus(resources, debug, path_to_private_key,
-                  file_log, log_format, dns_nameservers)
+        start_commands = self._parser.getlist(key, 'start_commands')
+        stop_commands = self._parser.getlist(key, 'stop_commands')
+        return key, values, preparer, start_commands, stop_commands
 
-    # Get the cloudbaseinit section
-    try:
-        expected_plugins_count = parser.getint(
-            'cloudbaseinit',
-            'expected_plugins_count')
-    except (six.moves.configparser.NoOptionError, ValueError):
-        expected_plugins_count = 13
+    @property
+    def environments(self):
+        """Get a list of environments.
 
-    cloudbaseinit = cloudbaseinit(expected_plugins_count)
+        An environment configuration should
+        look like this::
 
-    # Get the images section
-    images = []
-    for key in parser.sections():
-        if not key.startswith("image_"):
-            continue
-        image_name = key.partition("image_")[2]
-        ci_user = _get_default(parser, key, 'default_ci_username', 'CiAdmin')
-        ci_password = _get_default(parser, key, 'default_ci_password',
-                                   'Passw0rd')
-        image_ref = parser.get(key, 'image_ref')
-        flavor_ref = parser.get(key, 'flavor_ref')
-        group = parser.get(key, 'group')
-        created_user = parser.get(key, 'created_user')
-        os_type = _get_default(parser, key, 'os_type', 'Windows')
-        images.append(image(image_name, ci_user, ci_password,
-                            image_ref, flavor_ref, group, created_user,
-                            os_type))
+           [devstack_config]
 
-    # Get the scenarios section
-    images_names = {image.name: image for image in images}
-    scenarios = []
-    for key in parser.sections():
-        if not key.startswith("scenario_"):
-            continue
-        section = _ScenarioSection(key, parser)
-        image = images_names[section.image]
+           config_file = /etc/nova/nova.conf
+           default.configdrive = 34
+           nova.test = 24
 
-        scenarios.append(scenario(section.scenario_name,
-                                  section.scenario_class,
-                                  section.test_classes,
-                                  section.recipe,
-                                  section.userdata,
-                                  section.metadata,
-                                  image,
-                                  section.scenario_type,
-                                  section.service_type,
-                                  section.introspection))
+           [environment_1]
 
-    return conf(argus, cloudbaseinit, images, scenarios)
+           preparer = fully.qualified:Name
+           config = devstack_config
+           start_commands = ...
+                            ...
+                            ...
+           stop_commands = ...
+                           ...
+        """
+        environment = collections.namedtuple(
+            'environment',
+            'name config preparer start_commands stop_commands')
+
+        environments = []
+        for key in self._parser.sections():
+            if not key.startswith("environment_"):
+                continue
+
+            environ_obj = environment(*self._parse_environment(key))
+            environments.append(environ_obj)
+        return environments
+
+    @property
+    def argus(self):
+        # Get the argus section
+        argus = collections.namedtuple('argus',
+                                       'resources debug path_to_private_key '
+                                       'file_log log_format dns_nameservers')
+        resources = _get_default(
+            self._parser, 'argus', 'resources',
+            'https://raw.githubusercontent.com/PCManticore/'
+            'argus-ci/master/argus/resources')
+        debug = self._parser.getboolean('argus', 'debug')
+        path_to_private_key = self._parser.get('argus', 'path_to_private_key')
+        file_log = _get_default(self._parser, 'argus', 'file_log')
+        log_format = _get_default(self._parser, 'argus', 'log_format')
+        dns_nameservers = _get_default(
+            self._parser, 'argus', 'dns_nameservers',
+            ['8.8.8.8', '8.8.4.4'])
+        if not isinstance(dns_nameservers, list):
+            # pylint: disable=no-member
+            dns_nameservers = dns_nameservers.split(",")
+
+        return argus(resources, debug, path_to_private_key,
+                     file_log, log_format, dns_nameservers)
+
+    @property
+    def cloudbaseinit(self):
+        cloudbaseinit = collections.namedtuple('cloudbaseinit',
+                                               'expected_plugins_count')
+
+        try:
+            expected_plugins_count = self._parser.getint(
+                'cloudbaseinit',
+                'expected_plugins_count')
+        except (six.moves.configparser.NoOptionError, ValueError):
+            expected_plugins_count = 13
+
+        return cloudbaseinit(expected_plugins_count)
+
+    @property
+    def images(self):
+        image = collections.namedtuple(
+            'image',
+            'name default_ci_username '
+            'default_ci_password image_ref flavor_ref '
+            'group created_user os_type')
+
+        # Get the images section
+        images = []
+        for key in self._parser.sections():
+            if not key.startswith("image_"):
+                continue
+            image_name = key.partition("image_")[2]
+            ci_user = _get_default(
+                self._parser, key, 'default_ci_username', 'CiAdmin')
+            ci_password = _get_default(self._parser, key,
+                                       'default_ci_password',
+                                       'Passw0rd')
+            image_ref = self._parser.get(key, 'image_ref')
+            flavor_ref = self._parser.get(key, 'flavor_ref')
+            group = self._parser.get(key, 'group')
+            created_user = self._parser.get(key, 'created_user')
+            os_type = _get_default(self._parser, key, 'os_type', 'Windows')
+            images.append(image(image_name, ci_user, ci_password,
+                                image_ref, flavor_ref, group, created_user,
+                                os_type))
+        return images
+
+    @property
+    def scenarios(self):
+        # Get the scenarios section
+        scenario = collections.namedtuple('scenario',
+                                          'name scenario test_classes recipe '
+                                          'userdata metadata image type '
+                                          'service_type introspection '
+                                          'environment')
+        images_names = {image.name: image for image in self.images}
+        environment_names = {
+            environment.name: environment
+            for environment in self.environments
+        }
+        scenarios = []
+        for key in self._parser.sections():
+            if not key.startswith("scenario_"):
+                continue
+            section = _ScenarioSection(key, self._parser)
+            image = images_names[section.image]
+            environment = environment_names.get(section.environment)
+            scenarios.append(scenario(section.scenario_name,
+                                      section.scenario_class,
+                                      section.test_classes,
+                                      section.recipe,
+                                      section.userdata,
+                                      section.metadata,
+                                      image,
+                                      section.scenario_type,
+                                      section.service_type,
+                                      section.introspection,
+                                      environment))
+        return scenarios
+
+    @property
+    def conf(self):
+        conf = collections.namedtuple(
+            'conf', 'argus cloudbaseinit images scenarios')
+        return conf(self.argus, self.cloudbaseinit,
+                    self.images, self.scenarios)

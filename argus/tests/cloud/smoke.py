@@ -13,9 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from argus import scenario
-from argus import util
+from argus.tests import base
 from argus.tests.cloud import util as test_util
+from argus import util
 
 CONF = util.get_config()
 DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
@@ -38,7 +38,7 @@ def _get_dhcp_value(key):
             return value.strip()
 
 
-class PasswordRescueSmokeTest(scenario.BaseArgusTest):
+class PasswordRescueSmokeTest(base.BaseArgusTest):
 
     def _run_remote_command(self, cmd):
         remote_client = self.manager.get_remote_client(
@@ -62,7 +62,7 @@ class PasswordRescueSmokeTest(scenario.BaseArgusTest):
         self.assertEqual('3', stdout.strip())
 
 
-class PasswordSmokeTest(scenario.BaseArgusTest):
+class PasswordSmokeTest(base.BaseArgusTest):
 
     @test_util.requires_service('http')
     def test_password_set(self):
@@ -75,7 +75,7 @@ class PasswordSmokeTest(scenario.BaseArgusTest):
         self.assertEqual('1', stdout.strip())
 
 
-class CreatedUserTest(scenario.BaseArgusTest):
+class CreatedUserTest(base.BaseArgusTest):
 
     def test_username_created(self):
         # Verify that the expected created user exists.
@@ -86,7 +86,7 @@ class CreatedUserTest(scenario.BaseArgusTest):
 # pylint: disable=abstract-method
 class BaseSmokeTests(CreatedUserTest,
                      PasswordSmokeTest,
-                     scenario.BaseArgusTest):
+                     base.BaseArgusTest):
     """Various smoke tests for testing cloudbaseinit.
 
     Each OS test version must implement the abstract methods provided here,
