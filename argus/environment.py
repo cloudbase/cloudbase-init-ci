@@ -14,9 +14,12 @@
 #    under the License.
 
 import abc
+import os
 import shlex
 import subprocess
+import time
 
+import novaclient.v1_1.client as nova
 import six
 
 from argus import util
@@ -65,8 +68,8 @@ class DevstackEnvironmentPreparer(BaseEnvironmentPreparer):
             subprocess.call(args, shell=False)
 
     @staticmethod
-    def _wait_for_services():
-        # Wait until the services are up again
+    def _wait_for_nova_services():
+        # Wait until the nova services are up again
         LOG.info("Waiting for the services to be up again...")
 
         command = [
@@ -82,6 +85,23 @@ class DevstackEnvironmentPreparer(BaseEnvironmentPreparer):
             if all(entry == "up"
                    for entry in statuses):
                 break
+
+    @staticmethod
+    def _wait_for_api():
+        LOG.info("Waiting for the API to be up...")
+
+        username = os.environ['OS_USERNAME']
+        password = os.environ['OS_PASSWORD']
+        auth = os.environ['OS_AUTH_URL']
+        tenant = os.environ['OS_TENANT_NAME']
+
+        client = nova.Client(username, password, tenant, auth)
+        while True:
+            try:
+                client.images.list()
+                break
+            except Exception:
+                time.sleep(1)
 
     def _stop_devstack(self):
         self._run_commands(self._stop_commands)
@@ -100,7 +120,8 @@ class DevstackEnvironmentPreparer(BaseEnvironmentPreparer):
         except Exception:
             LOG.exception("Failed starting devstack")
 
-        self._wait_for_services()
+        self._wait_for_nova_services()
+        self._wait_for_api()
 
     def prepare_environment(self):
         LOG.info("Preparing to patch devstack configuration files.")
