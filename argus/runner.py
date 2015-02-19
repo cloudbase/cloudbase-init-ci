@@ -156,8 +156,8 @@ def _build_scenario(scenario):
         environment_preparer = util.load_qualified_object(
             scenario.environment.preparer)
         environment_preparer = environment_preparer(
-            scenario.environment.config_file,
-            **scenario.environment.config)
+            scenario.environment.config.config_file,
+            **scenario.environment.config.values)
 
     return scenario_class(
         name=scenario.name,

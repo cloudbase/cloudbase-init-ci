@@ -108,6 +108,27 @@ class ConfigurationParser(object):
         self._parser = _ConfigParser()
         self._parser.read(self._filename)
 
+    def _parse_environment(self, key):
+        values_factory = collections.namedtuple(
+            'values_factory',
+            'config_file values')
+        config_name = self._parser.get(key, 'config')
+        preparer = self._parser.get(key, 'preparer')
+
+        # The config is in fact another section.
+        config = dict(self._parser.items(config_name))
+        # Collect namespaces sections a la default.test.value=3
+        values = collections.defaultdict(dict)
+        config_file = config.pop('config_file')
+        for opt_name, opt_value in config.items():
+            section, subkey = opt_name.split(".", 1)
+            values[section][subkey] = opt_value
+        values = values_factory(config_file, values)
+
+        start_commands = self._parser.getlist(key, 'start_commands')
+        stop_commands = self._parser.getlist(key, 'stop_commands')
+        return key, values, preparer, start_commands, stop_commands
+
     @property
     def environments(self):
         """Get a list of environments.
@@ -140,22 +161,8 @@ class ConfigurationParser(object):
             if not key.startswith("environment_"):
                 continue
 
-            config_name = self._parser.get(key, 'config')
-            preparer = self._parser.get(key, 'preparer')
-
-            # The config is in fact another section.
-            config = dict(self._parser.items(config_name))
-            # Collect namespaces sections a la default.test.value=3
-            values = collections.defaultdict(dict)
-            values['config_file'] = config.pop('config_file')
-            for opt_name, opt_value in config.items():
-                section, subkey = opt_name.split(".", 1)
-                values[section][subkey] = opt_value
-
-            start_commands = self._parser.getlist(key, 'start_commands')
-            stop_commands = self._parser.getlist(key, 'stop_commands')
-            environments.append(environment(key, values, preparer,
-                                            start_commands, stop_commands))
+            environ_obj = environment(*self._parse_environment(key))
+            environments.append(environ_obj)
         return environments
 
     @property
