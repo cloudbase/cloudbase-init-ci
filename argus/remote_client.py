@@ -60,6 +60,7 @@ class WinRemoteClient(object):
 
     @staticmethod
     def _run_command(protocol_client, shell_id, command):
+        command_id = None
         try:
             command_id = protocol_client.run_command(shell_id, command)
             stdout, stderr, exit_code = protocol_client.get_command_output(
