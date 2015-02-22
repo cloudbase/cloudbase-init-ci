@@ -19,7 +19,7 @@ import shlex
 import subprocess
 import time
 
-import novaclient.v1_1.client as nova
+import novaclient.client as nova
 import six
 
 from argus import util
