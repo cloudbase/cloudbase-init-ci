@@ -13,13 +13,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+# pylint: disable=no-name-in-module,import-error
+
 import abc
 import os
 import shlex
 import subprocess
 import time
 
-import novaclient.client as nova
+import novaclient.v1_1.client as nova
 import six
 
 from argus import util
