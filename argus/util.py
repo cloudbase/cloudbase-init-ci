@@ -137,6 +137,10 @@ def parse_cli():
                         help="Give a path to the argus conf. "
                              "It should be an .ini file format "
                              "with a section called [argus].")
+    parser.add_argument("--patch-install", metavar="URL",
+                        help='Pass a link that points *directly* to a '
+                             'zip file containing the installed version. '
+                             'The content will just replace the files.')
     parser.add_argument("--git-command", type=str, default=None,
                         help="Pass a git command which should be interpreted "
                              "by a recipe.")

@@ -125,6 +125,38 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                .format(git_link, git_base))
         self._execute(cmd)
 
+    def replace_install(self):
+        """Replace the cb-init installed files with the downloaded ones.
+
+        For the same file names, there will be a replace. The new ones
+        will just be added and the other files will be left there.
+        So it's more like an update.
+        """
+        opts = util.parse_cli()
+        link = opts.patch_install
+        if not link:
+            return
+
+        LOG.info("Replacing cloudbaseinit's files...")
+
+        LOG.debug("Download and extract installation bundle.")
+        cmd = ("powershell Invoke-webrequest -uri "
+               "{} -outfile 'C:\\install.zip'"
+               .format(link))
+        self._execute_with_retry(cmd)
+        cmds = [
+            "Add-Type -A System.IO.Compression.FileSystem",
+            "[IO.Compression.ZipFile]::ExtractToDirectory("
+            "'C:\\install.zip', 'C:\\install')"
+        ]
+        cmd = 'powershell {}'.format("; ".join(cmds))
+        self._execute(cmd)
+
+        LOG.debug("Replace old files with the new ones.")
+        cbdir = introspection.get_cbinit_dir(self._execute)
+        self._execute('xcopy /y /e /q "C:\\install\\Cloudbase-Init"'
+                      ' "{}"'.format(cbdir))
+
     def replace_code(self):
         """Replace the code of cloudbaseinit."""
         opts = util.parse_cli()
