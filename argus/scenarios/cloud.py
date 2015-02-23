@@ -13,10 +13,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 
 from argus.scenarios import base
 from argus.scenarios import service_mock
 from argus import util
+
+
+class named(collections.namedtuple("service", "application script_name "
+                                              "host port")):
+
+    @property
+    def link(self):
+        return "http://{host}:{port}{script_name}".format(
+            host=self.host, port=self.port, script_name=self.port)
 
 
 class BaseWindowsScenario(base.BaseArgusScenario):
@@ -52,19 +62,48 @@ class RescueWindowsScenario(BaseWindowsScenario):
                                                     'ACTIVE')
 
 
-class BaseMockServiceMixin(object):
+class BaseServiceMockMixin(object):
+    """Mixin class for mocking metadata services.
+
+    In order to have support for mocked metadata services, set a list
+    of :meth:`named` entries in the class, as such::
+
+        class Test(BaseServiceMockMixin, BaseArgusScenario):
+            services = [
+                 named(application, script_name, host, port)
+            ]
+
+    These services will be started and will be stopped after
+    :meth:`prepare_instance` finishes.
+    """
 
     def prepare_instance(self):
-        with service_mock.create_service(self.service_class):
-            super(BaseMockServiceMixin, self).prepare_instance()
+        with service_mock.instantiate_services(self.services, self):
+            super(BaseServiceMockMixin, self).prepare_instance()
 
 
-class EC2WindowsScenario(BaseMockServiceMixin, BaseWindowsScenario):
+class EC2WindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
+    """Scenario for testing the EC2 metadata service."""
 
-    service_class = service_mock.EC2ServiceMock
+    services = [
+        named(application=service_mock.EC2MetadataServiceApp,
+              script_name="/",
+              host="0.0.0.0",
+              port="2000"),
+    ]
 
 
-class CloudStackWindowsScenario(BaseMockServiceMixin,
+class CloudstackWindowsScenario(BaseServiceMockMixin,
                                 BaseWindowsScenario):
+    """Scenario for testing the Cloudstack metadata service."""
 
-    service_class = service_mock.CloudStackServiceMock
+    services = [
+        named(application=service_mock.CloudstackMetadataServiceApp,
+              script_name="/",
+              host="0.0.0.0",
+              port="2001"),
+        named(application=service_mock.CloudstackPasswordManagerApp,
+              script_name="/",
+              host="0.0.0.0",
+              port="2002"),
+    ]

@@ -13,49 +13,103 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
+import base64
 import contextlib
+import textwrap
 import threading
 
 import cherrypy
 from six.moves import urllib
 
 
-class BaseServiceMock(object):
+def _instantiate_services(services, scenario):
+    for service in services:
+        app = service.application
+        script_name = service.script_name
+        host = service.host
+        port = service.port
 
-    script_name = None
-    host = "0.0.0.0"
-    port = 8080
-
-
-@contextlib.contextmanager
-def create_service(*service_classes):
-    """Context manager used for mocking metadata services.
-    
-    Create and start a custom server based on the
-    provided class. Kill it when leaving the context.
-    """
-    # start the service(s) in different thread(s)
-    threads = []
-    for service_class in service_classes:
         kwargs = {
-            "root": service_class,
-            "script_name": service_class.script_name,
+            "root": app(scenario),
+            "script_name": script_name,
             "config": {
-                "server.socket_host": service_class.host,
-                "server.socket_port": service_class.port
+                "server.socket_host": host,
+                "server.socket_port": port
             }
         }
         thread = threading.Thread(target=cherrypy.quickstart,
                                   kwargs=kwargs)
         thread.start()
-        threads.append(thread)
+        yield thread
 
-    yield
 
-    # send the shutdown "signal"
-    for service_class in service_classes:
-        urllib.request.urlopen(link)
-    while threads:
-        thread = threads.pop()
-        thread.join()
+@contextlib.contextmanager
+def instantiate_services(services, scenario):
+    """Context manager used for starting mocked metadata services."""
+
+    # Start the service(s) in different thread(s).
+    threads = list(_instantiate_services(services, scenario))
+    try:
+        yield
+    finally:
+        # Send the shutdown "signal"
+        for service in services:
+            urllib.request.urlopen(service.link)
+        for thread in threads:
+            thread.join()
+
+
+class BaseServiceApp(object):
+
+    def __init__(self, scenario):
+        self.scenario = scenario
+
+    def _dispatch_method(self, operand):
+        operand = operand.replace("-", "_")
+        return getattr(self, operand)
+
+
+class EC2MetadataServiceApp(BaseServiceApp):
+    pass
+
+
+class CloudstackMetadataServiceApp(BaseServiceApp):
+
+    @cherrypy.expose
+    def latest(self, data_type, operation=None):
+        # Too complicated and overkill to use cherrypy.Dispatcher.
+        # This should be as as simple as possible.
+        return self._dispatch_method(data_type)(operation)
+
+    def meta_data(self, operation):
+        return self._dispatch_method(operation)()
+
+    # pylint: disable=unused-argument
+    def user_data(self, operation=None):
+        return base64.encodestring(self.scenario._userdata)
+
+    def instance_id(self):
+        return self.scenario._server['id']
+
+    def local_hostname(self):
+        return self.scenario.instance_server()['name'][:15].lower()
+
+    def public_keys(self):
+        return self.scenario.public_key()
+
+    # pylint: disable=no-self-use
+    def service_offering(self):
+        return textwrap.dedent("""
+            availability-zone
+            local-ipv4
+            local-hostname
+            public-ipv4
+            public-hostname
+            instance-id
+            vm-id
+            public-keys
+            cloud-identifier""")
+
+
+class CloudstackPasswordManagerApp(BaseServiceApp):
+    pass
