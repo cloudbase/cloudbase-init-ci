@@ -140,9 +140,12 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         LOG.info("Replacing cloudbaseinit's files...")
 
         LOG.debug("Download and extract installation bundle.")
-        cmd = ("powershell Invoke-webrequest -uri "
-               "{} -outfile 'C:\\install.zip'"
-               .format(link))
+        if link.startswith("\\\\"):
+            cmd = 'copy "{}" "C:\\install.zip"'.format(link)
+        else:
+            cmd = ("powershell Invoke-webrequest -uri "
+                   "{} -outfile 'C:\\install.zip'"
+                   .format(link))
         self._execute_with_retry(cmd)
         cmds = [
             "Add-Type -A System.IO.Compression.FileSystem",
