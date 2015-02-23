@@ -15,6 +15,7 @@
 
 
 from argus.scenarios import base
+from argus.scenarios import service_mock
 from argus import util
 
 
@@ -49,3 +50,21 @@ class RescueWindowsScenario(BaseWindowsScenario):
         self._servers_client.unrescue_server(self._server['id'])
         self._servers_client.wait_for_server_status(self._server['id'],
                                                     'ACTIVE')
+
+
+class BaseMockServiceMixin(object):
+
+    def prepare_instance(self):
+        with service_mock.create_service(self.service_class):
+            super(BaseMockServiceMixin, self).prepare_instance()
+
+
+class EC2WindowsScenario(BaseMockServiceMixin, BaseWindowsScenario):
+
+    service_class = service_mock.EC2ServiceMock
+
+
+class CloudStackWindowsScenario(BaseMockServiceMixin,
+                                BaseWindowsScenario):
+
+    service_class = service_mock.CloudStackServiceMock
