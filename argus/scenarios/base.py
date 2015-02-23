@@ -379,8 +379,9 @@ class BaseArgusScenario(object):
 
     def instance_output(self, limit):
         """Get the console output, sent from the instance."""
-        return self._servers_client.get_console_output(self._server['id'],
-                                                       limit)
+        ret = self._servers_client.get_console_output(self._server['id'],
+                                                      limit)
+        return ret.response, ret.data
 
     def instance_server(self):
         """Get the instance server object."""
