@@ -26,7 +26,6 @@ from argus import util
 __all__ = ('BaseCloudbaseinitRecipe', )
 
 
-CONF = util.get_config()
 LOG = util.get_logger()
 
 
