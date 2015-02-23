@@ -92,24 +92,6 @@ def run_once(func, state={}, exceptions={}):
     return wrapper
 
 
-def trap_failure(func):
-    """Call pdb.set_trace when an exception occurs."""
-    @six.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except BaseException:
-            # TODO(cpopa): Save the original exception, since pdb will happily
-            # overwrite it. This makes flake8 scream, though.
-            # pylint: disable=unused-variable
-            exc = sys.exc_info()  # NOQA
-
-            LOG.exception("Exception occurred for func %s.", func)
-            import pdb
-            pdb.set_trace()
-    return wrapper
-
-
 def get_resource(resource):
     """Get the given resource from the list of known resources."""
     return pkgutil.get_data('argus.resources', resource)

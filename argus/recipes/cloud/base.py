@@ -112,6 +112,3 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         self.sysprep()
         self.wait_cbinit_finalization()
         LOG.info("Finished preparing instance %s.", self._instance_id)
-
-    if CONF.argus.debug:
-        prepare = util.trap_failure(prepare)
