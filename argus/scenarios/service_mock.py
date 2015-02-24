@@ -72,7 +72,7 @@ class BaseServiceApp(object):
         return getattr(self, operand)
 
     @cherrypy.expose
-    def stop_me(self): # pylint: no-self-use
+    def stop_me(self):  # pylint: disable=no-self-use
         """Stop the current running cherrypy engine."""
         cherrypy.engine.exit()
 
@@ -82,6 +82,7 @@ class EC2MetadataServiceApp(BaseServiceApp):
 
 
 class CloudstackMetadataServiceApp(BaseServiceApp):
+    """Metadata app for CloudStack service."""
 
     @cherrypy.expose
     def latest(self, data_type, operation=None):
@@ -120,4 +121,26 @@ class CloudstackMetadataServiceApp(BaseServiceApp):
 
 
 class CloudstackPasswordManagerApp(BaseServiceApp):
-    pass
+    """Metadata app for CloudStack password manager."""
+
+    def __init__(self, scenario):
+        super(CloudstackPasswordManagerApp, self).__init__(scenario)
+        self._password = "Passw0rd"
+
+    @cherrypy.expose
+    def index(self):
+        expected_header = "DomU_Request"
+        if expected_header not in cherrypy.request.headers:
+            raise cherrypy.HTTPError(400, "DomU_Request not given")
+
+        operation = cherrypy.request.headers[expected_header]
+        return self._dispatch_method(operation)()
+
+    def send_my_password(self):
+        if not self._password:
+            return "saved_password"
+        return self._password
+
+    def saved_password(self):
+        self._password = None
+
