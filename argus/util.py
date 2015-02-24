@@ -54,8 +54,8 @@ class WinRemoteClient(remote_client.WinRemoteClient):
         return stdout
 
 
-def get_ip():
-    """Get current machine IP."""
+def get_local_ip():
+    """Get the current machine's IP."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.connect(("google.com", 0))
     return sock.getsockname()[0]

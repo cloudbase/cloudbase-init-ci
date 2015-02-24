@@ -143,4 +143,3 @@ class CloudstackPasswordManagerApp(BaseServiceApp):
 
     def saved_password(self):
         self._password = None
-

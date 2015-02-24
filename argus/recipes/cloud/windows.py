@@ -285,29 +285,33 @@ class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
         self._execute('del "{}c"'.format(path))
 
 
-class CloudbaseinitServiceRecipe(CloudbaseinitRecipe):
+class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
+    """A recipe for patching the cloudbaseinit's conf with a custom server."""
 
-    entry = None
+    config_entry = None
     pattern = "{}"
 
     def pre_sysprep(self):
         LOG.info("Inject guest IP for mocked service access.")
         cbdir = introspection.get_cbinit_dir(self._execute)
         conf = ntpath.join(cbdir, "conf", "cloudbase-init.conf")
-        # append service IP as a config option
-        address = self.pattern.format(util.get_ip())
-        line = "{} = {}\n".format(self.entry, address)
+
+        # Append service IP as a config option.
+        address = self.pattern.format(util.get_local_ip())
+        line = "{} = {}\n".format(self.config_entry, address)
         cmd = "powershell ((Get-Content {0}) + {1}) | Set-content {0}".format(
             conf, line)
         self._execute(cmd)
 
 
-class CloudbaseinitEC2Recipe(CloudbaseinitServiceRecipe):
+class CloudbaseinitEC2Recipe(CloudbaseinitMockServiceRecipe):
+    """Recipe for EC2 metadata service mocking."""
 
-    entry = "ec2_metadata_base_url"
+    config_entry = "ec2_metadata_base_url"
     pattern = "http://{}/"
 
 
-class CloudbaseinitCloudstackRecipe(CloudbaseinitServiceRecipe):
+class CloudbaseinitCloudstackRecipe(CloudbaseinitMockServiceRecipe):
+    """Recipe for Cloudstack metadata service mocking."""
 
-    entry = "cloudstack_metadata_ip"
+    config_entry = "cloudstack_metadata_ip"
