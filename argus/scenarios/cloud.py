@@ -91,7 +91,7 @@ class EC2WindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
         named(application=service_mock.EC2MetadataServiceApp,
               script_name="",
               host="0.0.0.0",
-              port="2000"),
+              port=2000),
     ]
 
 
@@ -103,9 +103,9 @@ class CloudstackWindowsScenario(BaseServiceMockMixin,
         named(application=service_mock.CloudstackMetadataServiceApp,
               script_name="",
               host="0.0.0.0",
-              port="2001"),
+              port=2001),
         named(application=service_mock.CloudstackPasswordManagerApp,
               script_name="",
               host="0.0.0.0",
-              port="8080"),
+              port=8080),
     ]
