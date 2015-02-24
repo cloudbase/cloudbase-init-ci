@@ -20,30 +20,28 @@ import textwrap
 import multiprocessing
 
 import cherrypy
-from six.moves import urllib
+from six.moves import urllib  # pylint: disable=import-error
+
+
+def _create_service_server(service, scenario):
+    app = service.application
+    script_name = service.script_name
+    host = service.host
+    port = service.port
+
+    cherrypy.config.update({
+        "server.socket_host": host,
+        "server.socket_port": port,
+        "log.screen": False,
+    })
+    cherrypy.quickstart(app(scenario), script_name)
 
 
 def _instantiate_services(services, scenario):
     for service in services:
-        app = service.application
-        script_name = service.script_name
-        host = service.host
-        port = service.port
-
-        kwargs = {
-            "root": app(scenario),
-            "script_name": script_name,
-            "config": {
-                "/": {
-                    "server.socket_host": host,
-                    "server.socket_port": port,
-                    "log.screen": False,
-                }
-            }
-        }
         process = multiprocessing.Process(
-            target=cherrypy.quickstart,
-            kwargs=kwargs)
+            target=_create_service_server,
+            args=(service, scenario))
         process.start()
         yield process
 
