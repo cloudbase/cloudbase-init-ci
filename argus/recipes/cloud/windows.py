@@ -308,7 +308,7 @@ class CloudbaseinitEC2Recipe(CloudbaseinitMockServiceRecipe):
     """Recipe for EC2 metadata service mocking."""
 
     config_entry = "ec2_metadata_base_url"
-    pattern = "http://{}/"
+    pattern = "http://{}:2000/"
 
 
 class CloudbaseinitCloudstackRecipe(CloudbaseinitMockServiceRecipe):
