@@ -16,7 +16,8 @@
 import base64
 import contextlib
 import textwrap
-import threading
+
+import multiprocessing
 
 import cherrypy
 from six.moves import urllib
@@ -37,26 +38,28 @@ def _instantiate_services(services, scenario):
                 "server.socket_port": port
             }
         }
-        thread = threading.Thread(target=cherrypy.quickstart,
-                                  kwargs=kwargs)
-        thread.start()
-        yield thread
+        process = multiprocessing.Process(
+            target=cherrypy.quickstart,
+            kwargs=kwargs)
+        process.start()
+        yield process
 
 
 @contextlib.contextmanager
 def instantiate_services(services, scenario):
     """Context manager used for starting mocked metadata services."""
 
-    # Start the service(s) in different thread(s).
-    threads = list(_instantiate_services(services, scenario))
+    # Start the service(s) in different process(es).
+    processes = list(_instantiate_services(services, scenario))
     try:
         yield
     finally:
         # Send the shutdown "signal"
         for service in services:
             urllib.request.urlopen(service.stop_link)
-        for thread in threads:
-            thread.join()
+        for process in processes:
+            process.join()
+            process.terminate()
 
 
 class BaseServiceApp(object):
@@ -69,7 +72,7 @@ class BaseServiceApp(object):
         return getattr(self, operand)
 
     @cherrypy.expose
-    def stop_me(self):
+    def stop_me(self): # pylint: no-self-use
         """Stop the current running cherrypy engine."""
         cherrypy.engine.exit()
 
