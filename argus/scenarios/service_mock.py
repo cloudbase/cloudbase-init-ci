@@ -56,7 +56,10 @@ def instantiate_services(services, scenario):
     finally:
         # Send the shutdown "signal"
         for service in services:
-            urllib.request.urlopen(service.stop_link)
+            try:
+                urllib.request.urlopen(service.stop_link)
+            except urllib.error.URLError:
+                pass
         for process in processes:
             process.join()
             process.terminate()
