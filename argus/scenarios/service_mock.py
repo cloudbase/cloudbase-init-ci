@@ -34,8 +34,10 @@ def _instantiate_services(services, scenario):
             "root": app(scenario),
             "script_name": script_name,
             "config": {
-                "server.socket_host": host,
-                "server.socket_port": port
+                "/": {
+                    "server.socket_host": host,
+                    "server.socket_port": port
+                }
             }
         }
         process = multiprocessing.Process(
