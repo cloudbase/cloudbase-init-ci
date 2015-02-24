@@ -315,3 +315,19 @@ class CloudbaseinitCloudstackRecipe(CloudbaseinitMockServiceRecipe):
     """Recipe for Cloudstack metadata service mocking."""
 
     config_entry = "cloudstack_metadata_ip"
+    pattern = "{}:2001"
+
+    def pre_sysprep(self):
+        super(CloudbaseinitCloudstackRecipe, self).pre_sysprep()
+        # Adjust code in such manner to make the service reachable.
+        python_dir = introspection.get_python_dir(self._execute)
+        path, src, dest = (
+            ntpath.join(
+                python_dir, "Lib", "site-packages",
+                "cloudbaseinit", "metadata",
+                "services", "cloudstack.py"),
+            "self._router_ip = ip_address",
+            "self._router_ip = ip_address.split(':')[0]")
+        cmd = ('powershell "(gc {0}).replace(\'{1}\', '
+               '\'{2}\') | sc {0}"'.format(path, src, dest))
+        self._execute(cmd)
