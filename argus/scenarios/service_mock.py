@@ -36,7 +36,8 @@ def _instantiate_services(services, scenario):
             "config": {
                 "/": {
                     "server.socket_host": host,
-                    "server.socket_port": port
+                    "server.socket_port": port,
+                    "log.screen": False,
                 }
             }
         }
