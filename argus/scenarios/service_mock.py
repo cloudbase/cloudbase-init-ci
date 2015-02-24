@@ -54,7 +54,7 @@ def instantiate_services(services, scenario):
     finally:
         # Send the shutdown "signal"
         for service in services:
-            urllib.request.urlopen(service.link)
+            urllib.request.urlopen(service.stop_link)
         for thread in threads:
             thread.join()
 
@@ -67,6 +67,11 @@ class BaseServiceApp(object):
     def _dispatch_method(self, operand):
         operand = operand.replace("-", "_")
         return getattr(self, operand)
+
+    @cherrypy.expose
+    def stop_me(self):
+        """Stop the current running cherrypy engine."""
+        cherrypy.engine.exit()
 
 
 class EC2MetadataServiceApp(BaseServiceApp):

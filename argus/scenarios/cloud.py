@@ -24,9 +24,11 @@ class named(collections.namedtuple("service", "application script_name "
                                               "host port")):
 
     @property
-    def link(self):
-        return "http://{host}:{port}{script_name}".format(
-            host=self.host, port=self.port, script_name=self.port)
+    def stop_link(self):
+        link = "http://{host}:{port}{script_name}/stop_me/"
+        return link.format(host=self.host,
+                           port=self.port,
+                           script_name=self.port)
 
 
 class BaseWindowsScenario(base.BaseArgusScenario):
