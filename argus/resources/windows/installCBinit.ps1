@@ -33,7 +33,6 @@ function Set-Service([string]$ProgramFiles) {
         $value = "metadata_services=cloudbaseinit.metadata.services.ec2service.EC2Service"
     } elseif ($serviceType -eq 'opennebula') {
         $value = "metadata_services=cloudbaseinit.metadata.services.opennebulaservice.OpenNebulaService"
-    }
     } elseif ($serviceType -eq 'cloudstack') {
         $value = "metadata_services=cloudbaseinit.metadata.services.cloudstack.CloudStack"
     } elseif ($serviceType -eq 'maas') {
