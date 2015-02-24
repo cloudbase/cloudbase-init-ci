@@ -299,8 +299,8 @@ class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
         # Append service IP as a config option.
         address = self.pattern.format(util.get_local_ip())
         line = "{} = {}\n".format(self.config_entry, address)
-        cmd = "powershell ((Get-Content {0}) + {1}) | Set-content {0}".format(
-            conf, line)
+        cmd = ('powershell "((Get-Content {0}) + \'{1}\') |'
+               ' Set-Content {0}"'.format(conf, line))
         self._execute(cmd)
 
 
