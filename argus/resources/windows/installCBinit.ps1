@@ -36,7 +36,6 @@ function Set-Service([string]$ProgramFiles) {
     }
     } elseif ($serviceType -eq 'cloudstack') {
         $value = "metadata_services=cloudbaseinit.metadata.services.cloudstack.CloudStack"
-    }
     } elseif ($serviceType -eq 'maas') {
         $value = "metadata_services=cloudbaseinit.metadata.services.maasservice.MaaSHttpService"
     }
