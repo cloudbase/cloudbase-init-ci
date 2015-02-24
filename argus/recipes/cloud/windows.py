@@ -283,3 +283,31 @@ class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
         self._execute('del "{}"'.format(path))
         # *.pyc
         self._execute('del "{}c"'.format(path))
+
+
+class CloudbaseinitServiceRecipe(CloudbaseinitRecipe):
+
+    entry = None
+    pattern = "{}"
+
+    def pre_sysprep(self):
+        LOG.info("Inject guest IP for mocked service access.")
+        cbdir = introspection.get_cbinit_dir(self._execute)
+        conf = ntpath.join(cbdir, "conf", "cloudbase-init.conf")
+        # append service IP as a config option
+        address = self.pattern.format(util.get_ip())
+        line = "{} = {}\n".format(self.entry, address)
+        cmd = "powershell ((Get-Content {0}) + {1}) | Set-content {0}".format(
+            conf, line)
+        self._execute(cmd)
+
+
+class CloudbaseinitEC2Recipe(CloudbaseinitServiceRecipe):
+
+    entry = "ec2_metadata_base_url"
+    pattern = "http://{}/"
+
+
+class CloudbaseinitCloudstackRecipe(CloudbaseinitServiceRecipe):
+
+    entry = "cloudstack_metadata_ip"

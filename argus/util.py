@@ -19,6 +19,7 @@ import importlib
 import itertools
 import logging
 import pkgutil
+import socket
 import subprocess
 import sys
 
@@ -51,6 +52,13 @@ class WinRemoteClient(remote_client.WinRemoteClient):
         LOG.info("The stderr of the command was: %s", stderr)
         LOG.info("The exit code of the command was: %s", exit_code)
         return stdout
+
+
+def get_ip():
+    """Get current machine IP."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.connect(("google.com", 0))
+    return sock.getsockname()[0]
 
 
 def decrypt_password(private_key, password):
