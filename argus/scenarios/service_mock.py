@@ -16,11 +16,15 @@
 import base64
 import contextlib
 import textwrap
+import time
 
 import multiprocessing
 
 import cherrypy
 from six.moves import urllib  # pylint: disable=import-error
+
+
+STOP_LINK_RETRY_COUNT = 5
 
 
 def _create_service_server(service, scenario):
@@ -57,13 +61,17 @@ def instantiate_services(services, scenario):
     finally:
         # Send the shutdown "signal"
         for service in services:
-            try:
-                urllib.request.urlopen(service.stop_link)
-            except urllib.error.URLError:
-                pass
+            for _ in range(STOP_LINK_RETRY_COUNT):
+                # Do a best effort to stop the service.
+                try:
+                    urllib.request.urlopen(service.stop_link)
+                    break
+                except urllib.error.URLError:
+                    time.sleep(1)
+
         for process in processes:
-            process.join()
             process.terminate()
+            process.join()
 
 
 class BaseServiceApp(object):
