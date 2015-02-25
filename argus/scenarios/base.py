@@ -112,7 +112,6 @@ class BaseArgusScenario(object):
                  environment_preparer=None):
         self._name = name
         self._recipe = recipe
-        self._userdata = userdata
         self._metadata = metadata
         self._test_classes = test_classes
         # Internal created objects
@@ -129,6 +128,10 @@ class BaseArgusScenario(object):
         self._introspection = introspection
         self._output_directory = output_directory
         self._environment_preparer = environment_preparer
+        if userdata:
+            self._userdata = base64.encodestring(userdata)
+        else:
+            self._userdata = None
 
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
@@ -250,10 +253,6 @@ class BaseArgusScenario(object):
     def _setup(self):
         # pylint: disable=attribute-defined-outside-init
         LOG.info("Creating server for scenario %s...", self._name)
-        if self._userdata:
-            userdata = base64.encodestring(self._userdata)
-        else:
-            userdata = None
 
         self._keypair = self._create_keypair()
         self._server = self._create_server(
