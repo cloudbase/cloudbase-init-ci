@@ -104,10 +104,11 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         self.replace_code()
         # pause the process until user is satisfied with his changes
         opts = util.parse_cli()
+
+        self.pre_sysprep()
         if opts.pause:
             six.moves.input("Press Enter to continue...")
 
-        self.pre_sysprep()
         self.sysprep()
         self.wait_cbinit_finalization()
         LOG.info("Finished preparing instance %s.", self._instance_id)
