@@ -119,6 +119,7 @@ class CloudstackMetadataServiceApp(BaseServiceApp):
         return self.scenario.instance_server()['name'][:15].lower()
 
     def public_keys(self):
+        cherrypy.response.headers['Content-Type']= 'text/plain'
         return self.scenario.public_key()
 
     # pylint: disable=no-self-use
