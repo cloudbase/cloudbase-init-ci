@@ -103,7 +103,9 @@ class CloudstackMetadataServiceApp(BaseServiceApp):
         return self._dispatch_method(data_type)(operation)
 
     def meta_data(self, operation):
-        return self._dispatch_method(operation)()
+        if operation is not None:
+            return self._dispatch_method(operation)()
+        return "meta-data"
 
     # pylint: disable=unused-argument
     def user_data(self, operation=None):
