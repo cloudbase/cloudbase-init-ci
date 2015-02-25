@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import base64
 import contextlib
 import textwrap
 import time
@@ -109,7 +108,9 @@ class CloudstackMetadataServiceApp(BaseServiceApp):
 
     # pylint: disable=unused-argument
     def user_data(self, operation=None):
-        return base64.encodestring(self.scenario._userdata)
+        if self.scenario._userdata:
+            return self.scenario._userdata
+        return ""
 
     def instance_id(self):
         return self.scenario._server['id']
