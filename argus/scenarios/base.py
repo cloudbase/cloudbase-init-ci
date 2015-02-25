@@ -259,7 +259,7 @@ class BaseArgusScenario(object):
             wait_until='ACTIVE',
             key_name=self._keypair['name'],
             disk_config='AUTO',
-            user_data=userdata,
+            user_data=self._userdata,
             meta=self._metadata)
         self._floating_ip = self._assign_floating_ip()
         self._security_group = self._create_security_groups()
