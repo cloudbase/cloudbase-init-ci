@@ -89,7 +89,7 @@ class EC2WindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
 
     services = [
         named(application=service_mock.EC2MetadataServiceApp,
-              script_name="",
+              script_name="/2009-04-04/meta-data",
               host="0.0.0.0",
               port=2000),
     ]

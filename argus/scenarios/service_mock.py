@@ -73,6 +73,7 @@ def instantiate_services(services, scenario):
             process.join()
 
 
+@cherrypy.tools.response_headers(headers=[("Content-Type", "text/plain")])
 class BaseServiceApp(object):
 
     def __init__(self, scenario):
@@ -88,11 +89,59 @@ class BaseServiceApp(object):
         cherrypy.engine.exit()
 
 
-class EC2MetadataServiceApp(BaseServiceApp):
-    pass
+class MetadataServiceAppMixin(object):
+    """Common metadata resources."""
+
+    def instance_id(self):
+        return self.scenario.server['id']
+
+    def local_hostname(self):
+        return self.scenario.instance_server()['name'][:15].lower()
+
+    def public_keys(self):
+        return self.scenario.public_key().strip()
 
 
-class CloudstackMetadataServiceApp(BaseServiceApp):
+class EC2MetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
+
+    def __init__(self, *args, **kwargs):
+        super(EC2MetadataServiceApp, self).__init__(*args, **kwargs)
+        self._keydict = None
+
+    @property
+    def keydict(self):
+        """Build a dictionary with all the public keys.
+
+        Use as keys their indexes in increasing order starting with 0.
+        """
+        if not self._keydict:
+            keys = (super(EC2MetadataServiceApp, self)
+                    .public_keys().splitlines())
+            self._keydict = dict(enumerate(keys))
+        return self._keydict
+
+    @cherrypy.expose
+    def default(self, *args):
+        operation, remain = args[0], args[1:]
+        return self._dispatch_method(operation)(*remain)
+
+    def public_keys(self, *remain):
+        """Mimic the behavior of EC2 metadata service.
+
+        A first request to /public-keys will return all the available keys,
+        each one per line in this form: "index=key-name". Then, based on the
+        number of keys and their indexes, will follow requests like
+        /public-keys/<index>/openssh-key which returns the actual content.
+        """
+        if not len(remain):
+            # Return their indexes and names.
+            return "\n".join(["{}={}".format(idx, key.split()[-1])
+                              for idx, key in self.keydict.items()])
+        # Return the corresponding key, based on the given index.
+        return self.keydict.get(int(remain[0]))
+
+
+class CloudstackMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
     """Metadata app for CloudStack service."""
 
     @cherrypy.expose
@@ -110,16 +159,6 @@ class CloudstackMetadataServiceApp(BaseServiceApp):
     def user_data(self, operation=None):
         userdata = self.scenario.userdata()
         return userdata or ""
-
-    def instance_id(self):
-        return self.scenario.server()['id']
-
-    def local_hostname(self):
-        return self.scenario.instance_server()['name'][:15].lower()
-
-    def public_keys(self):
-        cherrypy.response.headers['Content-Type'] = 'text/plain'
-        return self.scenario.public_key()
 
     # pylint: disable=no-self-use
     def service_offering(self):
