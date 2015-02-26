@@ -93,7 +93,7 @@ class MetadataServiceAppMixin(object):
     """Common metadata resources."""
 
     def instance_id(self):
-        return self.scenario.server['id']
+        return self.scenario.server()['id']
 
     def local_hostname(self):
         return self.scenario.instance_server()['name'][:15].lower()
