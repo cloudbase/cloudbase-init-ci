@@ -34,9 +34,7 @@ class BaseArgusTest(unittest.TestCase):
 
     @property
     def server(self):
-        # Protected access is good here.
-        # pylint: disable=protected-access
-        return self.manager._server
+        return self.manager.server()
 
     @property
     def remote_client(self):

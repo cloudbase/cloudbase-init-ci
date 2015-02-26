@@ -368,6 +368,17 @@ class BaseArgusScenario(object):
             service_type=self._service_type,
             output_directory=self._output_directory).prepare()
 
+    def userdata(self):
+        """Get the userdata which will be injected."""
+        return self._userdata
+
+    def server(self):
+        """Get the server created by this scenario.
+
+        If the server wasn't created, this could be None.
+        """
+        return self._server
+
     def instance_password(self):
         """Get the password posted by the instance."""
         _, encoded_password = self._servers_client.get_password(

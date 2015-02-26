@@ -108,12 +108,11 @@ class CloudstackMetadataServiceApp(BaseServiceApp):
 
     # pylint: disable=unused-argument
     def user_data(self, operation=None):
-        if self.scenario._userdata:
-            return self.scenario._userdata
-        return ""
+        userdata = self.scenario.userdata()
+        return userdata or ""
 
     def instance_id(self):
-        return self.scenario._server['id']
+        return self.scenario.server()['id']
 
     def local_hostname(self):
         return self.scenario.instance_server()['name'][:15].lower()
