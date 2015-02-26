@@ -48,6 +48,7 @@ def _read_url(url):
         return content
 
 
+@util.with_retry()
 def _get_git_link():
     content = _read_url("http://git-scm.com/download/win")
     soup = bs4.BeautifulSoup(content)

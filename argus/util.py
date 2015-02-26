@@ -22,6 +22,7 @@ import pkgutil
 import socket
 import subprocess
 import sys
+import time
 
 import six
 
@@ -98,6 +99,28 @@ def run_once(func, state={}, exceptions={}):
                 exceptions[func] = sys.exc_info()
                 raise
     return wrapper
+
+
+class with_retry(object):  # pylint: disable=invalid-name
+    """A decorator that will retry function calls until success."""
+
+    def __init__(self, tries=5, delay=1):
+        self.tries = tries
+        self.delay = delay
+
+    def __call__(self, func):
+        @six.wraps(func)
+        def wrapper(*args, **kwargs):
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except Exception as exc:
+                    self.tries -= 1
+                    if self.tries <= 0:
+                        raise
+                    LOG.error("%s while calling %s", exc, func)
+                    time.sleep(self.delay)
+        return wrapper
 
 
 def get_resource(resource):
