@@ -381,7 +381,7 @@ class BaseArgusScenario(object):
 
     def instance_password(self):
         """Get the password posted by the instance."""
-        _, encoded_password = self._servers_client.get_password(
+        encoded_password = self._servers_client.get_password(
             self._server['id'])
         return util.decrypt_password(
             private_key=CONF.argus.path_to_private_key,
