@@ -27,6 +27,7 @@ import time
 import six
 
 from argus import config
+from argus import exceptions
 from argus import remote_client
 
 
@@ -43,16 +44,89 @@ DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 
 class WinRemoteClient(remote_client.WinRemoteClient):
-    def run_command_verbose(self, cmd):
-        """Run the given command and log anything it returns."""
+
+    def run_command(self, cmd):
+        """Run the given command and return execution details.
+
+        :rtype: tuple
+        :returns: stdout, stderr, exit_code
+        """
 
         LOG.info("Running command %s...", cmd)
-        stdout, stderr, exit_code = self.run_remote_cmd(cmd)
+        return self.run_remote_cmd(cmd)
 
+    def run_command_verbose(self, cmd):
+        """Run the given command and log anything it returns.
+
+        :rtype: string
+        :returns: stdout
+        """
+        stdout, stderr, exit_code = self.run_command(cmd)
         LOG.info("The command returned the output: %s", stdout)
         LOG.info("The stderr of the command was: %s", stderr)
         LOG.info("The exit code of the command was: %s", exit_code)
         return stdout
+
+    def run_command_with_retry(self, cmd, retry_count=None,
+                               retry_count_interval=5):
+        """Run the given `cmd` until succeeds.
+
+        :param cmd:
+            A string, representing a command which needs to
+            be executed on the underlying remote client.
+        :param retry_count:
+            The number of retries which this function has.
+            If the value is ``None``, then the function will retry *forever*.
+        :param retry_count_interval:
+            The number of seconds to sleep when retrying a command.
+
+        :returns: stdout, stderr, exit_code
+        :rtype: tuple
+        """
+        count = 0
+        while True:
+            try:
+                return self.run_command(cmd)
+            except Exception as exc:  # pylint: disable=broad-except
+                LOG.debug("Command failed with '%s'.\nRetrying...", exc)
+                count += 1
+                if retry_count and count >= retry_count:
+                    raise exceptions.ArgusTimeoutError(
+                        "Command {!r} failed too many times."
+                        .format(cmd))
+                time.sleep(retry_count_interval)
+
+    def run_command_until_condition(self, cmd, cond, retry_count=None,
+                                    retry_count_interval=5):
+        """Run the given `cmd` until a condition *cond* occurs.
+
+        :param cmd:
+            A string, representing a command which needs to
+            be executed on the underlying remote client.
+        :param cond:
+            A callable which receives the standard output returned by
+            executing the command. It should return a boolean value,
+            which tells to this function to stop execution.
+        :param retry_count:
+            The number of retries which this function
+            has until a successful run.
+            If the value is ``None``, then the function will retry *forever*.
+        :param retry_count_interval:
+            The number of seconds to sleep when retrying a command.
+        """
+        while True:
+            stdout, stderr, _ = self.run_command_with_retry(
+                cmd, retry_count=retry_count,
+                retry_count_interval=retry_count_interval)
+            if stderr:
+                raise exceptions.ArgusCLIError(
+                    "Executing command {!r} failed with {!r}."
+                    .format(cmd, stderr))
+            elif cond(stdout):
+                break
+            else:
+                LOG.debug("Condition not met.")
+                time.sleep(retry_count_interval)
 
 
 def get_local_ip():
@@ -81,13 +155,13 @@ def decrypt_password(private_key, password):
 
 
 # pylint: disable=dangerous-default-value
-def run_once(func, state={}, exceptions={}):
+def run_once(func, state={}, errors={}):
     """A memoization decorator, whose purpose is to cache calls."""
     @six.wraps(func)
     def wrapper(*args, **kwargs):
-        if func in exceptions:
+        if func in errors:
             # Deliberate use of LBYL.
-            six.reraise(*exceptions[func])
+            six.reraise(*errors[func])
 
         try:
             return state[func]
@@ -96,7 +170,7 @@ def run_once(func, state={}, exceptions={}):
                 state[func] = result = func(*args, **kwargs)
                 return result
             except Exception:
-                exceptions[func] = sys.exc_info()
+                errors[func] = sys.exc_info()
                 raise
     return wrapper
 

@@ -74,7 +74,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
                     'where -Property Name -contains {0}).Name"'
                     .format(self._image.default_ci_username))
-        return self._run_cmd_until_condition(
+        self._run_cmd_until_condition(
             wait_cmd,
             lambda stdout: stdout.strip() == self._image.default_ci_username)
 
