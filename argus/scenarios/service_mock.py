@@ -204,14 +204,27 @@ class MaasMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
 
     @staticmethod
     def _verify_headers():
+        if 'Authorization' not in cherrypy.request.headers:
+            raise cherrypy.HTTPError(400, "Authorization header not given")
+
+        auth = cherrypy.request.headers['Authorization']
+        if not auth.startswith('OAuth'):
+            raise cherrypy.HTTPError(400, "Authorization header malformed. "
+                                          "It should start with `OAuth`.")
+
+        auth = auth[6:]
+        parts = map(str.strip, auth.split(","))
+        auth_parts = {part.split("=")[0] for part in parts}
+
         required_headers = {
             'oauth_version', 'oauth_nonce',
             'oauth_timestamp', 'oauth_token',
             'oauth_consumer_key',
         }
-        for header in required_headers:
-            if header not in cherrypy.request.headers:
-                raise cherrypy.HTTPError(400, "header %r not given" % header)
+        if not required_headers.issubset(auth_parts):
+            missing = required_headers - auth_parts
+            message = "Expected headers not found %r" % missing
+            raise cherrypy.HTTPError(400, message)
 
     @cherrypy.expose
     def user_data(self):
