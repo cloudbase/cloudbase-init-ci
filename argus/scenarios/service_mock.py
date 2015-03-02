@@ -183,7 +183,7 @@ class CloudstackPasswordManagerApp(BaseServiceApp):
 
     @cherrypy.expose
     def index(self):
-        expected_header = "DomU_Request"
+        expected_header = "Domu_request"
         if expected_header not in cherrypy.request.headers:
             raise cherrypy.HTTPError(400, "DomU_Request not given")
 
