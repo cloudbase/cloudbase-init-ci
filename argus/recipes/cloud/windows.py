@@ -78,6 +78,14 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             wait_cmd,
             lambda stdout: stdout.strip() == self._image.default_ci_username)
 
+    def execution_prologue(self):
+        LOG.info("Retrieve common module for proper script execution.")
+
+        cmd = ("powershell Invoke-webrequest -uri "
+               "{}/windows/common.ps1 -outfile C:\\common.ps1"
+               .format(CONF.argus.resources))
+        self._execute(cmd)
+
     def get_installation_script(self):
         """Get an insallation script for CloudbaseInit."""
         LOG.info("Retrieve an installation script for CloudbaseInit.")

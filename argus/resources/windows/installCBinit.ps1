@@ -1,3 +1,5 @@
+Import-Module C:\common.ps1
+
 param
 (
     [string]$serviceType = 'http'
@@ -66,12 +68,10 @@ try {
     $Host.UI.RawUI.WindowTitle = "Downloading Cloudbase-Init..."
 
     $osArch = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
-    $programDirs = @($ENV:ProgramFiles)
 
     if($osArch -eq "64-bit")
     {
         $CloudbaseInitMsi = "CloudbaseInitSetup_Beta_x64.msi"
-        $programDirs += ${ENV:ProgramFiles(x86)}
     }
     else
     {
@@ -98,16 +98,7 @@ try {
         throw "Installing $CloudbaseInitMsiPath failed. Log: $CloudbaseInitMsiLog"
     }
 
-    $ProgramFilesDir = 0
-    foreach ($programDir in $programDirs) {
-        if (Test-Path "$programDir\Cloudbase Solutions") {
-            $ProgramFilesDir = $programDir
-        }
-    }
-    if (!$ProgramFilesDir) {
-        throw "Cloudbase-init installed files not found in $programDirs"
-    }
-
+    $programFilesDir = Get-ProgramDir
     Set-LocalScripts $ProgramFilesDir
     Set-WindowsActivation $ProgramFilesDir
 

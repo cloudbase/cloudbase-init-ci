@@ -1,18 +1,10 @@
+Import-Module C:\common.ps1
+
 $ErrorActionPreference = "Stop"
 
 try
 {
-
-    $osArch = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
-    if($osArch -eq "64-bit")
-    {
-        $programFilesDir = ${ENV:ProgramFiles(x86)}
-    }
-    else
-    {
-        $programFilesDir = $ENV:ProgramFiles
-    }
-
+    $programFilesDir = Get-ProgramDir
     $Host.UI.RawUI.WindowTitle = "Running Sysprep..."
     $unattendedXmlPath = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\Unattend.xml"
     & "$ENV:SystemRoot\System32\Sysprep\Sysprep.exe" `/generalize `/oobe `/reboot `/unattend:"$unattendedXmlPath"
