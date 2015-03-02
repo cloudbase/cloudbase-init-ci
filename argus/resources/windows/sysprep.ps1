@@ -1,4 +1,4 @@
-Import-Module C:\common.ps1
+Import-Module C:\common.psm1
 
 $ErrorActionPreference = "Stop"
 

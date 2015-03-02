@@ -1,10 +1,9 @@
-Import-Module C:\common.ps1
-
 param
 (
     [string]$serviceType = 'http'
 )
 
+Import-Module C:\common.psm1
 $ErrorActionPreference = "Stop"
 
 

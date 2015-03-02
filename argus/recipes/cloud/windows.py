@@ -82,7 +82,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         LOG.info("Retrieve common module for proper script execution.")
 
         cmd = ("powershell Invoke-webrequest -uri "
-               "{}/windows/common.ps1 -outfile C:\\common.ps1"
+               "{}/windows/common.psm1 -outfile C:\\common.psm1"
                .format(CONF.argus.resources))
         self._execute(cmd)
 

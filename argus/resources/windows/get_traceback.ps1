@@ -1,4 +1,4 @@
-Import-Module C:\common.ps1
+Import-Module C:\common.psm1
 $programFilesDir = Get-ProgramDir
 
 Select-string -Path $programFilesDir'\Cloudbase Solutions\Cloudbase-Init\log\cloudbase-init.log' `

@@ -1,6 +1,6 @@
 # Look for any tracebacks in the code
 
-Import-Module C:\common.ps1
+Import-Module C:\common.psm1
 $programFilesDir = Get-ProgramDir
 
 $cloudbaseinit = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init"
