@@ -341,3 +341,30 @@ class CloudbaseinitCloudstackRecipe(CloudbaseinitMockServiceRecipe):
         self._execute(cmd)
 
         self._execute("powershell C:\\\\patch_cloudstack.ps1")
+
+
+class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
+    """Recipe for Maas metadata service mocking."""
+
+    config_entry = "maas_metadata_url"
+    pattern = "http://{}:2002"
+
+    def pre_sysprep(self):
+        super(CloudbaseinitMaasRecipe, self).pre_sysprep()
+
+        # We'll have to send a couple of other config options as well.
+        cbdir = introspection.get_cbinit_dir(self._execute)
+        conf = ntpath.join(cbdir, "conf", "cloudbase-init.conf")
+
+        required_fields = (
+            "maas_oauth_consumer_key",
+            "maas_oauth_consumer_secret",
+            "maas_oauth_token_key",
+            "maas_oauth_token_secret",
+        )
+
+        for field in required_fields:
+            line = "{} = secret".format(field)
+            cmd = ('powershell "((Get-Content {0!r}) + {1!r}) |'
+                   ' Set-Content {0!r}"'.format(conf, line))
+            self._execute(cmd)
