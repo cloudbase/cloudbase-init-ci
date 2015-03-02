@@ -355,7 +355,7 @@ class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
         )
 
         for field in required_fields:
-            line = "{} = 'secret'".format(field)
+            line = "{} = secret".format(field)
             cmd = ('powershell "((Get-Content {0!r}) + {1!r}) |'
                    ' Set-Content {0!r}"'.format(conf, line))
             self._execute(cmd)
