@@ -20,7 +20,7 @@ import time
 import multiprocessing
 
 import cherrypy
-from six.moves import urllib  # pylint: disable=import-error
+from six.moves import urllib, http_client  # pylint: disable=import-error
 
 
 STOP_LINK_RETRY_COUNT = 5
@@ -65,7 +65,7 @@ def instantiate_services(services, scenario):
                 try:
                     urllib.request.urlopen(service.stop_link)
                     break
-                except urllib.error.URLError:
+                except (urllib.error.URLError, http_client.BadStatusLine):
                     time.sleep(1)
 
         for process in processes:
