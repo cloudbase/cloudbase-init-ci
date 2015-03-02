@@ -219,7 +219,7 @@ class MaasMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
         return self.scenario.userdata() or ""
 
     @cherrypy.expose
-    def meta_data(self, operation):
+    def meta_data(self, operation=None):
         self._verify_headers()
         if operation is not None:
             return self._dispatch_method(operation)()
