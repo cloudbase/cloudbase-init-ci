@@ -46,6 +46,13 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     def wait_for_boot_completion(self):
         """Wait for the instance to finish up booting."""
 
+    def execution_prologue(self):
+        """Executed before any downloaded script.
+
+        Do extra things to assure a successful
+        remote powershell (and others) script execution.
+        """
+
     @abc.abstractmethod
     def get_installation_script(self):
         """Get the installation script for cloudbaseinit."""
@@ -97,6 +104,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         """
         LOG.info("Preparing instance %s...", self._instance_id)
         self.wait_for_boot_completion()
+        self.execution_prologue()
         self.get_installation_script()
         self.install_cbinit()
         self.replace_install()
