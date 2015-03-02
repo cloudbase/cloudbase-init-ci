@@ -109,3 +109,14 @@ class CloudstackWindowsScenario(BaseServiceMockMixin,
               host="0.0.0.0",
               port=8080),
     ]
+
+
+class MaasWindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
+    """Scenario for testing the Maas metadata service."""
+
+    services = [
+        named(application=service_mock.MaasMetadataServiceApp,
+              script_name="/2012-03-01",
+              host="0.0.0.0",
+              port=2002),
+    ]
