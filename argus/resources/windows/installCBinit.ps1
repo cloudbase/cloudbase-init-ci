@@ -24,7 +24,7 @@ function Set-LocalScripts([string]$ProgramFilesDir) {
 }
 
 
-function Set-Service([string]$ProgramFiles) {
+function Set-Service([string]$ProgramFilesDir) {
     $path = "$ProgramFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
 
     if ($serviceType -eq 'http') {
@@ -43,7 +43,7 @@ function Set-Service([string]$ProgramFiles) {
     ((Get-Content $path) + $value) | Set-content $path
 }
 
-function Set-WindowsActivation([string]$ProgramFiles) {
+function Set-WindowsActivation([string]$ProgramFilesDir) {
     $value = "activate_windows=True"
     $path = "$ProgramFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
     ((Get-Content $path) + $value) | Set-content $path
