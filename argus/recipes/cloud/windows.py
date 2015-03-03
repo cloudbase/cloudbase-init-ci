@@ -214,7 +214,12 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                "{}/windows/sysprep.ps1 -outfile 'C:\\sysprep.ps1'"
                .format(CONF.argus.resources))
         self._execute(cmd)
-        self._execute('powershell C:\\sysprep.ps1')
+        try:
+            self._execute('powershell C:\\sysprep.ps1')
+        except Exception:
+            # This could fail, since it's blocking until the
+            # restart occurs.
+            pass
 
     def wait_cbinit_finalization(self):
         """Wait for the finalization of CloudbaseInit.
