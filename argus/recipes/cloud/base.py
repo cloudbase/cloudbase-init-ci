@@ -67,7 +67,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
 
     @abc.abstractmethod
     def wait_reboot(self):
-        """Do a reboot and wait for the instance to be up."""
+        """Wait for the instance to be rebooted."""
 
     @abc.abstractmethod
     def install_git(self):
@@ -118,5 +118,6 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
             six.moves.input("Press Enter to continue...")
 
         self.sysprep()
+        self.wait_reboot()
         self.wait_cbinit_finalization()
         LOG.info("Finished preparing instance %s.", self._instance_id)

@@ -231,13 +231,11 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     def wait_reboot(self):
         """Do a reboot and wait until the instance is up."""
 
-        LOG.info('Waiting for server status SHUTOFF because of sysprep...')
+        LOG.info('Waiting for the instance to be rebooted, due to sysprep.')
         self._api_manager.servers_client.wait_for_server_status(
             server_id=self._instance_id,
             status='SHUTOFF',
             extra_timeout=600)
-
-        self._api_manager.servers_client.start(self._instance_id)
 
         LOG.info('Waiting for server status ACTIVE...')
         self._api_manager.servers_client.wait_for_server_status(
