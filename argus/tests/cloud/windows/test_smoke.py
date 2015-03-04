@@ -116,7 +116,7 @@ class TestScriptsUserdataSmoke(TestSmoke):
         # user data plugins.
         userdata_executed_plugins = (
             self.introspection.get_userdata_executed_plugins())
-        self.assertEqual(4, userdata_executed_plugins)
+        self.assertEqual(5, userdata_executed_plugins)
 
     def test_local_scripts_executed(self):
         # Verify that the shell script we provided as local script
