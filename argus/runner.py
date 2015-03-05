@@ -83,14 +83,13 @@ class Runner(object):
 
         time_taken = time.time() - start_time
 
-        LOG.info("Ran %d test%s in %.3fs",
+        LOG.info("\nRan %d test%s in %.3fs",
                  tests_run, tests_run != 1 and "s" or "", time_taken)
-        LOG.info("\n")
 
         if failures or errors:
-            LOG.info("FAILED")
+            head = "FAILED"
         else:
-            LOG.info("OK")
+            head = "OK"
 
         infos = []
 
@@ -108,9 +107,9 @@ class Runner(object):
             infos.append("unexpected successes=%d" % unexpected_successes)
 
         if infos:
-            LOG.info(" (%s)", ", ".join(infos))
+            LOG.info("%s (%s)", head, ", ".join(infos))
         else:
-            LOG.info("\n")
+            LOG.info(head)
 
 
 def _load_userdata(userdata):
