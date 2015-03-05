@@ -66,12 +66,13 @@ class WinRemoteClient(object):
             stdout, stderr, exit_code = protocol_client.get_command_output(
                 shell_id, command_id)
             if exit_code:
+                output = "\n\n".join([out for out in (stdout, stderr) if out])
                 raise exceptions.ArgusError(
                     "Executing command {command!r} failed with "
                     "exit code {exit_code!r} and output {output!r}."
                     .format(command=command,
                             exit_code=exit_code,
-                            output=stdout))
+                            output=output))
 
             return stdout, stderr, exit_code
         finally:
