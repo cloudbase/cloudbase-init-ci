@@ -41,6 +41,7 @@ __all__ = (
 )
 
 DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+DEFAULT_LOG_FILE = 'argus.log'
 
 
 class WinRemoteClient(remote_client.WinRemoteClient):
@@ -233,12 +234,6 @@ def parse_cli():
                              "by a recipe.")
     parser.add_argument("-p", "--pause", action="store_true",
                         help="Pause argus before doing any test.")
-    parser.add_argument("--logging-format",
-                        type=str, default=DEFAULT_FORMAT,
-                        help="The logging format argus should use.")
-    parser.add_argument("--logging-file",
-                        type=str, default="argus.log",
-                        help="The logging file argus should use.")
     parser.add_argument("--test-os-types",
                         type=str, nargs="*",
                         help="Test only those scenarios with these OS types. "
@@ -267,26 +262,24 @@ def get_config():
     return config.ConfigurationParser(opts.conf).conf
 
 
-def get_logger(name="argus", format_string=None):
+def get_logger(name="argus",
+               format_string=DEFAULT_FORMAT,
+               logging_file=DEFAULT_LOG_FILE):
     """Obtain a new logger object.
 
-    The `name` parameter will be the name of the logger
-    and `format_string` will be the format it will
-    use for logging.
-    If it is not given, the the one given at command
-    line will be used, otherwise the default format.
+    The `name` parameter will be the name of the logger and `format_string`
+    will be the format it will use for logging. `logging_file` is a file
+    where the messages will be written.
     """
     logger = logging.getLogger(name)
-    opts = parse_cli()
-    formatter = logging.Formatter(
-        format_string or opts.logging_format or DEFAULT_FORMAT)
+    formatter = logging.Formatter(format_string)
 
     if not logger.handlers:
         # If the logger wasn't obtained another time,
         # then it shouldn't have any loggers
 
-        if opts.logging_file:
-            file_handler = logging.FileHandler(opts.logging_file)
+        if logging_file:
+            file_handler = logging.FileHandler(logging_file)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
 
