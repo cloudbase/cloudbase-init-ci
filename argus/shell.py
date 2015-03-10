@@ -16,7 +16,8 @@ from argus import runner
 
 
 def main():
-    runner.run_scenarios()
+    failures = runner.run_scenarios()
+    sys.exit(1 if failures else 0)
 
 
 if __name__ == "__main__":

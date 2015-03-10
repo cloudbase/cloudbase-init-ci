@@ -111,6 +111,8 @@ class Runner(object):
         else:
             LOG.info(head)
 
+        return failures or errors
+
 
 def _load_userdata(userdata):
     userdata, is_argus, part = userdata.partition("argus.")
@@ -211,4 +213,4 @@ def run_scenarios():
     """
     scenarios = _filter_scenarios(CONF.scenarios)
     scenario_classes = map(_build_scenario, scenarios)
-    Runner(scenario_classes).run()
+    return Runner(scenario_classes).run()
