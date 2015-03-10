@@ -15,9 +15,9 @@
 
 import collections
 import os
-import unittest
 import tempfile
 import textwrap
+import unittest
 
 from argus import config
 
@@ -108,16 +108,18 @@ class TestConfig(unittest.TestCase):
         """)
 
     def test_parse_config_environment(self):
-        expected_environment = collections.namedtuple(
+        environment_factory = collections.namedtuple(
             'expected_environment',
             'name preparer config start_commands stop_commands')
-        expected_environment = expected_environment(
+        config_factory = collections.namedtuple('config', 'config_file values')
+
+        environment_config = config_factory('/etc/nova/nova.conf',
+                                            {'default': {'configdrive': '34',
+                                                         'tempest': '24'},
+                                             'nova': {'test': '24'}})
+        expected_environment = environment_factory(
             'environment_nova',
-            'fully.qualified:Name',
-            {'config_file': '/etc/nova/nova.conf',
-             'default': {'configdrive': '34',
-                         'tempest': '24'},
-             'nova': {'test': '24'}},
+            'fully.qualified:Name', environment_config,
             ['test', 'multiple', 'commands'],
             ['test', 'comma', 'commands']
         )
@@ -225,9 +227,8 @@ class TestConfig(unittest.TestCase):
                              parsed.scenarios[0].environment.stop_commands)
             self.assertEqual(environment.preparer,
                              parsed.scenarios[0].environment.preparer)
-
             self.assertEqual(
-                sorted(environment.config.items()),
-                sorted(parsed.scenarios[0].environment.config.items()))
+                environment.config,
+                parsed.scenarios[0].environment.config)
         else:
             self.assertFalse(parsed.scenarios[0].environment)

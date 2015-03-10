@@ -279,7 +279,7 @@ def get_logger(name="argus",
         # then it shouldn't have any loggers
 
         if logging_file:
-            file_handler = logging.FileHandler(logging_file)
+            file_handler = logging.FileHandler(logging_file, delay=True)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
 
