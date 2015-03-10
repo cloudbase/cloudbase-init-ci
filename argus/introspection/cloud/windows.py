@@ -67,7 +67,7 @@ def _escape_path(path):
     return path
 
 
-def _get_cbinit_dir(execute_function):
+def get_cbinit_dir(execute_function):
     """Get the location of cloudbase-init from the instance."""
     stdout = execute_function(
         'powershell "(Get-WmiObject  Win32_OperatingSystem).'
@@ -100,7 +100,7 @@ def _get_cbinit_dir(execute_function):
 
 def get_python_dir(execute_function):
     """Find python directory from the cb-init installation."""
-    cbinit_dir = _get_cbinit_dir(execute_function)
+    cbinit_dir = get_cbinit_dir(execute_function)
     command = 'dir "{}" /b'.format(cbinit_dir)
     stdout = execute_function(command).strip()
     names = list(filter(None, stdout.splitlines()))

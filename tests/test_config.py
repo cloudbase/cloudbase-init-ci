@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import collections
 import os
 import unittest
 import tempfile
@@ -34,7 +35,7 @@ class TestConfig(unittest.TestCase):
     # TODO(cpopa): more tests should be added here
 
     def test_parse_config(self):
-        tmp = self._create_file("""
+        self._test_parse_config("""
         [argus]
         resources = a
         debug = False
@@ -55,6 +56,7 @@ class TestConfig(unittest.TestCase):
         created_user = 5
 
         [scenario_windows]
+        type = smoke
         scenario = 3
         test_classes = 4,5, 6, 7,   8,
                        0,2
@@ -64,9 +66,122 @@ class TestConfig(unittest.TestCase):
         image = 8
         service_type = configdrive
         introspection = something
+
         """)
 
-        parsed = config.parse_config(tmp)
+    def test_parse_config_inheritance(self):
+        self._test_parse_config("""
+        [argus]
+        resources = a
+        debug = False
+        path_to_private_key = b
+        file_log = c
+        log_format = d
+        dns_nameservers = a,b
+
+        [cloudbaseinit]
+        expected_plugins_count = 4
+
+        [image_8]
+        default_ci_username = Admin
+        default_ci_password = Passw0rd
+        image_ref = image_ref
+        flavor_ref = flavor_ref
+        group = 4
+        created_user = 5
+
+        [base_scenario]
+
+        type = smoke
+        scenario = 2
+        test_classes = 4,5,6,7,8,0,2
+        recipe = 5
+        userdata = 6
+        metadata = 7
+        introspection = something
+
+        [scenario_windows : base_scenario]
+        type = smoke
+        scenario = 3
+        image = 8
+        service_type = configdrive
+        """)
+
+    def test_parse_config_environment(self):
+        expected_environment = collections.namedtuple(
+            'expected_environment',
+            'name preparer config start_commands stop_commands')
+        expected_environment = expected_environment(
+            'environment_nova',
+            'fully.qualified:Name',
+            {'config_file': '/etc/nova/nova.conf',
+             'default': {'configdrive': '34',
+                         'tempest': '24'},
+             'nova': {'test': '24'}},
+            ['test', 'multiple', 'commands'],
+            ['test', 'comma', 'commands']
+        )
+
+        self._test_parse_config("""
+        [devstack_config]
+
+        config_file = /etc/nova/nova.conf
+        default.configdrive = 34
+        default.tempest = 24
+        nova.test = 24
+
+        [environment_nova]
+
+        preparer = fully.qualified:Name
+        config = devstack_config
+        start_commands = test
+                         multiple
+                         commands
+        stop_commands = test,
+                        comma,
+                        commands
+
+        [argus]
+        resources = a
+        debug = False
+        path_to_private_key = b
+        file_log = c
+        log_format = d
+        dns_nameservers = a,b
+
+        [cloudbaseinit]
+        expected_plugins_count = 4
+
+        [image_8]
+        default_ci_username = Admin
+        default_ci_password = Passw0rd
+        image_ref = image_ref
+        flavor_ref = flavor_ref
+        group = 4
+        created_user = 5
+
+        [base_scenario]
+
+        type = smoke
+        scenario = 2
+        test_classes = 4,5,6,7,8,0,2
+        recipe = 5
+        userdata = 6
+        metadata = 7
+        introspection = something
+
+        [scenario_windows : base_scenario]
+        type = smoke
+        scenario = 3
+        image = 8
+        service_type = configdrive
+        environment = environment_nova
+        """, environment=expected_environment)
+
+    def _test_parse_config(self, config_text, environment=None):
+        tmp = self._create_file(textwrap.dedent(config_text))
+
+        parsed = config.ConfigurationParser(tmp).conf
         self.assertTrue({'argus',
                          'images',
                          'cloudbaseinit',
@@ -98,3 +213,21 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(parsed.images[0], parsed.scenarios[0].image)
         self.assertEqual('configdrive', parsed.scenarios[0].service_type)
         self.assertEqual('something', parsed.scenarios[0].introspection)
+        self.assertEqual('smoke', parsed.scenarios[0].type)
+
+        if environment is not None:
+            self.assertTrue(parsed.scenarios[0].environment)
+            self.assertEqual(environment.name,
+                             parsed.scenarios[0].environment.name)
+            self.assertEqual(environment.start_commands,
+                             parsed.scenarios[0].environment.start_commands)
+            self.assertEqual(environment.stop_commands,
+                             parsed.scenarios[0].environment.stop_commands)
+            self.assertEqual(environment.preparer,
+                             parsed.scenarios[0].environment.preparer)
+
+            self.assertEqual(
+                sorted(environment.config.items()),
+                sorted(parsed.scenarios[0].environment.config.items()))
+        else:
+            self.assertFalse(parsed.scenarios[0].environment)

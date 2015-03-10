@@ -15,7 +15,7 @@
 
 """Smoke tests for the cloudbaseinit."""
 
-from argus import scenario
+from argus.tests import base
 from argus.tests.cloud import smoke
 from argus.tests.cloud import util as test_util
 
@@ -116,7 +116,7 @@ class TestScriptsUserdataSmoke(TestSmoke):
         # user data plugins.
         userdata_executed_plugins = (
             self.introspection.get_userdata_executed_plugins())
-        self.assertEqual(4, userdata_executed_plugins)
+        self.assertEqual(5, userdata_executed_plugins)
 
     def test_local_scripts_executed(self):
         # Verify that the shell script we provided as local script
@@ -128,7 +128,7 @@ class TestScriptsUserdataSmoke(TestSmoke):
         self.assertEqual('True', stdout.strip())
 
 
-class TestEC2Userdata(scenario.BaseArgusTest):
+class TestEC2Userdata(base.BaseArgusTest):
 
     def test_ec2_script(self):
         file_name = "ec2file.txt"
@@ -136,3 +136,10 @@ class TestEC2Userdata(scenario.BaseArgusTest):
         names = self.introspection.list_location("C:\\")
         self.assertIn(file_name, names)
         self.assertIn(directory_name, names)
+
+
+class TestCatchingSpecialize(base.BaseArgusTest):
+
+    def test_traceback_occurred(self):
+        instance_traceback = self.introspection.get_cloudbaseinit_traceback()
+        self.assertIn('ImportError: No module named mtu', instance_traceback)

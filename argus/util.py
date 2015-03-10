@@ -16,14 +16,18 @@
 import argparse
 import base64
 import importlib
+import itertools
 import logging
 import pkgutil
+import socket
 import subprocess
 import sys
+import time
 
 import six
 
 from argus import config
+from argus import exceptions
 from argus import remote_client
 
 
@@ -40,16 +44,96 @@ DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 
 
 class WinRemoteClient(remote_client.WinRemoteClient):
-    def run_command_verbose(self, cmd):
-        """Run the given command and log anything it returns."""
+
+    def run_command(self, cmd):
+        """Run the given command and return execution details.
+
+        :rtype: tuple
+        :returns: stdout, stderr, exit_code
+        """
 
         LOG.info("Running command %s...", cmd)
-        stdout, stderr, exit_code = self.run_remote_cmd(cmd)
+        return self.run_remote_cmd(cmd)
 
+    def run_command_verbose(self, cmd):
+        """Run the given command and log anything it returns.
+
+        :rtype: string
+        :returns: stdout
+        """
+        stdout, stderr, exit_code = self.run_command(cmd)
         LOG.info("The command returned the output: %s", stdout)
         LOG.info("The stderr of the command was: %s", stderr)
         LOG.info("The exit code of the command was: %s", exit_code)
         return stdout
+
+    def run_command_with_retry(self, cmd, retry_count=None,
+                               retry_count_interval=5):
+        """Run the given `cmd` until succeeds.
+
+        :param cmd:
+            A string, representing a command which needs to
+            be executed on the underlying remote client.
+        :param retry_count:
+            The number of retries which this function has.
+            If the value is ``None``, then the function will retry *forever*.
+        :param retry_count_interval:
+            The number of seconds to sleep when retrying a command.
+
+        :returns: stdout, stderr, exit_code
+        :rtype: tuple
+        """
+        count = 0
+        while True:
+            try:
+                return self.run_command(cmd)
+            except Exception as exc:  # pylint: disable=broad-except
+                LOG.debug("Command failed with '%s'.\nRetrying...", exc)
+                count += 1
+                if retry_count and count >= retry_count:
+                    raise exceptions.ArgusTimeoutError(
+                        "Command {!r} failed too many times."
+                        .format(cmd))
+                time.sleep(retry_count_interval)
+
+    def run_command_until_condition(self, cmd, cond, retry_count=None,
+                                    retry_count_interval=5):
+        """Run the given `cmd` until a condition *cond* occurs.
+
+        :param cmd:
+            A string, representing a command which needs to
+            be executed on the underlying remote client.
+        :param cond:
+            A callable which receives the standard output returned by
+            executing the command. It should return a boolean value,
+            which tells to this function to stop execution.
+        :param retry_count:
+            The number of retries which this function
+            has until a successful run.
+            If the value is ``None``, then the function will retry *forever*.
+        :param retry_count_interval:
+            The number of seconds to sleep when retrying a command.
+        """
+        while True:
+            stdout, stderr, _ = self.run_command_with_retry(
+                cmd, retry_count=retry_count,
+                retry_count_interval=retry_count_interval)
+            if stderr:
+                raise exceptions.ArgusCLIError(
+                    "Executing command {!r} failed with {!r}."
+                    .format(cmd, stderr))
+            elif cond(stdout):
+                break
+            else:
+                LOG.debug("Condition not met.")
+                time.sleep(retry_count_interval)
+
+
+def get_local_ip():
+    """Get the current machine's IP."""
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.connect(("google.com", 0))
+    return sock.getsockname()[0]
 
 
 def decrypt_password(private_key, password):
@@ -65,19 +149,19 @@ def decrypt_password(private_key, password):
     out, err = proc.communicate(unencoded)
     proc.stdin.close()
     if proc.returncode:
-        raise Exception("Failed calling openssl with error: {!r}"
+        raise Exception("Failed calling openssl with error: {!r}."
                         .format(err))
     return out
 
 
 # pylint: disable=dangerous-default-value
-def run_once(func, state={}, exceptions={}):
+def run_once(func, state={}, errors={}):
     """A memoization decorator, whose purpose is to cache calls."""
     @six.wraps(func)
     def wrapper(*args, **kwargs):
-        if func in exceptions:
+        if func in errors:
             # Deliberate use of LBYL.
-            six.reraise(*exceptions[func])
+            six.reraise(*errors[func])
 
         try:
             return state[func]
@@ -86,27 +170,31 @@ def run_once(func, state={}, exceptions={}):
                 state[func] = result = func(*args, **kwargs)
                 return result
             except Exception:
-                exceptions[func] = sys.exc_info()
+                errors[func] = sys.exc_info()
                 raise
     return wrapper
 
 
-def trap_failure(func):
-    """Call pdb.set_trace when an exception occurs."""
-    @six.wraps(func)
-    def wrapper(*args, **kwargs):
-        try:
-            return func(*args, **kwargs)
-        except BaseException:
-            # TODO(cpopa): Save the original exception, since pdb will happily
-            # overwrite it. This makes flake8 scream, though.
-            # pylint: disable=unused-variable
-            exc = sys.exc_info()  # NOQA
+class with_retry(object):  # pylint: disable=invalid-name
+    """A decorator that will retry function calls until success."""
 
-            LOG.exception("Exception occurred for func %s.", func)
-            import pdb
-            pdb.set_trace()
-    return wrapper
+    def __init__(self, tries=5, delay=1):
+        self.tries = tries
+        self.delay = delay
+
+    def __call__(self, func):
+        @six.wraps(func)
+        def wrapper(*args, **kwargs):
+            while True:
+                try:
+                    return func(*args, **kwargs)
+                except Exception as exc:
+                    self.tries -= 1
+                    if self.tries <= 0:
+                        raise
+                    LOG.error("%s while calling %s", exc, func)
+                    time.sleep(self.delay)
+        return wrapper
 
 
 def get_resource(resource):
@@ -136,6 +224,10 @@ def parse_cli():
                         help="Give a path to the argus conf. "
                              "It should be an .ini file format "
                              "with a section called [argus].")
+    parser.add_argument("--patch-install", metavar="URL",
+                        help='Pass a link that points *directly* to a '
+                             'zip file containing the installed version. '
+                             'The content will just replace the files.')
     parser.add_argument("--git-command", type=str, default=None,
                         help="Pass a git command which should be interpreted "
                              "by a recipe.")
@@ -162,7 +254,8 @@ def parse_cli():
     parser.add_argument("-o", "--instance-output",
                         metavar="DIRECTORY",
                         help="Save the instance console output "
-                             "content in this path.")
+                             "content in this path. If this is given, "
+                             "it can be reused for other files as well.")
     opts = parser.parse_args()
     return opts
 
@@ -171,7 +264,7 @@ def parse_cli():
 def get_config():
     """Get the argus config object."""
     opts = parse_cli()
-    return config.parse_config(opts.conf)
+    return config.ConfigurationParser(opts.conf).conf
 
 
 def get_logger(name="argus", format_string=None):
@@ -239,5 +332,61 @@ class ProxyLogger(object):
         obj = getattr(self._logger, attr)
         self.__dict__[attr] = obj
         return obj
+
+
+class ConfigurationPatcher(object):
+    """Simple configuration patcher for .ini style configs.
+
+    This class can be used to modify values of a configuration
+    file with other predefined options. It also has support
+    for reverting the changes.
+
+    >>> patcher = ConfigurationPatcher('a.ini', DEFAULT={'a': '1'})
+    >>> patcher.patch() # the file was modified
+    >>> patcher.unpatch() # the file is as the original
+
+    It also supports context management protocol:
+
+    >>> with patcher: # the file is modified
+        ...
+    # the file was unpatched
+    >>>
+    """
+
+    def __init__(self, config_file, **opts):
+        self._config_file = config_file
+        self._opts = opts
+        self._original_content = None
+
+    def patch(self):
+        with open(self._config_file) as stream:
+            self._original_content = stream.read()
+
+        parser = six.moves.configparser.ConfigParser()
+        parser.read(self._config_file)
+        for section in itertools.chain(parser.sections(), ['DEFAULT']):
+            if section in self._opts:
+                # Needs to be patched
+                opts = self._opts[section]
+                for opt, value in opts.items():
+                    LOG.info("Patching file %s on section %r, with "
+                             "entry %s=%s",
+                             self._config_file, section, opt, value)
+
+                    parser.set(section, opt, str(value))
+        with open(self._config_file, 'w') as stream:
+            parser.write(stream)
+
+    def unpatch(self):
+        with open(self._config_file, 'w') as stream:
+            stream.write(self._original_content)
+
+    def __enter__(self):
+        self.patch()
+        return self
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
+        self.unpatch()
+
 
 LOG = ProxyLogger()

@@ -83,14 +83,13 @@ class Runner(object):
 
         time_taken = time.time() - start_time
 
-        LOG.info("Ran %d test%s in %.3fs",
+        LOG.info("\nRan %d test%s in %.3fs",
                  tests_run, tests_run != 1 and "s" or "", time_taken)
-        LOG.info("\n")
 
         if failures or errors:
-            LOG.info("FAILED")
+            head = "FAILED"
         else:
-            LOG.info("OK")
+            head = "OK"
 
         infos = []
 
@@ -108,9 +107,9 @@ class Runner(object):
             infos.append("unexpected successes=%d" % unexpected_successes)
 
         if infos:
-            LOG.info(" (%s)", ", ".join(infos))
+            LOG.info("%s (%s)", head, ", ".join(infos))
         else:
-            LOG.info("\n")
+            LOG.info(head)
 
 
 def _load_userdata(userdata):
@@ -131,6 +130,13 @@ def _load_metadata(metadata):
 
 
 def _build_scenario(scenario):
+    cli_opts = util.parse_cli()
+    if cli_opts.instance_output:
+        try:
+            os.makedirs(cli_opts.instance_output)
+        except OSError:
+            pass
+
     test_result = _TestResult(_WritelnDecorator(sys.stdout), None, 0)
 
     if scenario.userdata:
@@ -144,6 +150,16 @@ def _build_scenario(scenario):
     scenario_class = util.load_qualified_object(scenario.scenario)
     introspection = util.load_qualified_object(scenario.introspection)
 
+    environment_preparer = None
+    if scenario.environment:
+        environment_preparer = util.load_qualified_object(
+            scenario.environment.preparer)
+        environment_preparer = environment_preparer(
+            scenario.environment.config.config_file,
+            scenario.environment.config.values,
+            scenario.environment.start_commands,
+            scenario.environment.stop_commands)
+
     return scenario_class(
         name=scenario.name,
         test_classes=test_classes,
@@ -153,7 +169,9 @@ def _build_scenario(scenario):
         image=scenario.image,
         service_type=scenario.service_type,
         introspection=introspection,
-        result=test_result)
+        result=test_result,
+        output_directory=cli_opts.instance_output,
+        environment_preparer=environment_preparer)
 
 
 def _filter_scenarios(scenarios):

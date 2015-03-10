@@ -20,16 +20,13 @@ by installing and configuring it with what it's necessary.
 """
 
 import abc
-import time
 
 import six
 
-from argus import exceptions
 from argus import util
 
 
 LOG = util.get_logger()
-
 
 __all__ = (
     'BaseRecipe',
@@ -45,67 +42,27 @@ class BaseRecipe(object):
     """
 
     def __init__(self, instance_id, api_manager, remote_client, image,
-                 service_type):
+                 service_type, output_directory=None):
         self._api_manager = api_manager
         self._instance_id = instance_id
         self._remote_client = remote_client
         self._image = image
         self._service_type = service_type
-
-    def _execute_with_stderr(self, cmd):
-        """Execute the given command and fail when the command fails."""
-        stdout, stderr, return_code = self._remote_client.run_remote_cmd(cmd)
-        if return_code:
-            raise exceptions.ArgusError(
-                "Command {command!r} failed with "
-                "return code {return_code!r}"
-                .format(command=cmd,
-                        return_code=return_code))
-        return stdout, stderr
+        self._output_directory = output_directory
 
     def _execute(self, cmd):
-        """Execute and return only the stdout."""
-        return self._execute_with_stderr(cmd)[0]
+        """Execute and return only the standard output."""
+        # A positive exit code will trigger the failure
+        # in the underlying methods as an `ArgusError`.
+        return self._remote_client.run_command(cmd)[0]
 
-    def _run_cmd_until_condition(self, cmd, cond, retry_count=None,
-                                 retry_count_interval=5):
-        """Run the given `cmd` until a condition *cond* occurs.
+    def _execute_with_retry(self, cmd):
+        """Execute until success and return only the standard output."""
+        return self._remote_client.run_command_with_retry(cmd)[0]
 
-        :param cmd:
-            A string, representing a command which needs to
-            be executed on the underlying remote client.
-        :param cond:
-            A callable which receives the stdout returned by
-            executing the command. It should return a boolean value,
-            which tells to this function to stop execution.
-        :param retry_count:
-            The number of retries which this function has.
-            If the value is ``None``, then the function will run *forever*.
-        :param retry_count_interval:
-            The number of seconds to sleep when retrying a command.
-        """
-        count = 0
-        while True:
-            try:
-                std_out, std_err = self._execute_with_stderr(cmd)
-            except Exception:  # pylint: disable=broad-except
-                LOG.debug("Command %r failed while waiting for condition.",
-                          cmd)
-                count += 1
-                if retry_count and count >= retry_count:
-                    raise exceptions.ArgusTimeoutError(
-                        "Command {!r} failed too many times."
-                        .format(cmd))
-                time.sleep(retry_count_interval)
-            else:
-                if std_err:
-                    raise exceptions.ArgusCLIError(
-                        "Executing command {!r} failed with {!r}"
-                        .format(cmd, std_err))
-                elif cond(std_out):
-                    break
-                else:
-                    time.sleep(retry_count_interval)
+    def _run_cmd_until_condition(self, cmd, cond):
+        """Execute a command until the condition is met without returning."""
+        self._remote_client.run_command_until_condition(cmd, cond)
 
     @abc.abstractmethod
     def prepare(self):

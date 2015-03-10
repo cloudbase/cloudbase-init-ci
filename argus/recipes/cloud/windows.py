@@ -35,6 +35,7 @@ __all__ = (
     'CloudbaseinitRecipe',
     'CloudbaseinitScriptRecipe',
     'CloudbaseinitCreateUserRecipe',
+    'CloudbaseinitSpecializeRecipe',
 )
 
 
@@ -47,6 +48,7 @@ def _read_url(url):
         return content
 
 
+@util.with_retry()
 def _get_git_link():
     content = _read_url("http://git-scm.com/download/win")
     soup = bs4.BeautifulSoup(content)
@@ -60,7 +62,7 @@ def _get_git_link():
         if not href.endswith('.exe'):
             continue
         return href
-    raise exceptions.ArgusError("git download link not found.")
+    raise exceptions.ArgusError("Git download link not found.")
 
 
 class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
@@ -72,9 +74,17 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
                     'where -Property Name -contains {0}).Name"'
                     .format(self._image.default_ci_username))
-        return self._run_cmd_until_condition(
+        self._run_cmd_until_condition(
             wait_cmd,
             lambda stdout: stdout.strip() == self._image.default_ci_username)
+
+    def execution_prologue(self):
+        LOG.info("Retrieve common module for proper script execution.")
+
+        cmd = ("powershell Invoke-webrequest -uri "
+               "{}/windows/common.psm1 -outfile C:\\common.psm1"
+               .format(CONF.argus.resources))
+        self._execute(cmd)
 
     def get_installation_script(self):
         """Get an insallation script for CloudbaseInit."""
@@ -93,6 +103,22 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                .format(self._service_type))
         self._execute(cmd)
 
+        self._grab_cbinit_installation_log()
+
+    def _grab_cbinit_installation_log(self):
+        """Obtain the installation logs."""
+        LOG.info("Obtaining the installation logs.")
+        if not self._output_directory:
+            LOG.warning("The output directory wasn't given, "
+                        "the log will not be grabbed.")
+            return
+
+        content = self._remote_client.read_file("C:\\installation.log")
+        path = os.path.join(self._output_directory,
+                            "installation-{}.log".format(self._instance_id))
+        with open(path, 'w') as stream:
+            stream.write(content)
+
     def install_git(self):
         """Install git in the instance."""
         LOG.info("Installing git...")
@@ -107,6 +133,41 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         cmd = ('powershell "C:\\install_git.ps1 {} {}"'
                .format(git_link, git_base))
         self._execute(cmd)
+
+    def replace_install(self):
+        """Replace the cb-init installed files with the downloaded ones.
+
+        For the same file names, there will be a replace. The new ones
+        will just be added and the other files will be left there.
+        So it's more like an update.
+        """
+        opts = util.parse_cli()
+        link = opts.patch_install
+        if not link:
+            return
+
+        LOG.info("Replacing cloudbaseinit's files...")
+
+        LOG.debug("Download and extract installation bundle.")
+        if link.startswith("\\\\"):
+            cmd = 'copy "{}" "C:\\install.zip"'.format(link)
+        else:
+            cmd = ("powershell Invoke-webrequest -uri "
+                   "{} -outfile 'C:\\install.zip'"
+                   .format(link))
+        self._execute_with_retry(cmd)
+        cmds = [
+            "Add-Type -A System.IO.Compression.FileSystem",
+            "[IO.Compression.ZipFile]::ExtractToDirectory("
+            "'C:\\install.zip', 'C:\\install')"
+        ]
+        cmd = 'powershell {}'.format("; ".join(cmds))
+        self._execute(cmd)
+
+        LOG.debug("Replace old files with the new ones.")
+        cbdir = introspection.get_cbinit_dir(self._execute)
+        self._execute('xcopy /y /e /q "C:\\install\\Cloudbase-Init"'
+                      ' "{}"'.format(cbdir))
 
     def replace_code(self):
         """Replace the code of cloudbaseinit."""
@@ -153,48 +214,24 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                "{}/windows/sysprep.ps1 -outfile 'C:\\sysprep.ps1'"
                .format(CONF.argus.resources))
         self._execute(cmd)
-        self._execute('powershell C:\\sysprep.ps1')
+        try:
+            self._execute('powershell C:\\sysprep.ps1')
+        except Exception:
+            # This could fail, since it's blocking until the
+            # restart occurs.
+            pass
 
     def wait_cbinit_finalization(self):
         """Wait for the finalization of CloudbaseInit.
 
-        The function waits until all the plugins have been executed.
+        The function waits until cloudbaseinit fininished.
         """
         LOG.info("Waiting for the finalization of CloudbaseInit execution...")
-
-        # Test that this instance's cloudbaseinit run exists.
-        self._run_cmd_until_condition(
-            "echo 1",
-            lambda out: out.strip() == "1"
-        )
-        head = introspection.get_cbinit_key(self._execute)
-        key = "{0}\\{1}".format(head, self._instance_id)
-        self._run_cmd_until_condition(
-            'powershell Test-Path "{0}"'.format(key),
-            lambda out: out.strip() == 'True')
-
-        # Test the number of executed cloudbaseinit plugins.
         wait_cmd = ('powershell (Get-Service "| where -Property Name '
                     '-match cloudbase-init").Status')
         self._run_cmd_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'Stopped')
-
-    def wait_reboot(self):
-        """Do a reboot and wait until the instance is up."""
-
-        LOG.info('Waiting for server status SHUTOFF because of sysprep...')
-        self._api_manager.servers_client.wait_for_server_status(
-            server_id=self._instance_id,
-            status='SHUTOFF',
-            extra_timeout=600)
-
-        self._api_manager.servers_client.start(self._instance_id)
-
-        LOG.info('Waiting for server status ACTIVE...')
-        self._api_manager.servers_client.wait_for_server_status(
-            server_id=self._instance_id,
-            status='ACTIVE')
 
 
 class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):
@@ -225,3 +262,98 @@ class CloudbaseinitCreateUserRecipe(CloudbaseinitRecipe):
 
         self._execute('powershell "C:\\\\create_user.ps1 -user {}"'.format(
             self._image.created_user))
+
+
+class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
+    """A recipe for testing errors in specialize part.
+
+    We'll need to test the specialize part as well and
+    this recipe ensures us that something will fail there,
+    in order to see if argus catches that error.
+    """
+
+    def pre_sysprep(self):
+        LOG.info("Preparing cloudbaseinit for failure.")
+        python_dir = introspection.get_python_dir(self._execute)
+        path = ntpath.join(python_dir, "Lib", "site-packages",
+                           "cloudbaseinit", "plugins", "common",
+                           "mtu.py")
+        self._execute('del "{}"'.format(path))
+        # *.pyc
+        self._execute('del "{}c"'.format(path))
+
+
+class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
+    """A recipe for patching the cloudbaseinit's conf with a custom server."""
+
+    config_entry = None
+    pattern = "{}"
+
+    def pre_sysprep(self):
+        LOG.info("Inject guest IP for mocked service access.")
+        cbdir = introspection.get_cbinit_dir(self._execute)
+        conf = ntpath.join(cbdir, "conf", "cloudbase-init.conf")
+
+        # Append service IP as a config option.
+        address = self.pattern.format(util.get_local_ip())
+        line = "{} = {}".format(self.config_entry, address)
+        cmd = ('powershell "((Get-Content {0!r}) + {1!r}) |'
+               ' Set-Content {0!r}"'.format(conf, line))
+        self._execute(cmd)
+
+
+class CloudbaseinitEC2Recipe(CloudbaseinitMockServiceRecipe):
+    """Recipe for EC2 metadata service mocking."""
+
+    config_entry = "ec2_metadata_base_url"
+    pattern = "http://{}:2000/"
+
+
+class CloudbaseinitCloudstackRecipe(CloudbaseinitMockServiceRecipe):
+    """Recipe for Cloudstack metadata service mocking."""
+
+    config_entry = "cloudstack_metadata_ip"
+    pattern = "{}:2001"
+
+    def pre_sysprep(self):
+        super(CloudbaseinitCloudstackRecipe, self).pre_sysprep()
+
+        # CloudStack uses the metadata service on port 80 and
+        # uses the passed metadata IP on port 8080 for the password manager.
+        # Since we need to mock the service, we'll have to provide
+        # a service on a custom port (apache is started on 80),
+        # so this code does what it's necessary to make this work.
+        cmd = ("powershell Invoke-Webrequest -uri "
+               "{}/windows/patch_cloudstack.ps1 -outfile "
+               "C:\\patch_cloudstack.ps1"
+               .format(CONF.argus.resources))
+        self._execute(cmd)
+
+        self._execute("powershell C:\\\\patch_cloudstack.ps1")
+
+
+class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
+    """Recipe for Maas metadata service mocking."""
+
+    config_entry = "maas_metadata_url"
+    pattern = "http://{}:2002"
+
+    def pre_sysprep(self):
+        super(CloudbaseinitMaasRecipe, self).pre_sysprep()
+
+        # We'll have to send a couple of other config options as well.
+        cbdir = introspection.get_cbinit_dir(self._execute)
+        conf = ntpath.join(cbdir, "conf", "cloudbase-init.conf")
+
+        required_fields = (
+            "maas_oauth_consumer_key",
+            "maas_oauth_consumer_secret",
+            "maas_oauth_token_key",
+            "maas_oauth_token_secret",
+        )
+
+        for field in required_fields:
+            line = "{} = secret".format(field)
+            cmd = ('powershell "((Get-Content {0!r}) + {1!r}) |'
+                   ' Set-Content {0!r}"'.format(conf, line))
+            self._execute(cmd)

@@ -15,6 +15,7 @@
 .ropeproject
 .tox
 .venv
+.idea
 build/*
 doc/source/api/*
 doc/build/*

@@ -68,7 +68,7 @@ class WinRemoteClient(object):
             if exit_code:
                 raise exceptions.ArgusError(
                     "Executing command {command!r} failed with "
-                    "exit code {exit_code!r} and output {output!r}"
+                    "exit code {exit_code!r} and output {output!r}."
                     .format(command=command,
                             exit_code=exit_code,
                             output=stdout))
@@ -124,3 +124,8 @@ class WinRemoteClient(object):
 
             commands.append(remote_command)
         self._run_commands(commands)
+
+    def read_file(self, filepath):
+        """Get the content of the given file."""
+        cmd = 'powershell Get-Content "{}"'.format(filepath)
+        return self.run_remote_cmd(cmd)[0]

@@ -13,9 +13,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from argus import scenario
-from argus import util
+from argus.tests import base
 from argus.tests.cloud import util as test_util
+from argus import util
 
 CONF = util.get_config()
 DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
@@ -38,7 +38,7 @@ def _get_dhcp_value(key):
             return value.strip()
 
 
-class PasswordRescueSmokeTest(scenario.BaseArgusTest):
+class PasswordRescueSmokeTest(base.BaseArgusTest):
 
     def _run_remote_command(self, cmd):
         remote_client = self.manager.get_remote_client(
@@ -62,7 +62,7 @@ class PasswordRescueSmokeTest(scenario.BaseArgusTest):
         self.assertEqual('3', stdout.strip())
 
 
-class PasswordSmokeTest(scenario.BaseArgusTest):
+class PasswordSmokeTest(base.BaseArgusTest):
 
     @test_util.requires_service('http')
     def test_password_set(self):
@@ -70,17 +70,12 @@ class PasswordSmokeTest(scenario.BaseArgusTest):
         remote_client = self.manager.get_remote_client(
             self.image.created_user,
             self.manager.instance_password())
-        # Pylint emits properly this error, but it doesn't understand
-        # that this class is used as a mixin later on (and will
-        # never understand these cases). So it's okay to disable
-        # the message here.
-        # pylint: disable=no-member
 
         stdout = remote_client.run_command_verbose("echo 1")
         self.assertEqual('1', stdout.strip())
 
 
-class CreatedUserTest(scenario.BaseArgusTest):
+class CreatedUserTest(base.BaseArgusTest):
 
     def test_username_created(self):
         # Verify that the expected created user exists.
@@ -91,7 +86,7 @@ class CreatedUserTest(scenario.BaseArgusTest):
 # pylint: disable=abstract-method
 class BaseSmokeTests(CreatedUserTest,
                      PasswordSmokeTest,
-                     scenario.BaseArgusTest):
+                     base.BaseArgusTest):
     """Various smoke tests for testing cloudbaseinit.
 
     Each OS test version must implement the abstract methods provided here,
@@ -117,7 +112,7 @@ class BaseSmokeTests(CreatedUserTest,
     def test_hostname_set(self):
         # Test that the hostname was properly set.
         instance_hostname = self.introspection.get_instance_hostname()
-        server = self.manager.instance_server()[1]
+        server = self.manager.instance_server()
 
         self.assertEqual(instance_hostname,
                          str(server['name'][:15]).lower())

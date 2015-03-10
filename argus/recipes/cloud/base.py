@@ -26,7 +26,6 @@ from argus import util
 __all__ = ('BaseCloudbaseinitRecipe', )
 
 
-CONF = util.get_config()
 LOG = util.get_logger()
 
 
@@ -47,6 +46,13 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     def wait_for_boot_completion(self):
         """Wait for the instance to finish up booting."""
 
+    def execution_prologue(self):
+        """Executed before any downloaded script.
+
+        Do extra things to assure a successful
+        remote powershell (and others) script execution.
+        """
+
     @abc.abstractmethod
     def get_installation_script(self):
         """Get the installation script for cloudbaseinit."""
@@ -58,10 +64,6 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     @abc.abstractmethod
     def wait_cbinit_finalization(self):
         """Wait for the finalization of cloudbaseinit."""
-
-    @abc.abstractmethod
-    def wait_reboot(self):
-        """Do a reboot and wait for the instance to be up."""
 
     @abc.abstractmethod
     def install_git(self):
@@ -79,6 +81,10 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         """
 
     @abc.abstractmethod
+    def replace_install(self):
+        """Do whatever is necessary to replace the installation."""
+
+    @abc.abstractmethod
     def replace_code(self):
         """Do whatever is necessary to replace the code for cloudbaseinit."""
 
@@ -94,19 +100,19 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         """
         LOG.info("Preparing instance %s...", self._instance_id)
         self.wait_for_boot_completion()
+        self.execution_prologue()
         self.get_installation_script()
         self.install_cbinit()
+        self.replace_install()
         self.install_git()
         self.replace_code()
         # pause the process until user is satisfied with his changes
         opts = util.parse_cli()
+
+        self.pre_sysprep()
         if opts.pause:
             six.moves.input("Press Enter to continue...")
 
-        self.pre_sysprep()
         self.sysprep()
         self.wait_cbinit_finalization()
         LOG.info("Finished preparing instance %s.", self._instance_id)
-
-    if CONF.argus.debug:
-        prepare = util.trap_failure(prepare)
