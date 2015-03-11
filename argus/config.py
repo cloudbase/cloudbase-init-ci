@@ -43,7 +43,7 @@ def _get_default(parser, section, option, default=None):
 
 
 class _Option(object):
-    def __init__(self, option, method='get', default=None):
+    def __init__(self, option, method='get', default=_SENTINEL):
         self._option = option
         self._method = method
         self._default = default
@@ -97,11 +97,11 @@ class _ScenarioSection(object):
     recipe = _Option(option='recipe')
     userdata = _Option(option='userdata')
     metadata = _Option(option='metadata')
-    image = _Option(option='image')
     scenario_type = _Option(option='type')
     service_type = _Option(option='service_type', default='http')
     introspection = _Option(option='introspection')
     environment = _Option(option='environment', default=None)
+    images = _Option(option='images', method='getlist')
 
 
 class ConfigurationParser(object):
@@ -241,7 +241,7 @@ class ConfigurationParser(object):
         # Get the scenarios section
         scenario = collections.namedtuple('scenario',
                                           'name scenario test_classes recipe '
-                                          'userdata metadata image type '
+                                          'userdata metadata images type '
                                           'service_type introspection '
                                           'environment')
         images_names = {image.name: image for image in self.images}
@@ -254,7 +254,7 @@ class ConfigurationParser(object):
             if not key.startswith("scenario_"):
                 continue
             section = _ScenarioSection(key, self._parser)
-            image = images_names[section.image]
+            images = [images_names[image] for image in section.images]
             environment = environment_names.get(section.environment)
             scenarios.append(scenario(section.scenario_name,
                                       section.scenario_class,
@@ -262,7 +262,7 @@ class ConfigurationParser(object):
                                       section.recipe,
                                       section.userdata,
                                       section.metadata,
-                                      image,
+                                      images,
                                       section.scenario_type,
                                       section.service_type,
                                       section.introspection,

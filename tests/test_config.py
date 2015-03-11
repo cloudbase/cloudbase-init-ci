@@ -55,6 +55,14 @@ class TestConfig(unittest.TestCase):
         group = 4
         created_user = 5
 
+        [image_4]
+        default_ci_username = Admin
+        default_ci_password = Passw0rd
+        image_ref = image_ref
+        flavor_ref = flavor_ref
+        group = 4
+        created_user = 5
+
         [scenario_windows]
         type = smoke
         scenario = 3
@@ -63,7 +71,8 @@ class TestConfig(unittest.TestCase):
         recipe = 5
         userdata = 6
         metadata = 7
-        image = 8
+        images = 8,
+                 4
         service_type = configdrive
         introspection = something
 
@@ -90,6 +99,15 @@ class TestConfig(unittest.TestCase):
         group = 4
         created_user = 5
 
+        [image_4]
+        default_ci_username = Admin
+        default_ci_password = Passw0rd
+        image_ref = image_ref
+        flavor_ref = flavor_ref
+        group = 4
+        created_user = 5
+
+
         [base_scenario]
 
         type = smoke
@@ -103,7 +121,7 @@ class TestConfig(unittest.TestCase):
         [scenario_windows : base_scenario]
         type = smoke
         scenario = 3
-        image = 8
+        images = 8, 4
         service_type = configdrive
         """)
 
@@ -162,6 +180,15 @@ class TestConfig(unittest.TestCase):
         group = 4
         created_user = 5
 
+        [image_4]
+        default_ci_username = Admin
+        default_ci_password = Passw0rd
+        image_ref = image_ref
+        flavor_ref = flavor_ref
+        group = 4
+        created_user = 5
+
+
         [base_scenario]
 
         type = smoke
@@ -175,7 +202,7 @@ class TestConfig(unittest.TestCase):
         [scenario_windows : base_scenario]
         type = smoke
         scenario = 3
-        image = 8
+        images = 8, 4
         service_type = configdrive
         environment = environment_nova
         """, environment=expected_environment)
@@ -212,7 +239,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual('5', parsed.scenarios[0].recipe)
         self.assertEqual('6', parsed.scenarios[0].userdata)
         self.assertEqual('7', parsed.scenarios[0].metadata)
-        self.assertEqual(parsed.images[0], parsed.scenarios[0].image)
+        self.assertEqual(parsed.images, parsed.scenarios[0].images)
         self.assertEqual('configdrive', parsed.scenarios[0].service_type)
         self.assertEqual('something', parsed.scenarios[0].introspection)
         self.assertEqual('smoke', parsed.scenarios[0].type)

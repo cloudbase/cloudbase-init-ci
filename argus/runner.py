@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import functools
 import json
 import os
 import sys
@@ -162,18 +163,19 @@ def _build_scenario(scenario):
             scenario.environment.start_commands,
             scenario.environment.stop_commands)
 
-    return scenario_class(
+    partial_scenario = functools.partial(
+        scenario_class,
         name=scenario.name,
         test_classes=test_classes,
         recipe=recipe,
         metadata=metadata,
         userdata=userdata,
-        image=scenario.image,
         service_type=scenario.service_type,
         introspection=introspection,
         result=test_result,
         output_directory=cli_opts.instance_output,
         environment_preparer=environment_preparer)
+    return map(partial_scenario, scenario.images)
 
 
 def _filter_scenarios(scenarios):
@@ -213,4 +215,4 @@ def run_scenarios():
     """
     scenarios = _filter_scenarios(CONF.scenarios)
     scenario_classes = map(_build_scenario, scenarios)
-    return Runner(scenario_classes).run()
+    return Runner(*scenario_classes).run()
