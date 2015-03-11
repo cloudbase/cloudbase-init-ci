@@ -307,26 +307,6 @@ def load_qualified_object(obj):
     return obj
 
 
-class ProxyLogger(object):
-    """Proxy class for the logging object.
-
-    This comes in hand when using argus as a library,
-    so there is no need to provide required CLI arguments,
-    just to import argus.util.
-    """
-
-    def __init__(self):
-        self._logger = None
-
-    def __getattr__(self, attr):
-        # single instantiation on access only
-        if not self._logger:
-            self._logger = get_logger()
-        obj = getattr(self._logger, attr)
-        self.__dict__[attr] = obj
-        return obj
-
-
 class ConfigurationPatcher(object):
     """Simple configuration patcher for .ini style configs.
 
@@ -382,4 +362,4 @@ class ConfigurationPatcher(object):
         self.unpatch()
 
 
-LOG = ProxyLogger()
+LOG = get_logger()
