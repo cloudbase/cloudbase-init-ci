@@ -19,6 +19,7 @@ import importlib
 import itertools
 import logging
 import pkgutil
+import random
 import socket
 import subprocess
 import sys
@@ -305,6 +306,14 @@ def load_qualified_object(obj):
         for part in parts:
             obj = getattr(obj, part)
     return obj
+
+
+def rand_name(name=''):
+    randbits = str(random.randint(1, 0x7fffffff))
+    if name:
+        return name + '-' + randbits
+    else:
+        return randbits
 
 
 class ConfigurationPatcher(object):

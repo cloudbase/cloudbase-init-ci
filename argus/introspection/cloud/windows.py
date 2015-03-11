@@ -21,8 +21,6 @@ import re
 import shutil
 import tempfile
 
-from tempest.common.utils import data_utils
-
 from argus.introspection.cloud import base
 from argus import util
 
@@ -181,7 +179,7 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
 
     def get_cloudbaseinit_traceback(self):
         code = util.get_resource('windows/get_traceback.ps1')
-        remote_script = "C:\\{}.ps1".format(data_utils.rand_name())
+        remote_script = "C:\\{}.ps1".format(util.rand_name())
         with _create_tempfile(content=code) as tmp:
             self.remote_client.copy_file(tmp, remote_script)
             stdout = self.remote_client.run_command_verbose(

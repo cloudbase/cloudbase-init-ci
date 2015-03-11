@@ -26,7 +26,6 @@ import six
 from tempest import clients
 from tempest.common import credentials
 from tempest.common import service_client
-from tempest.common.utils import data_utils
 from tempest.services import network
 
 from argus import exceptions
@@ -172,7 +171,7 @@ class BaseArgusScenario(object):
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         server = self._servers_client.create_server(
-            data_utils.rand_name(self.__class__.__name__ + "-instance"),
+            util.rand_name(self.__class__.__name__ + "-instance"),
             self._image.image_ref,
             self._image.flavor_ref,
             **kwargs)
@@ -238,7 +237,7 @@ class BaseArgusScenario(object):
             yield sg_rule
 
     def _create_security_groups(self):
-        sg_name = data_utils.rand_name(self.__class__.__name__)
+        sg_name = util.rand_name(self.__class__.__name__)
         sg_desc = sg_name + " description"
         secgroup = self._security_groups_client.create_security_group(
             sg_name, sg_desc)
