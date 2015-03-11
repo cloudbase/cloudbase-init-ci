@@ -14,6 +14,7 @@
 #    under the License.
 
 import functools
+import itertools
 import json
 import os
 import sys
@@ -214,5 +215,7 @@ def run_scenarios():
     and test type. By default, all scenarios are executed.
     """
     scenarios = _filter_scenarios(CONF.scenarios)
-    scenario_classes = map(_build_scenario, scenarios)
-    return Runner(*scenario_classes).run()
+    scenario_classes = itertools.chain.from_iterable(
+        map(_build_scenario, scenarios)
+    )
+    return Runner(scenario_classes).run()
