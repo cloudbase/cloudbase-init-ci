@@ -175,7 +175,7 @@ def _build_scenario(scenario):
         result=test_result,
         output_directory=cli_opts.instance_output,
         environment_preparer=environment_preparer)
-    return map(partial_scenario, scenario.images)
+    return [partial_scenario(image=image) for image in scenario.images]
 
 
 def _filter_scenarios(scenarios):
