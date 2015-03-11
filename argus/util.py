@@ -33,12 +33,18 @@ from argus import remote_client
 
 
 __all__ = (
+    'ConfigurationPatcher',
     'WinRemoteClient',
     'decrypt_password',
-    'run_once',
+    'get_config',
+    'get_logger',
     'get_resource',
     'cached_property',
     'load_qualified_object',
+    'parse_cli',
+    'run_once',
+    'rand_name',
+    'with_retry',
 )
 
 DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
