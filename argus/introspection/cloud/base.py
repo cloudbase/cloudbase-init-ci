@@ -92,3 +92,7 @@ class BaseInstanceIntrospection(object):
     @abc.abstractmethod
     def get_timezone(self):
         """Get the timezone of the instance."""
+
+    @abc.abstractmethod
+    def get_network_interfaces(self):
+        """Get IP available instance network adapters."""

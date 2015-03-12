@@ -124,13 +124,13 @@ class BaseArgusScenario(object):
             self._userdata = base64.encodestring(userdata)
         else:
             self._userdata = None
+        self._networks = None    # list with UUIDs for future attached NICs
 
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
         self._isolated_creds = credentials.get_isolated_credentials(
             self.__class__.__name__, network_resources={})
         self._manager = clients.Manager(credentials=self._credentials())
-        self._admin_manager = clients.Manager(self._admin_credentials())
 
         # Clients (in alphabetical order)
         self._flavors_client = self._manager.flavors_client
@@ -140,7 +140,6 @@ class BaseArgusScenario(object):
         # Compute image client
         self._images_client = self._manager.images_client
         self._keypairs_client = self._manager.keypairs_client
-        self._networks_client = self._admin_manager.networks_client
         # Nova security groups client
         self._security_groups_client = self._manager.security_groups_client
         self._servers_client = self._manager.servers_client
@@ -154,13 +153,6 @@ class BaseArgusScenario(object):
 
     def _credentials(self):
         return self._isolated_creds.get_primary_creds()
-
-    def _admin_credentials(self):
-        try:
-            return self._isolated_creds.get_admin_creds()
-        except NotImplementedError:
-            raise exceptions.ArgusError(
-                'Admin Credentials are not available.')
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         server = self._servers_client.create_server(
@@ -252,7 +244,8 @@ class BaseArgusScenario(object):
             key_name=self._keypair['name'],
             disk_config='AUTO',
             user_data=self._userdata,
-            meta=self._metadata)
+            meta=self._metadata,
+            networks=self._networks)
         self._floating_ip = self._assign_floating_ip()
         self._security_group = self._create_security_groups()
         self.prepare_instance()
@@ -323,9 +316,9 @@ class BaseArgusScenario(object):
                 self._environment_preparer.cleanup_environment()
 
     def _run(self):
-        self._prepare_run()
 
         try:
+            self._prepare_run()
             self._setup()
             self._save_instance_output()
 

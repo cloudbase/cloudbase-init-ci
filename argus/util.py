@@ -21,6 +21,7 @@ import logging
 import pkgutil
 import random
 import socket
+import struct
 import subprocess
 import sys
 import time
@@ -142,6 +143,30 @@ def get_local_ip():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.connect(("google.com", 0))
     return sock.getsockname()[0]
+
+
+def next_ip(ip, step=1):
+    """Return the next IP address of the given one.
+
+    :type step: int
+    :param step: offset adjustment value
+    """
+    # Convert IP address to unsigned long.
+    data_type = "!L"
+    number = struct.unpack(data_type, socket.inet_aton(ip))[0]
+    # Get the next one.
+    number += step
+    # Convert it back and return the ascii value.
+    return socket.inet_ntoa(struct.pack(data_type, number))
+
+
+def cidr2netmask(cidr):
+    """Return the net mask deduced from the CIDR format network address."""
+    mask_length = int(cidr.split("/")[1])
+    mask_bits = "1" * mask_length + "0" * (32 - mask_length)
+    mask_number = int(mask_bits, 2)
+    mask_bytes = struct.pack("!L", mask_number)
+    return socket.inet_ntoa(mask_bytes)
 
 
 def decrypt_password(private_key, password):

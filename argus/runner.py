@@ -31,7 +31,7 @@ LOG.propagate = False
 
 
 class _WritelnDecorator(object):
-    """Used to decorate file-like objects with a handy 'writeln' method"""
+    """Used to decorate file-like objects with a handy 'writeln' method."""
     def __init__(self, stream):
         self.stream = stream
 
