@@ -16,13 +16,13 @@
 import unittest
 
 
-class BaseArgusTest(unittest.TestCase):
+class TestBaseArgus(unittest.TestCase):
     """Test class which offers support for parametrization of the manager."""
 
     def __init__(self, methodName='runTest',
                  manager=None, image=None,
                  service_type=None, introspection=None):
-        super(BaseArgusTest, self).__init__(methodName)
+        super(TestBaseArgus, self).__init__(methodName)
         self.manager = manager
         self.image = image
         self.service_type = service_type

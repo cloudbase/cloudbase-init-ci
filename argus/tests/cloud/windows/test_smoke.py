@@ -37,7 +37,7 @@ def _parse_licenses(output):
     return licenses
 
 
-class TestSmoke(smoke.BaseSmokeTests):
+class TestSmoke(smoke.TestsBaseSmoke):
 
     def test_service_display_name(self):
         cmd = ('powershell (Get-Service "| where -Property Name '
@@ -128,7 +128,7 @@ class TestScriptsUserdataSmoke(TestSmoke):
         self.assertEqual('True', stdout.strip())
 
 
-class TestEC2Userdata(base.BaseArgusTest):
+class TestEC2Userdata(base.TestBaseArgus):
 
     def test_ec2_script(self):
         file_name = "ec2file.txt"
@@ -138,7 +138,7 @@ class TestEC2Userdata(base.BaseArgusTest):
         self.assertIn(directory_name, names)
 
 
-class TestCatchingSpecialize(base.BaseArgusTest):
+class TestCatchingSpecialize(base.TestBaseArgus):
 
     def test_traceback_occurred(self):
         instance_traceback = self.introspection.get_cloudbaseinit_traceback()

@@ -38,7 +38,7 @@ def _get_dhcp_value(key):
             return value.strip()
 
 
-class PasswordRescueSmokeTest(base.BaseArgusTest):
+class TestPasswordRescueSmoke(base.TestBaseArgus):
 
     def _run_remote_command(self, cmd):
         remote_client = self.manager.get_remote_client(
@@ -62,7 +62,7 @@ class PasswordRescueSmokeTest(base.BaseArgusTest):
         self.assertEqual('3', stdout.strip())
 
 
-class PasswordSmokeTest(base.BaseArgusTest):
+class TestPasswordSmoke(base.TestBaseArgus):
 
     @test_util.requires_service('http')
     def test_password_set(self):
@@ -75,7 +75,7 @@ class PasswordSmokeTest(base.BaseArgusTest):
         self.assertEqual('1', stdout.strip())
 
 
-class CreatedUserTest(base.BaseArgusTest):
+class TestCreatedUser(base.TestBaseArgus):
 
     def test_username_created(self):
         # Verify that the expected created user exists.
@@ -84,9 +84,9 @@ class CreatedUserTest(base.BaseArgusTest):
 
 
 # pylint: disable=abstract-method
-class BaseSmokeTests(CreatedUserTest,
-                     PasswordSmokeTest,
-                     base.BaseArgusTest):
+class TestsBaseSmoke(TestCreatedUser,
+                     TestPasswordSmoke,
+                     base.TestBaseArgus):
     """Various smoke tests for testing cloudbaseinit.
 
     Each OS test version must implement the abstract methods provided here,
