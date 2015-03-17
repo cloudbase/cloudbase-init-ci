@@ -40,14 +40,7 @@ STATUS_OK = [200]
 # tempest sets its own excepthook, which will log the error
 # using the tempest logger. Unfortunately, we are not using
 # the tempest logger, so any uncaught error goes into nothingness.
-# The code which sets the excepthook is here:
-# https://github.com/openstack/tempest/blob/master/tempest/openstack/common/
-# log.py#L420
-# That's why we mock the logging.setup call to something which
-# won't affect us. This will work everytime tempest thinks to call
-# log.setup. Just in case, reset the excepthook to the original one.
-from tempest.openstack.common import log
-log.setup = lambda *args, **kwargs: None
+# So just reset the excepthook to the original.
 sys.excepthook = _ORIG_EXCEPTHOOK
 
 
