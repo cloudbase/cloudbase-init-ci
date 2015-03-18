@@ -31,6 +31,10 @@ from argus import util
 CONF = util.get_config()
 LOG = util.get_logger()
 
+# Default values for an instance under booting step.
+COUNT = 20
+DELAY = 20
+
 __all__ = (
     'CloudbaseinitRecipe',
     'CloudbaseinitScriptRecipe',
@@ -74,9 +78,10 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
                     'where -Property Name -contains {0}).Name"'
                     .format(self._image.default_ci_username))
-        self._run_cmd_until_condition(
+        self._execute_until_condition(
             wait_cmd,
-            lambda stdout: stdout.strip() == self._image.default_ci_username)
+            lambda stdout: stdout.strip() == self._image.default_ci_username,
+            count=COUNT, delay=DELAY)
 
     def execution_prologue(self):
         LOG.info("Retrieve common module for proper script execution.")
@@ -155,7 +160,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             cmd = ("powershell Invoke-webrequest -uri "
                    "{} -outfile 'C:\\install.zip'"
                    .format(link))
-        self._execute_with_retry(cmd)
+        self._execute(cmd)
         cmds = [
             "Add-Type -A System.IO.Compression.FileSystem",
             "[IO.Compression.ZipFile]::ExtractToDirectory("
@@ -215,23 +220,24 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                .format(CONF.argus.resources))
         self._execute(cmd)
         try:
-            self._execute('powershell C:\\sysprep.ps1')
+            self._execute('powershell C:\\sysprep.ps1', count=1)
         except Exception:
-            # This could fail, since it's blocking until the
-            # restart occurs.
+            # This will fail, since it's blocking until the
+            # restart occurs, so there will be transport issues.
             pass
 
     def wait_cbinit_finalization(self):
         """Wait for the finalization of CloudbaseInit.
 
-        The function waits until cloudbaseinit fininished.
+        The function waits until cloudbaseinit finished.
         """
         LOG.info("Waiting for the finalization of CloudbaseInit execution...")
         wait_cmd = ('powershell (Get-Service "| where -Property Name '
                     '-match cloudbase-init").Status')
-        self._run_cmd_until_condition(
+        self._execute_until_condition(
             wait_cmd,
-            lambda out: out.strip() == 'Stopped')
+            lambda out: out.strip() == 'Stopped',
+            count=COUNT, delay=DELAY)
 
 
 class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):

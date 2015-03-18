@@ -75,57 +75,57 @@ class WinRemoteClient(remote_client.WinRemoteClient):
         LOG.info("The exit code of the command was: %s", exit_code)
         return stdout
 
-    def run_command_with_retry(self, cmd, retry_count=None,
-                               retry_count_interval=5):
+    def run_command_with_retry(self, cmd, count=5, delay=5):
         """Run the given `cmd` until succeeds.
 
         :param cmd:
             A string, representing a command which needs to
             be executed on the underlying remote client.
-        :param retry_count:
+        :param count:
             The number of retries which this function has.
             If the value is ``None``, then the function will retry *forever*.
-        :param retry_count_interval:
+        :param delay:
             The number of seconds to sleep when retrying a command.
 
-        :returns: stdout, stderr, exit_code
         :rtype: tuple
+        :returns: stdout, stderr, exit_code
         """
-        count = 0
+
+        # Countdown normalization.
+        if not count or count < 0:
+            count = 0
+
         while True:
             try:
                 return self.run_command(cmd)
             except Exception as exc:  # pylint: disable=broad-except
-                LOG.debug("Command failed with '%s'.\nRetrying...", exc)
-                count += 1
-                if retry_count and count >= retry_count:
+                LOG.debug("Command failed with %r.", exc)
+                # A negative `count` means no count at all.
+                if count >= 0:
+                    count -= 1
+                if count == 0:
                     raise exceptions.ArgusTimeoutError(
                         "Command {!r} failed too many times."
                         .format(cmd))
-                time.sleep(retry_count_interval)
+                LOG.debug("Retrying...")
+                time.sleep(delay)
 
-    def run_command_until_condition(self, cmd, cond, retry_count=None,
-                                    retry_count_interval=5):
-        """Run the given `cmd` until a condition *cond* occurs.
+    def run_command_until_condition(self, cmd, cond, count=5, delay=5):
+        """Run the given `cmd` until a condition `cond` occurs.
 
-        :param cmd:
-            A string, representing a command which needs to
-            be executed on the underlying remote client.
         :param cond:
             A callable which receives the standard output returned by
             executing the command. It should return a boolean value,
             which tells to this function to stop execution.
-        :param retry_count:
-            The number of retries which this function
-            has until a successful run.
-            If the value is ``None``, then the function will retry *forever*.
-        :param retry_count_interval:
-            The number of seconds to sleep when retrying a command.
+        :raises:
+            `ArgusCLIError` if there is output found in the standard error.
+
+        This method uses and behaves like `run_command_with_retry` but
+        with an additional condition parameter.
         """
         while True:
             stdout, stderr, _ = self.run_command_with_retry(
-                cmd, retry_count=retry_count,
-                retry_count_interval=retry_count_interval)
+                cmd, count=count, delay=delay)
             if stderr:
                 raise exceptions.ArgusCLIError(
                     "Executing command {!r} failed with {!r}."
@@ -133,8 +133,8 @@ class WinRemoteClient(remote_client.WinRemoteClient):
             elif cond(stdout):
                 break
             else:
-                LOG.debug("Condition not met.")
-                time.sleep(retry_count_interval)
+                LOG.debug("Condition not met, retrying...")
+                time.sleep(delay)
 
 
 def get_local_ip():

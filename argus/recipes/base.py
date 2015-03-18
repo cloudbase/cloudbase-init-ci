@@ -50,19 +50,19 @@ class BaseRecipe(object):
         self._service_type = service_type
         self._output_directory = output_directory
 
-    def _execute(self, cmd):
-        """Execute and return only the standard output."""
+    def _execute(self, cmd, count=5, delay=5):
+        """Execute until success and return only the standard output."""
         # A positive exit code will trigger the failure
         # in the underlying methods as an `ArgusError`.
-        return self._remote_client.run_command(cmd)[0]
+        # Also, if the retrying limit is reached, and `ArgusTimeoutError`
+        # will be raised.
+        return self._remote_client.run_command_with_retry(
+            cmd, count=count, delay=delay)[0]
 
-    def _execute_with_retry(self, cmd):
-        """Execute until success and return only the standard output."""
-        return self._remote_client.run_command_with_retry(cmd)[0]
-
-    def _run_cmd_until_condition(self, cmd, cond):
+    def _execute_until_condition(self, cmd, cond, count=5, delay=5):
         """Execute a command until the condition is met without returning."""
-        self._remote_client.run_command_until_condition(cmd, cond)
+        self._remote_client.run_command_until_condition(
+            cmd, cond, count=count, delay=delay)
 
     @abc.abstractmethod
     def prepare(self):
