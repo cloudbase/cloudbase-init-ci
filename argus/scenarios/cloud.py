@@ -15,6 +15,9 @@
 
 import collections
 
+from tempest.common import isolated_creds
+
+from argus import exceptions
 from argus.scenarios import base
 from argus.scenarios import service_mock
 from argus import util
@@ -46,6 +49,115 @@ class BaseWindowsScenario(base.BaseArgusScenario):
                                     transport_protocol=protocol)
 
     remote_client = util.cached_property(get_remote_client, 'remote_client')
+
+
+class NetworkWindowsScenario(BaseWindowsScenario):
+    """Scenario for testing static network configuration.
+
+    Creates an additional internal network which will be
+    bound explicitly with the new created instance.
+    """
+
+    def _get_isolated_network(self):
+        """Returns the network itself from the isolated network resources.
+
+        This works only with the isolated credentials and
+        this step is achieved by allowing/forcing tenant isolation.
+        """
+        # Extract the just created private network.
+        resources = self._isolated_creds.isolated_net_resources["primary"]
+        return resources[0]
+
+    def _get_networks(self):
+        """Explicitly gather and return the private networks.
+
+        All these networks will be attached to the newly created
+        instance without letting nova to handle this part.
+        """
+        _networks = self._network_client.list_networks()["networks"]
+        # Skip external/private networks.
+        networks = [net["id"] for net in _networks
+                    if not net["router:external"]]
+        # Put in front the main private network.
+        head = self._get_isolated_network()["id"]
+        networks.remove(head)
+        networks.insert(0, head)
+        # Adapt the list to a format accepted by the API.
+        return [{"uuid": net} for net in networks]
+
+    def _create_private_network(self):
+        """Create an extra private network to be attached.
+
+        This network is the one with disabled DHCP and
+        ready for static configuration by cb-init.
+        """
+        tenant_id = self._credentials().tenant_id
+        # pylint: disable=protected-access
+        value = self._isolated_creds._create_network_resources(tenant_id)
+        # Store the network for later cleanup.
+        key = "extra"
+        self._isolated_creds.isolated_net_resources[key] = value
+        # Disable DHCP for this network to test static configuration.
+        subnet_id = value[1]["id"]
+        net_client = self._isolated_creds.network_admin_client
+        net_client.update_subnet(subnet_id, enable_dhcp=False)
+        # Change the allocation pool to configure any IP,
+        # other the one used already with dynamic settings.
+        allocation_pools = net_client.show_subnet(subnet_id)["subnet"][
+            "allocation_pools"]
+        allocation_pools[0]["start"] = util.next_ip(
+            allocation_pools[0]["start"], step=2)
+        net_client.update_subnet(subnet_id, allocation_pools=allocation_pools)
+
+    def _prepare_run(self):
+        # Just like a normal preparer, but this time
+        # with explicitly specified attached networks.
+        super(NetworkWindowsScenario, self)._prepare_run()
+        # Raise an error if the required data is not available.
+        if not isinstance(self._isolated_creds,
+                          isolated_creds.IsolatedCreds):
+            raise exceptions.ArgusError(
+                "Network resources are not available."
+            )
+        # Create and prepare the networks for attachment.
+        self._create_private_network()
+        self._networks = self._get_networks()
+
+    def get_network_interfaces(self):
+        """Retrieve and parse network details from the compute node."""
+        net_client = self._network_client
+        guest_nics = []
+        for network in self._networks or []:
+            network_id = network["uuid"]
+            # Now get the subnet and other related details.
+            details = net_client.show_network(network_id)["network"]
+            subnet_id = details["subnets"][0]
+            # Now retrieve details from the corresponding subnet.
+            details = net_client.show_subnet(subnet_id)["subnet"]
+            # The network interface should follow the format found under
+            # `windows.InstanceIntrospection.get_network_interfaces` method.
+            nic = {}
+            nic["dhcp"] = details["enable_dhcp"]
+            nic["dns"] = details["dns_nameservers"]
+            nic["gateway"] = details["gateway_ip"]
+            nic["netmask"] = util.cidr2netmask(details["cidr"])
+            # Find rest of the details under the ports using this subnet.
+            # There should be no conflicts because on the current architecture
+            # every instance is using its own router, subnet and network
+            # accessible only to it.
+            ports = net_client.list_ports()["ports"]
+            for port in ports:
+                # Select instance related ports only, with the
+                # corresponding subnet ID.
+                if ("compute" not in port["device_owner"] or
+                        port["fixed_ips"][0]["subnet_id"] != subnet_id):
+                    continue
+                nic["mac"] = port["mac_address"].upper()
+                nic["address"] = port["fixed_ips"][0]["ip_address"]
+                break
+            # Fill the list of adapters retrieved from the guest.
+            guest_nics.append(nic)
+        return guest_nics
 
 
 class RescueWindowsScenario(BaseWindowsScenario):

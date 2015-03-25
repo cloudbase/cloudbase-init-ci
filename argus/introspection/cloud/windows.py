@@ -25,8 +25,11 @@ from argus.introspection.cloud import base
 from argus import util
 
 
+CONF = util.get_config()
+
 # escaped characters for powershell paths
 ESC = "( )"
+SEP = "\r\n"    # default separator for new lines on windows
 
 
 @contextlib.contextmanager
@@ -246,3 +249,27 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         stdout = self.remote_client.run_command_verbose(
             "powershell {}".format(command))
         return stdout
+
+    def get_network_interfaces(self):
+        # Retrieve utility script.
+        cmd = ("powershell Invoke-WebRequest -uri "
+               "{}/windows/network_details.ps1 -outfile "
+               "C:\\network_details.ps1".format(CONF.argus.resources))
+        self.remote_client.run_command_with_retry(cmd)
+        # Run and parse the output, where each adapter details
+        # block is separated by a new line.
+        cmd = "powershell C:\\network_details.ps1"
+        output = self.remote_client.run_command_verbose(cmd).strip()
+        nics = []
+        for block in output.split(SEP * 2):
+            details = block.splitlines()
+            nic = {
+                "mac": details[0],
+                "address": details[1],
+                "gateway": details[3],
+                "netmask": details[4],
+                "dns": details[6].split(),
+                "dhcp": details[7].lower() == "true"
+            }
+            nics.append(nic)
+        return nics
