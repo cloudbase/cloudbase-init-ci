@@ -388,6 +388,9 @@ class BaseArgusScenario(object):
     def get_image_ref(self):
         return self._images_client.get_image(self._image.image_ref)
 
+    def get_metadata(self):
+        return self._metadata
+
     @abc.abstractmethod
     def get_remote_client(self, username=None, password=None, **kwargs):
         """Get a remote client to the underlying instance.

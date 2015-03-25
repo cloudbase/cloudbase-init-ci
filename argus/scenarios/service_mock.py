@@ -183,7 +183,7 @@ class CloudstackPasswordManagerApp(BaseServiceApp):
 
     @cherrypy.expose
     def index(self):
-        expected_header = "Domu_request"
+        expected_header = "Domu-Request"
         if expected_header not in cherrypy.request.headers:
             raise cherrypy.HTTPError(400, "DomU_Request not given")
 
@@ -197,6 +197,12 @@ class CloudstackPasswordManagerApp(BaseServiceApp):
 
     def saved_password(self):
         self._password = None
+
+    @cherrypy.expose
+    def password(self, password):
+        if cherrypy.request.method != 'POST':
+            raise cherrypy.HTTPError(405, 'Method not allowed')
+        self._password = password
 
 
 class MaasMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):

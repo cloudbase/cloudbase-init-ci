@@ -12,6 +12,11 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import binascii
+import os
+import time
+
+from six.moves import urllib
 
 from argus.tests import base
 from argus.tests.cloud import util as test_util
@@ -73,6 +78,83 @@ class TestPasswordSmoke(base.TestBaseArgus):
 
         stdout = remote_client.run_command_verbose("echo 1")
         self.assertEqual('1', stdout.strip())
+
+
+class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
+
+    @property
+    def service_url(self):
+        return "http://%(host)s:%(port)s/" % {
+            "host": self.manager.services[1].host,
+            "port": self.manager.services[1].port
+        }
+
+    def _run_remote_command(self, password, cmd):
+        remote_client = self.manager.get_remote_client(
+            CONF.cloudbaseinit.created_user, password)
+        stdout = remote_client.run_command_verbose(cmd)
+        return stdout
+
+    def _update_password(self, password):
+        url = urllib.parse.urljoin(self.service_url, 'password')
+        params = urllib.parse.urlencode({'password': password})
+        request = urllib.request.Request(url, data=params)
+        try:
+            response = urllib.request.urlopen(request)
+        except urllib.error.HTTPError as exc:
+            return exc.code
+        return response.getcode()
+
+    def _wait_for_service_status(self, status, retry_count=3,
+                                 retry_interval=1):
+        while retry_count:
+            response_status = None
+            retry_count = retry_count - 1
+            try:
+                response = urllib.request.urlopen(self.service_url)
+                response_status = response.getcode()
+            except urllib.error.HTTPError as error:
+                response_status = error.code
+            except urllib.error.URLError:
+                pass
+
+            if response_status == status:
+                return True
+            time.sleep(retry_interval)
+
+        return False
+
+    def _test_password(self, password, expected):
+        # Set the password in the Password Server
+        response = self._update_password(password)
+        self.assertEqual(200, response)
+
+        # Reboot the instance
+        self.manager.reboot_instance()
+
+        # Check if the password was set properly
+        response = self._run_remote_command(expected, 'echo 1')
+        self.assertEqual('1', response.strip())
+
+    def test_update_password(self):
+        # Get the password from the metadata
+        password = self.manager.get_metadata()['admin_pass']
+
+        with self.manager.instantiate_mock_services():
+            # Wait until the web service starts serving requests
+            self.assertTrue(self._wait_for_service_status(status=400))
+
+            # Set a new password in Password Server and test if the
+            # plugin updates the password.
+            new_password = binascii.hexlify(os.urandom(4))
+            self._test_password(password=new_password, expected=new_password)
+
+            # Remove the password from Password Server in order to check
+            # if the plugin keeps the last password.
+            self._test_password(password=None, expected=new_password)
+
+            # Change the password again and check if the plugin updates it
+            self._test_password(password=password, expected=password)
 
 
 class TestCreatedUser(base.TestBaseArgus):

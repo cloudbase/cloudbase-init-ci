@@ -14,6 +14,7 @@
 #    under the License.
 
 import collections
+import contextlib
 
 from argus import exceptions
 from argus.scenarios import base
@@ -192,8 +193,13 @@ class BaseServiceMockMixin(object):
     :meth:`prepare_instance` finishes.
     """
 
-    def prepare_instance(self):
+    @contextlib.contextmanager
+    def instantiate_mock_services(self):
         with service_mock.instantiate_services(self.services, self):
+            yield
+
+    def prepare_instance(self):
+        with self.instantiate_mock_services():
             super(BaseServiceMockMixin, self).prepare_instance()
 
 
@@ -233,3 +239,14 @@ class MaasWindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
               host="0.0.0.0",
               port=2002),
     ]
+
+
+class CloudstackUpdatePasswordScenario(CloudstackWindowsScenario):
+
+    """Scenario for testing the password update feature."""
+
+    def reboot_instance(self):
+        self._servers_client.reboot(server_id=self._server['id'],
+                                    reboot_type='soft')
+        self._servers_client.wait_for_server_status(self._server['id'],
+                                                    'ACTIVE')
