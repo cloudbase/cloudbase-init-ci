@@ -34,8 +34,10 @@ from argus import util
 CONF = util.get_config()
 LOG = util.get_logger()
 
-SIZE = 128    # starting size as number of lines
-STATUS_OK = [200]
+# Starting size as number of lines and tolerance.
+OUTPUT_SIZE = 128
+OUTPUT_EPSILON = int(OUTPUT_SIZE / 10)
+OUTPUT_STATUS_OK = [200]
 
 # tempest sets its own excepthook, which will log the error
 # using the tempest logger. Unfortunately, we are not using
@@ -256,14 +258,15 @@ class BaseArgusScenario(object):
 
         path = os.path.join(self._output_directory,
                             "{}.log".format(self._server["id"]))
-        # try to obtain the entire content
-        size = SIZE
+        # Try to obtain the entire content.
+        content = ""
+        size = OUTPUT_SIZE
         while True:
             resp, content = self.instance_output(size)
-            if resp.status not in STATUS_OK:
+            if resp.status not in OUTPUT_STATUS_OK:
                 LOG.error("Couldn't save console output <%d>.", resp.status)
                 return
-            if len(content.splitlines()) >= size:
+            if len(content.splitlines()) >= (size - OUTPUT_EPSILON):
                 size *= 2
             else:
                 break
