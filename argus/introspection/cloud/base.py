@@ -88,3 +88,7 @@ class BaseInstanceIntrospection(object):
 
         The values are the actual file content.
         """
+
+    @abc.abstractmethod
+    def get_timezone(self):
+        """Get the timezone of the instance."""

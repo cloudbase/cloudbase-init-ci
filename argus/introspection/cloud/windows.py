@@ -240,3 +240,9 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
             content = self.get_instance_file_content(path)
             files[basefile] = content.strip()
         return files
+
+    def get_timezone(self):
+        command = "[System.TimeZone]::CurrentTimeZone.StandardName"
+        stdout = self.remote_client.run_command_verbose(
+            "powershell {}".format(command))
+        return stdout
