@@ -89,7 +89,7 @@ class TestSetTimezone(base.TestBaseArgus):
         # Verify that the instance timezone matches what we are
         # expecting from it.
         timezone = self.introspection.get_timezone()
-        self.assertEqual("Georgian Standard Time", timezone)
+        self.assertEqual("Georgian Standard Time", timezone.strip())
 
 
 # pylint: disable=abstract-method
