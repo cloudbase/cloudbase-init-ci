@@ -29,7 +29,7 @@ CONF = util.get_config()
 
 # escaped characters for powershell paths
 ESC = "( )"
-SEP = "\r\n"    # default separator for new lines on windows
+SEP = "----\r\n"    # default separator for network details blocks
 
 
 @contextlib.contextmanager
@@ -251,25 +251,38 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         return stdout
 
     def get_network_interfaces(self):
+        """Get a list with dictionaries of network details.
+
+        If a value is an empty string, then that value is missing.
+        """
         # Retrieve utility script.
         cmd = ("powershell Invoke-WebRequest -uri "
                "{}/windows/network_details.ps1 -outfile "
                "C:\\network_details.ps1".format(CONF.argus.resources))
         self.remote_client.run_command_with_retry(cmd)
         # Run and parse the output, where each adapter details
-        # block is separated by a new line.
+        # block is separated by a specific separator.
+        # Each block contains multiple fields separated by EOLs
+        # and each field contains multiple details separated by spaces.
         cmd = "powershell C:\\network_details.ps1"
-        output = self.remote_client.run_command_verbose(cmd).strip()
+        output = self.remote_client.run_command_verbose(cmd)
+        # Do NOT remove any extra space, but remove the first separator.
+        # There's a possibility for the block to end with spaces,
+        # which are in fact missing details under the fields.
+        output = output.replace(SEP, "", 1)
         nics = []
-        for block in output.split(SEP * 2):
+        for block in output.split(SEP):
+            # Get a list of multi-detail fields.
             details = block.splitlines()
+            if len(details) < 6:
+                continue
             nic = {
                 "mac": details[0],
-                "address": details[1],
-                "gateway": details[3],
-                "netmask": details[4],
-                "dns": details[6].split(),
-                "dhcp": details[7].lower() == "true"
+                "address": details[1].split(" ")[0],
+                "gateway": details[2].split(" ")[0],
+                "netmask": details[3].split(" ")[0],
+                "dns": details[4].split(" "),
+                "dhcp": details[5].lower() == "true"
             }
             nics.append(nic)
         return nics
