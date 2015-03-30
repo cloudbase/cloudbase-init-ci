@@ -33,6 +33,9 @@ from argus import exceptions
 from argus import remote_client
 
 
+RETRY_COUNT = 15
+RETRY_DELAY = 10
+
 __all__ = (
     'ConfigurationPatcher',
     'WinRemoteClient',
@@ -76,7 +79,8 @@ class WinRemoteClient(remote_client.WinRemoteClient):
         LOG.info("The exit code of the command was: %s", exit_code)
         return stdout
 
-    def run_command_with_retry(self, cmd, count=5, delay=5):
+    def run_command_with_retry(self, cmd, count=RETRY_COUNT,
+                               delay=RETRY_DELAY):
         """Run the given `cmd` until succeeds.
 
         :param cmd:
@@ -111,7 +115,8 @@ class WinRemoteClient(remote_client.WinRemoteClient):
                 LOG.debug("Retrying...")
                 time.sleep(delay)
 
-    def run_command_until_condition(self, cmd, cond, count=5, delay=5):
+    def run_command_until_condition(self, cmd, cond,
+                                    count=RETRY_COUNT, delay=RETRY_DELAY):
         """Run the given `cmd` until a condition `cond` occurs.
 
         :param cond:

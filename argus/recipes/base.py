@@ -27,6 +27,9 @@ from argus import util
 
 
 LOG = util.get_logger()
+RETRY_COUNT = 15
+RETRY_DELAY = 10
+
 
 __all__ = (
     'BaseRecipe',
@@ -50,7 +53,7 @@ class BaseRecipe(object):
         self._service_type = service_type
         self._output_directory = output_directory
 
-    def _execute(self, cmd, count=5, delay=5):
+    def _execute(self, cmd, count=RETRY_COUNT, delay=RETRY_DELAY):
         """Execute until success and return only the standard output."""
         # A positive exit code will trigger the failure
         # in the underlying methods as an `ArgusError`.
@@ -59,7 +62,8 @@ class BaseRecipe(object):
         return self._remote_client.run_command_with_retry(
             cmd, count=count, delay=delay)[0]
 
-    def _execute_until_condition(self, cmd, cond, count=5, delay=5):
+    def _execute_until_condition(self, cmd, cond, count=RETRY_COUNT,
+                                 delay=RETRY_DELAY):
         """Execute a command until the condition is met without returning."""
         self._remote_client.run_command_until_condition(
             cmd, cond, count=count, delay=delay)
