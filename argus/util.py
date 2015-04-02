@@ -70,10 +70,12 @@ class WinRemoteClient(remote_client.WinRemoteClient):
     def run_command_verbose(self, cmd):
         """Run the given command and log anything it returns.
 
+        Do this with retrying support.
+
         :rtype: string
         :returns: stdout
         """
-        stdout, stderr, exit_code = self.run_command(cmd)
+        stdout, stderr, exit_code = self.run_command_with_retry(cmd)
         LOG.info("The command returned the output: %s", stdout)
         LOG.info("The stderr of the command was: %s", stderr)
         LOG.info("The exit code of the command was: %s", exit_code)
