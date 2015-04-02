@@ -17,19 +17,19 @@
 import abc
 import base64
 import os
-import sys
 import unittest
 
-_ORIG_EXCEPTHOOK = sys.excepthook
-
 import six
-from tempest import clients
-from tempest.common import credentials
-from tempest.common import service_client
-from tempest.services import network
 
 from argus import exceptions
 from argus import util
+
+with util.keep_excepthook():
+    from tempest import clients
+    from tempest.common import credentials
+    from tempest.common import service_client
+    from tempest.services import network
+
 
 CONF = util.get_config()
 LOG = util.get_logger()
@@ -38,12 +38,6 @@ LOG = util.get_logger()
 OUTPUT_SIZE = 128
 OUTPUT_EPSILON = int(OUTPUT_SIZE / 10)
 OUTPUT_STATUS_OK = [200]
-
-# tempest sets its own excepthook, which will log the error
-# using the tempest logger. Unfortunately, we are not using
-# the tempest logger, so any uncaught error goes into nothingness.
-# So just reset the excepthook to the original.
-sys.excepthook = _ORIG_EXCEPTHOOK
 
 
 # TODO(cpopa): this is really a horrible hack!

@@ -15,6 +15,7 @@
 
 import argparse
 import base64
+import contextlib
 import importlib
 import itertools
 import logging
@@ -352,6 +353,22 @@ def rand_name(name=''):
         return name + '-' + randbits
     else:
         return randbits
+
+
+@contextlib.contextmanager
+def keep_excepthook():
+    """Context manager used to preserve the original except hook.
+
+    *tempest* sets its own except hook, which will log the error
+    using the tempest logger. Unfortunately, we are not using
+    the tempest logger, so any uncaught error goes into nothingness.
+    So just reset the excepthook to the original.
+    """
+    # pylint: disable=redefined-outer-name,reimported
+    import sys
+    original = sys.excepthook
+    yield
+    sys.excepthook = original
 
 
 class ConfigurationPatcher(object):

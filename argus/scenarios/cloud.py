@@ -15,12 +15,13 @@
 
 import collections
 
-from tempest.common import isolated_creds
-
 from argus import exceptions
 from argus.scenarios import base
 from argus.scenarios import service_mock
 from argus import util
+
+with util.keep_excepthook():
+    from tempest.common import isolated_creds
 
 
 class named(collections.namedtuple("service", "application script_name "
