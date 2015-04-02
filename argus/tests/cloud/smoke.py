@@ -168,3 +168,22 @@ class TestsBaseSmoke(TestCreatedUser,
         self.assertTrue(output, "Console output was empty.")
         lines = len(output.split('\n'))
         self.assertEqual(lines, 10)
+
+
+class TestStaticNetwork(base.TestBaseArgus):
+
+    def test_static_network(self):
+        """Check if the attached NICs were properly configured."""
+        # Get network adapter details within the guest compute node.
+        guest_nics = self.manager.get_network_interfaces()
+        # Get network adapter details within the instance.
+        instance_nics = self.introspection.get_network_interfaces()
+        # Filter them by DHCP disabled status for static checks.
+        filter_nics = lambda nics: [nic for nic in nics if not nic["dhcp"]]
+        guest_nics = filter_nics(guest_nics)
+        instance_nics = filter_nics(instance_nics)
+        # Sort by hardware address and compare results.
+        sort_func = lambda arg: arg["mac"]
+        instance_nics.sort(key=sort_func)
+        guest_nics.sort(key=sort_func)
+        self.assertEqual(guest_nics, instance_nics)
