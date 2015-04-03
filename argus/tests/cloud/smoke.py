@@ -42,7 +42,7 @@ class TestPasswordRescueSmoke(base.TestBaseArgus):
 
     def _run_remote_command(self, cmd):
         remote_client = self.manager.get_remote_client(
-            self.image.created_user,
+            CONF.cloudbaseinit.created_user,
             self.manager.instance_password())
         stdout = remote_client.run_command_verbose(cmd)
         return stdout
@@ -68,7 +68,7 @@ class TestPasswordSmoke(base.TestBaseArgus):
     def test_password_set(self):
         # Test that the proper password was set.
         remote_client = self.manager.get_remote_client(
-            self.image.created_user,
+            CONF.cloudbaseinit.created_user,
             self.manager.instance_password())
 
         stdout = remote_client.run_command_verbose("echo 1")
@@ -79,7 +79,8 @@ class TestCreatedUser(base.TestBaseArgus):
 
     def test_username_created(self):
         # Verify that the expected created user exists.
-        exists = self.introspection.username_exists(self.image.created_user)
+        exists = self.introspection.username_exists(
+            CONF.cloudbaseinit.created_user)
         self.assertTrue(exists)
 
 
@@ -158,8 +159,9 @@ class TestsBaseSmoke(TestCreatedUser,
 
     def test_user_belongs_to_group(self):
         # Check that the created user belongs to the specified local groups
-        members = self.introspection.get_group_members(self.image.group)
-        self.assertIn(self.image.created_user, members)
+        members = self.introspection.get_group_members(
+            CONF.cloudbaseinit.group)
+        self.assertIn(CONF.cloudbaseinit.created_user, members)
 
     def test_get_console_output(self):
         # Verify that the product emits messages to the console output.

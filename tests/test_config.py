@@ -46,22 +46,20 @@ class TestConfig(unittest.TestCase):
 
         [cloudbaseinit]
         expected_plugins_count = 4
+        created_user = 5
+        group = 4
 
         [image_8]
         default_ci_username = Admin
         default_ci_password = Passw0rd
         image_ref = image_ref
-        flavor_ref = flavor_ref
-        group = 4
-        created_user = 5
+        flavor_ref = flavor_ref        
 
         [image_4]
         default_ci_username = Admin
         default_ci_password = Passw0rd
         image_ref = image_ref
         flavor_ref = flavor_ref
-        group = 4
-        created_user = 5
 
         [scenario_windows]
         type = smoke
@@ -90,23 +88,20 @@ class TestConfig(unittest.TestCase):
 
         [cloudbaseinit]
         expected_plugins_count = 4
+        group = 4
+        created_user = 5
 
         [image_8]
         default_ci_username = Admin
         default_ci_password = Passw0rd
         image_ref = image_ref
         flavor_ref = flavor_ref
-        group = 4
-        created_user = 5
 
         [image_4]
         default_ci_username = Admin
         default_ci_password = Passw0rd
         image_ref = image_ref
         flavor_ref = flavor_ref
-        group = 4
-        created_user = 5
-
 
         [base_scenario]
 
@@ -171,23 +166,20 @@ class TestConfig(unittest.TestCase):
 
         [cloudbaseinit]
         expected_plugins_count = 4
+        group = 4
+        created_user = 5
 
         [image_8]
         default_ci_username = Admin
         default_ci_password = Passw0rd
         image_ref = image_ref
         flavor_ref = flavor_ref
-        group = 4
-        created_user = 5
 
         [image_4]
         default_ci_username = Admin
         default_ci_password = Passw0rd
         image_ref = image_ref
         flavor_ref = flavor_ref
-        group = 4
-        created_user = 5
-
 
         [base_scenario]
 
@@ -224,14 +216,14 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(['a', 'b'], parsed.argus.dns_nameservers)
 
         self.assertEqual(4, parsed.cloudbaseinit.expected_plugins_count)
+        self.assertEqual('4', parsed.cloudbaseinit.group)
+        self.assertEqual('5', parsed.cloudbaseinit.created_user)
 
         self.assertIsInstance(parsed.images, list)
         self.assertEqual('Admin', parsed.images[0].default_ci_username)
         self.assertEqual('Passw0rd', parsed.images[0].default_ci_password)
         self.assertEqual('image_ref', parsed.images[0].image_ref)
         self.assertEqual('flavor_ref', parsed.images[0].flavor_ref)
-        self.assertEqual('4', parsed.images[0].group)
-        self.assertEqual('5', parsed.images[0].created_user)
 
         self.assertEqual('3', parsed.scenarios[0].scenario)
         self.assertEqual(['4', '5', '6', '7', '8', '0', '2'],

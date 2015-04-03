@@ -162,7 +162,7 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         stdout = self.remote_client.run_command_verbose(cmd)
         homedir, _, _ = stdout.rpartition(ntpath.sep)
         return ntpath.join(
-            homedir, self.image.created_user,
+            homedir, CONF.cloudbaseinit.created_user,
             ".ssh", "authorized_keys")
 
     def get_instance_file_content(self, filepath):

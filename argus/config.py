@@ -195,8 +195,9 @@ class ConfigurationParser(object):
 
     @property
     def cloudbaseinit(self):
-        cloudbaseinit = collections.namedtuple('cloudbaseinit',
-                                               'expected_plugins_count')
+        cloudbaseinit = collections.namedtuple(
+            'cloudbaseinit',
+            'expected_plugins_count created_user group')
 
         try:
             expected_plugins_count = self._parser.getint(
@@ -205,15 +206,17 @@ class ConfigurationParser(object):
         except (six.moves.configparser.NoOptionError, ValueError):
             expected_plugins_count = 13
 
-        return cloudbaseinit(expected_plugins_count)
+        group = self._parser.get('cloudbaseinit', 'group')
+        created_user = self._parser.get('cloudbaseinit', 'created_user')
+
+        return cloudbaseinit(expected_plugins_count, created_user, group)
 
     @property
     def images(self):
         image = collections.namedtuple(
             'image',
             'name default_ci_username '
-            'default_ci_password image_ref flavor_ref '
-            'group created_user os_type')
+            'default_ci_password image_ref flavor_ref os_type')
 
         # Get the images section
         images = []
@@ -228,12 +231,9 @@ class ConfigurationParser(object):
                                        'Passw0rd')
             image_ref = self._parser.get(key, 'image_ref')
             flavor_ref = self._parser.get(key, 'flavor_ref')
-            group = self._parser.get(key, 'group')
-            created_user = self._parser.get(key, 'created_user')
             os_type = _get_default(self._parser, key, 'os_type', 'Windows')
             images.append(image(image_name, ci_user, ci_password,
-                                image_ref, flavor_ref, group, created_user,
-                                os_type))
+                                image_ref, flavor_ref, os_type))
         return images
 
     @property
