@@ -297,15 +297,12 @@ class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
 
     def pre_sysprep(self):
         LOG.info("Inject guest IP for mocked service access.")
-        cbdir = introspection.get_cbinit_dir(self._execute)
-        conf = ntpath.join(cbdir, "conf", "cloudbase-init.conf")
 
         # Append service IP as a config option.
         address = self.pattern.format(util.get_local_ip())
-        line = "{} = {}".format(self.config_entry, address)
-        cmd = ('powershell "((Get-Content {0!r}) + {1!r}) |'
-               ' Set-Content {0!r}"'.format(conf, line))
-        self._execute(cmd)
+        introspection.set_config_option(option=self.config_entry,
+                                        value=address,
+                                        execute_function=self._execute)
 
 
 class CloudbaseinitEC2Recipe(CloudbaseinitMockServiceRecipe):
@@ -347,10 +344,6 @@ class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
     def pre_sysprep(self):
         super(CloudbaseinitMaasRecipe, self).pre_sysprep()
 
-        # We'll have to send a couple of other config options as well.
-        cbdir = introspection.get_cbinit_dir(self._execute)
-        conf = ntpath.join(cbdir, "conf", "cloudbase-init.conf")
-
         required_fields = (
             "maas_oauth_consumer_key",
             "maas_oauth_consumer_secret",
@@ -359,7 +352,5 @@ class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
         )
 
         for field in required_fields:
-            line = "{} = secret".format(field)
-            cmd = ('powershell "((Get-Content {0!r}) + {1!r}) |'
-                   ' Set-Content {0!r}"'.format(conf, line))
-            self._execute(cmd)
+            introspection.set_config_option(option=field, value="secret",
+                                            execute_function=self._execute)

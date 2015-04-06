@@ -99,6 +99,18 @@ def get_cbinit_dir(execute_function):
             )
 
 
+def set_config_option(option, value, execute_function):
+    """Set the value for the given *option* to *value*."""
+
+    line = "{} = {}".format(option, value)
+    cbdir = get_cbinit_dir(execute_function)
+    conf = ntpath.join(cbdir, "conf", "cloudbase-init.conf")
+
+    cmd = ('powershell "((Get-Content {0!r}) + {1!r}) |'
+           ' Set-Content {0!r}"'.format(conf, line))
+    execute_function(cmd)
+
+
 def get_python_dir(execute_function):
     """Find python directory from the cb-init installation."""
     cbinit_dir = get_cbinit_dir(execute_function)
