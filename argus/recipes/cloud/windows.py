@@ -362,5 +362,6 @@ class CloudbaseinitWinrmRecipe(CloudbaseinitRecipe):
     def pre_sysprep(self):
         introspection.set_config_option(
             option="plugins",
-            value="cloudbaseinit.plugins.windows.winrmcertificateauth",
+            value="cloudbaseinit.plugins.windows.winrmcertificateauth."
+                  "ConfigWinRMCertificateAuthPlugin",
             execute_function=self._execute)
