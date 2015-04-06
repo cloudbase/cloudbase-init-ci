@@ -251,14 +251,19 @@ class BaseArgusScenario(object):
         self._security_group = self._create_security_groups()
         self.prepare_instance()
 
-    def _save_instance_output(self):
+    def save_instance_output(self, suffix=None):
+        """Retrieve and save all data written through the COM port.
+
+        If a `suffix` is provided, then the log name is preceded by it.
+        """
         if not self._output_directory:
             return
 
         content = ""
         size = OUTPUT_SIZE
+        template = "{}{}.log".format("{}", "-" + suffix if suffix else "")
         path = os.path.join(self._output_directory,
-                            "{}.log".format(self._server["id"]))
+                            template.format(self._server["id"]))
         while True:
             resp, content = self.instance_output(size)
             if resp.status not in OUTPUT_STATUS_OK:
@@ -273,10 +278,9 @@ class BaseArgusScenario(object):
         if not content.strip():
             LOG.warn("Empty console output; nothing to save.")
             return
-        else:
-            LOG.info("Saving instance console output to: %s", path)
-            with open(path, "wb") as stream:
-                stream.write(content)
+        LOG.info("Saving instance console output to: %s", path)
+        with open(path, "wb") as stream:
+            stream.write(content)
 
     def _cleanup(self):
         LOG.info("Cleaning up...")
@@ -323,7 +327,7 @@ class BaseArgusScenario(object):
         try:
             self._prepare_run()
             self._setup()
-            self._save_instance_output()
+            self.save_instance_output()
 
             LOG.info("Running tests...")
             testloader = unittest.TestLoader()

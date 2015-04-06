@@ -164,13 +164,16 @@ class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
             # plugin updates the password.
             new_password = self.password
             self._test_password(password=new_password, expected=new_password)
+            self.manager.save_instance_output(suffix="password-1")
 
             # Remove the password from Password Server in order to check
             # if the plugin keeps the last password.
             self._test_password(password=None, expected=new_password)
+            self.manager.save_instance_output(suffix="password-2")
 
             # Change the password again and check if the plugin updates it.
             self._test_password(password=password, expected=password)
+            self.manager.save_instance_output(suffix="password-3")
 
 
 class TestCreatedUser(base.TestBaseArgus):
