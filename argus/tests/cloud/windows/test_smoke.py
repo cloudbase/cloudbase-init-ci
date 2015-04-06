@@ -27,6 +27,7 @@ def _parse_licenses(output):
     license status.
     """
     licenses = {}
+
     # We are starting from 2, since the first line is the
     # list of fields and the second one is a separator.
     # We can't use csv to parse this, unfortunately.
@@ -38,6 +39,7 @@ def _parse_licenses(output):
 
 
 class TestSmoke(smoke.TestsBaseSmoke):
+    """Test additional Windows specific behaviour."""
 
     def test_service_display_name(self):
         cmd = ('powershell (Get-Service "| where -Property Name '
@@ -129,6 +131,7 @@ class TestScriptsUserdataSmoke(TestSmoke):
 
 
 class TestEC2Userdata(base.TestBaseArgus):
+    """Test the EC2 config userdata."""
 
     def test_ec2_script(self):
         file_name = "ec2file.txt"
@@ -139,6 +142,7 @@ class TestEC2Userdata(base.TestBaseArgus):
 
 
 class TestCatchingSpecialize(base.TestBaseArgus):
+    """Test that errors are caught if they occur in the specialize phase."""
 
     def test_traceback_occurred(self):
         instance_traceback = self.introspection.get_cloudbaseinit_traceback()

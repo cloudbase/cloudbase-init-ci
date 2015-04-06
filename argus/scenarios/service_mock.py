@@ -20,9 +20,12 @@ import time
 import multiprocessing
 
 import cherrypy
-from six.moves import urllib, http_client  # pylint: disable=import-error
+# pylint: disable=import-error
+from six.moves import http_client
+from six.moves import urllib
 
 
+CLOUDSTACK_EXPECTED_HEADER = "Domu-Request"
 STOP_LINK_RETRY_COUNT = 5
 
 
@@ -58,7 +61,7 @@ def instantiate_services(services, scenario):
     try:
         yield
     finally:
-        # Send the shutdown "signal"
+        # Send the shutdown "signal".
         for service in services:
             for _ in range(STOP_LINK_RETRY_COUNT):
                 # Do a best effort to stop the service.
@@ -103,6 +106,7 @@ class MetadataServiceAppMixin(object):
 
 
 class EC2MetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
+    """Mock server for testing EC2 metadata service."""
 
     def __init__(self, *args, **kwargs):
         super(EC2MetadataServiceApp, self).__init__(*args, **kwargs)
@@ -183,7 +187,7 @@ class CloudstackPasswordManagerApp(BaseServiceApp):
 
     @cherrypy.expose
     def index(self):
-        expected_header = "Domu-Request"
+        expected_header = CLOUDSTACK_EXPECTED_HEADER
         if expected_header not in cherrypy.request.headers:
             raise cherrypy.HTTPError(400, "DomU_Request not given")
 

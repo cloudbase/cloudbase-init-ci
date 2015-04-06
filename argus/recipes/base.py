@@ -55,9 +55,10 @@ class BaseRecipe(object):
 
     def _execute(self, cmd, count=RETRY_COUNT, delay=RETRY_DELAY):
         """Execute until success and return only the standard output."""
+
         # A positive exit code will trigger the failure
         # in the underlying methods as an `ArgusError`.
-        # Also, if the retrying limit is reached, and `ArgusTimeoutError`
+        # Also, if the retrying limit is reached, `ArgusTimeoutError`
         # will be raised.
         return self._remote_client.run_command_with_retry(
             cmd, count=count, delay=delay)[0]

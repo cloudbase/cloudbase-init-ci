@@ -21,7 +21,7 @@ from argus.scenarios import base
 from argus.scenarios import service_mock
 from argus import util
 
-with util.keep_excepthook():
+with util.restore_excepthook():
     from tempest.common import isolated_creds
 
 
@@ -96,13 +96,16 @@ class NetworkWindowsScenario(BaseWindowsScenario):
         tenant_id = self._credentials().tenant_id
         # pylint: disable=protected-access
         value = self._isolated_creds._create_network_resources(tenant_id)
+
         # Store the network for later cleanup.
         key = "extra"
         self._isolated_creds.isolated_net_resources[key] = value
+
         # Disable DHCP for this network to test static configuration.
         subnet_id = value[1]["id"]
         net_client = self._isolated_creds.network_admin_client
         net_client.update_subnet(subnet_id, enable_dhcp=False)
+
         # Change the allocation pool to configure any IP,
         # other the one used already with dynamic settings.
         allocation_pools = net_client.show_subnet(subnet_id)["subnet"][
@@ -115,13 +118,13 @@ class NetworkWindowsScenario(BaseWindowsScenario):
         # Just like a normal preparer, but this time
         # with explicitly specified attached networks.
         super(NetworkWindowsScenario, self)._prepare_run()
-        # Raise an error if the required data is not available.
+
         if not isinstance(self._isolated_creds,
                           isolated_creds.IsolatedCreds):
             raise exceptions.ArgusError(
                 "Network resources are not available."
             )
-        # Create and prepare the networks for attachment.
+
         self._create_private_network()
         self._networks = self._get_networks()
 
@@ -131,11 +134,10 @@ class NetworkWindowsScenario(BaseWindowsScenario):
         guest_nics = []
         for network in self._networks or []:
             network_id = network["uuid"]
-            # Now get the subnet and other related details.
             details = net_client.show_network(network_id)["network"]
             subnet_id = details["subnets"][0]
-            # Now retrieve details from the corresponding subnet.
             details = net_client.show_subnet(subnet_id)["subnet"]
+
             # The network interface should follow the format found under
             # `windows.InstanceIntrospection.get_network_interfaces` method.
             nic = {}
@@ -143,6 +145,7 @@ class NetworkWindowsScenario(BaseWindowsScenario):
             nic["dns"] = details["dns_nameservers"]
             nic["gateway"] = details["gateway_ip"]
             nic["netmask"] = util.cidr2netmask(details["cidr"])
+
             # Find rest of the details under the ports using this subnet.
             # There should be no conflicts because on the current architecture
             # every instance is using its own router, subnet and network
@@ -154,10 +157,11 @@ class NetworkWindowsScenario(BaseWindowsScenario):
                 if ("compute" not in port["device_owner"] or
                         port["fixed_ips"][0]["subnet_id"] != subnet_id):
                     continue
+
                 nic["mac"] = port["mac_address"].upper()
                 nic["address"] = port["fixed_ips"][0]["ip_address"]
                 break
-            # Fill the list of adapters retrieved from the guest.
+
             guest_nics.append(nic)
         return guest_nics
 
@@ -229,6 +233,12 @@ class CloudstackWindowsScenario(BaseServiceMockMixin,
               port=8080),
     ]
 
+    def reboot_instance(self):
+        self._servers_client.reboot(server_id=self._server['id'],
+                                    reboot_type='soft')
+        self._servers_client.wait_for_server_status(self._server['id'],
+                                                    'ACTIVE')
+
 
 class MaasWindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
     """Scenario for testing the Maas metadata service."""
@@ -239,13 +249,3 @@ class MaasWindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
               host="0.0.0.0",
               port=2002),
     ]
-
-
-class CloudstackUpdatePasswordScenario(CloudstackWindowsScenario):
-    """Scenario for testing the password update feature."""
-
-    def reboot_instance(self):
-        self._servers_client.reboot(server_id=self._server['id'],
-                                    reboot_type='soft')
-        self._servers_client.wait_for_server_status(self._server['id'],
-                                                    'ACTIVE')

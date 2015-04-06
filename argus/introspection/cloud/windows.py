@@ -75,7 +75,6 @@ def get_cbinit_dir(execute_function):
         'OSArchitecture"')
     architecture = stdout.strip()
 
-    # Next, get the location.
     locations = [execute_function('powershell "$ENV:ProgramFiles"')]
     if architecture == '64-bit':
         location = execute_function(
@@ -83,14 +82,12 @@ def get_cbinit_dir(execute_function):
         locations.append(location)
 
     for location in locations:
-        # preprocess the path
         location = location.strip()
         _location = _escape_path(location)
-        # test its existence
         status = execute_function(
             'powershell Test-Path "{}\\Cloudbase` Solutions"'.format(
                 _location)).strip().lower()
-        # return the path to the cloudbase-init installation
+
         if status == "true":
             return ntpath.join(
                 location,
@@ -255,27 +252,28 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
 
         If a value is an empty string, then that value is missing.
         """
-        # Retrieve utility script.
         cmd = ("powershell Invoke-WebRequest -uri "
                "{}/windows/network_details.ps1 -outfile "
                "C:\\network_details.ps1".format(CONF.argus.resources))
         self.remote_client.run_command_with_retry(cmd)
+
         # Run and parse the output, where each adapter details
         # block is separated by a specific separator.
         # Each block contains multiple fields separated by EOLs
         # and each field contains multiple details separated by spaces.
         cmd = "powershell C:\\network_details.ps1"
         output = self.remote_client.run_command_verbose(cmd)
+
         # Do NOT remove any extra space, but remove the first separator.
         # There's a possibility for the block to end with spaces,
         # which are in fact missing details under the fields.
         output = output.replace(SEP, "", 1)
         nics = []
         for block in output.split(SEP):
-            # Get a list of multi-detail fields.
             details = block.splitlines()
             if len(details) < 6:
                 continue
+
             nic = {
                 "mac": details[0],
                 "address": details[1].split(" ")[0],

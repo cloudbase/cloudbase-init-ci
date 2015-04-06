@@ -46,6 +46,7 @@ def _get_dhcp_value(key):
 
 
 class TestPasswordRescueSmoke(base.TestBaseArgus):
+    """Test that the password can be used in case of rescued instances."""
 
     def _run_remote_command(self, cmd):
         remote_client = self.manager.get_remote_client(
@@ -70,6 +71,12 @@ class TestPasswordRescueSmoke(base.TestBaseArgus):
 
 
 class TestPasswordSmoke(base.TestBaseArgus):
+    """Test that the proper password was set.
+
+    This will attempt a WinRM login on the instance,
+    which will use the password which was correctly
+    set by the underlying cloud initialisation software.
+    """
 
     @test_util.requires_service('http')
     def test_password_set(self):
@@ -83,13 +90,15 @@ class TestPasswordSmoke(base.TestBaseArgus):
 
 
 class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
+    """
+    Test that the cloud initialisation service
+    can update passwords when using the Cloudstack metadata service.
+    """
 
     @property
     def service_url(self):
-        return "http://%(host)s:%(port)s/" % {
-            "host": self.manager.services[1].host,
-            "port": self.manager.services[1].port
-        }
+        return "http://%(host)s:%(port)s/" % {"host": "0.0.0.0",
+                                              "port": 8080}
 
     def _run_remote_command(self, password, cmd):
         remote_client = self.manager.get_remote_client(
@@ -127,23 +136,23 @@ class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
         return False
 
     def _test_password(self, password, expected):
-        # Set the password in the Password Server
+        # Set the password in the Password Server.
         response = self._update_password(password)
         self.assertEqual(200, response)
 
-        # Reboot the instance
+        # Reboot the instance.
         self.manager.reboot_instance()
 
-        # Check if the password was set properly
+        # Check if the password was set properly.
         response = self._run_remote_command(expected, 'echo 1')
         self.assertEqual('1', response.strip())
 
     def test_update_password(self):
-        # Get the password from the metadata
+        # Get the password from the metadata.
         password = self.manager.get_metadata()['admin_pass']
 
         with self.manager.instantiate_mock_services():
-            # Wait until the web service starts serving requests
+            # Wait until the web service starts serving requests.
             self.assertTrue(self._wait_for_service_status(status=400))
 
             # Set a new password in Password Server and test if the
@@ -155,11 +164,15 @@ class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
             # if the plugin keeps the last password.
             self._test_password(password=None, expected=new_password)
 
-            # Change the password again and check if the plugin updates it
+            # Change the password again and check if the plugin updates it.
             self._test_password(password=password, expected=password)
 
 
 class TestCreatedUser(base.TestBaseArgus):
+    """
+    Test that the user created by the cloud initialisation service
+    was actually created.
+    """
 
     def test_username_created(self):
         # Verify that the expected created user exists.
@@ -169,6 +182,7 @@ class TestCreatedUser(base.TestBaseArgus):
 
 
 class TestSetTimezone(base.TestBaseArgus):
+    """Test that the expected timezone was set in the instance."""
 
     def test_set_timezone(self):
         # Verify that the instance timezone matches what we are
@@ -181,14 +195,7 @@ class TestSetTimezone(base.TestBaseArgus):
 class TestsBaseSmoke(TestCreatedUser,
                      TestPasswordSmoke,
                      base.TestBaseArgus):
-    """Various smoke tests for testing cloudbaseinit.
-
-    Each OS test version must implement the abstract methods provided here,
-    the methods will be called by each required test.
-    The tests provided here are testing that basic behaviour of
-    cloudbaseinit is fulfilled. OS specific tests should go in the
-    specific subclass.
-    """
+    """Various smoke tests for testing cloudbaseinit."""
 
     def test_plugins_count(self):
         # Test that we have the expected numbers of plugins.
@@ -257,17 +264,21 @@ class TestsBaseSmoke(TestCreatedUser,
 
 
 class TestStaticNetwork(base.TestBaseArgus):
+    """Test that the static network was configured properly in instance."""
 
     def test_static_network(self):
         """Check if the attached NICs were properly configured."""
         # Get network adapter details within the guest compute node.
         guest_nics = self.manager.get_network_interfaces()
+
         # Get network adapter details within the instance.
         instance_nics = self.introspection.get_network_interfaces()
+
         # Filter them by DHCP disabled status for static checks.
         filter_nics = lambda nics: [nic for nic in nics if not nic["dhcp"]]
         guest_nics = filter_nics(guest_nics)
         instance_nics = filter_nics(instance_nics)
+
         # Sort by hardware address and compare results.
         sort_func = lambda arg: arg["mac"]
         instance_nics.sort(key=sort_func)

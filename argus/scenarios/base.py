@@ -24,7 +24,7 @@ import six
 from argus import exceptions
 from argus import util
 
-with util.keep_excepthook():
+with util.restore_excepthook():
     from tempest import clients
     from tempest.common import credentials
     from tempest.common import service_client
@@ -131,19 +131,24 @@ class BaseArgusScenario(object):
         # Clients (in alphabetical order)
         self._flavors_client = self._manager.flavors_client
         self._floating_ips_client = self._manager.floating_ips_client
+
         # Glance image client v1
         self._image_client = self._manager.image_client
+
         # Compute image client
         self._images_client = self._manager.images_client
         self._keypairs_client = self._manager.keypairs_client
+
         # Nova security groups client
         self._security_groups_client = self._manager.security_groups_client
         self._servers_client = self._manager.servers_client
         self._volumes_client = self._manager.volumes_client
         self._snapshots_client = self._manager.snapshots_client
         self._interface_client = self._manager.interfaces_client
+
         # Neutron network client
         self._network_client = self._manager.network_client
+
         # Heat client
         self._orchestration_client = self._manager.orchestration_client
 
@@ -223,7 +228,7 @@ class BaseArgusScenario(object):
         secgroup = self._security_groups_client.create_security_group(
             sg_name, sg_desc)
 
-        # Add rules to the security group
+        # Add rules to the security group.
         for rule in self._add_security_group_exceptions(secgroup['id']):
             self._security_groups_rules.append(rule['id'])
         self._servers_client.add_security_group(self._server['id'],
@@ -250,27 +255,28 @@ class BaseArgusScenario(object):
         if not self._output_directory:
             return
 
-        path = os.path.join(self._output_directory,
-                            "{}.log".format(self._server["id"]))
-        # Try to obtain the entire content.
         content = ""
         size = OUTPUT_SIZE
+        path = os.path.join(self._output_directory,
+                            "{}.log".format(self._server["id"]))
         while True:
             resp, content = self.instance_output(size)
             if resp.status not in OUTPUT_STATUS_OK:
                 LOG.error("Couldn't save console output <%d>.", resp.status)
                 return
+
             if len(content.splitlines()) >= (size - OUTPUT_EPSILON):
                 size *= 2
             else:
                 break
-        # write (or not) the content
+
         if not content.strip():
             LOG.warn("Empty console output; nothing to save.")
             return
-        LOG.info("Saving instance console output to: %s", path)
-        with open(path, "wb") as stream:
-            stream.write(content)
+        else:
+            LOG.info("Saving instance console output to: %s", path)
+            with open(path, "wb") as stream:
+                stream.write(content)
 
     def _cleanup(self):
         LOG.info("Cleaning up...")
@@ -299,7 +305,7 @@ class BaseArgusScenario(object):
         self._isolated_creds.clear_isolated_creds()
 
     def run(self):
-        """Run the tests from the underlying test class.
+        """Run the tests from the underlying test classes.
 
         This will start a new instance and prepare it using the recipe.
         It will return a list of test results.
@@ -319,7 +325,6 @@ class BaseArgusScenario(object):
             self._setup()
             self._save_instance_output()
 
-            # run the tests
             LOG.info("Running tests...")
             testloader = unittest.TestLoader()
             suite = unittest.TestSuite()

@@ -356,7 +356,7 @@ def rand_name(name=''):
 
 
 @contextlib.contextmanager
-def keep_excepthook():
+def restore_excepthook():
     """Context manager used to preserve the original except hook.
 
     *tempest* sets its own except hook, which will log the error
@@ -367,8 +367,10 @@ def keep_excepthook():
     # pylint: disable=redefined-outer-name,reimported
     import sys
     original = sys.excepthook
-    yield
-    sys.excepthook = original
+    try:
+        yield
+    finally:
+        sys.excepthook = original
 
 
 class ConfigurationPatcher(object):
