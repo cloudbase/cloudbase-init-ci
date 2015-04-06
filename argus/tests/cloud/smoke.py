@@ -12,10 +12,12 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 import binascii
 import os
 import time
 
+# pylint: disable=import-error
 from six.moves import urllib
 
 from argus.tests import base
@@ -146,7 +148,7 @@ class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
 
             # Set a new password in Password Server and test if the
             # plugin updates the password.
-            new_password = binascii.hexlify(os.urandom(4))
+            new_password = binascii.hexlify(os.urandom(4)).decode()
             self._test_password(password=new_password, expected=new_password)
 
             # Remove the password from Password Server in order to check

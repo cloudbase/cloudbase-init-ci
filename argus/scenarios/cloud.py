@@ -242,7 +242,6 @@ class MaasWindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
 
 
 class CloudstackUpdatePasswordScenario(CloudstackWindowsScenario):
-
     """Scenario for testing the password update feature."""
 
     def reboot_instance(self):
