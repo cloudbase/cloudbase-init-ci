@@ -100,6 +100,11 @@ class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
         return "http://%(host)s:%(port)s/" % {"host": "0.0.0.0",
                                               "port": 8080}
 
+    @property
+    def password(self):
+        generated = binascii.hexlify(os.urandom(14)).decode()
+        return generated + "!*"
+
     def _run_remote_command(self, password, cmd):
         remote_client = self.manager.get_remote_client(
             CONF.cloudbaseinit.created_user, password)
@@ -157,7 +162,7 @@ class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
 
             # Set a new password in Password Server and test if the
             # plugin updates the password.
-            new_password = binascii.hexlify(os.urandom(4)).decode()
+            new_password = self.password
             self._test_password(password=new_password, expected=new_password)
 
             # Remove the password from Password Server in order to check
