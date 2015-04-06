@@ -354,3 +354,13 @@ class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
         for field in required_fields:
             introspection.set_config_option(option=field, value="secret",
                                             execute_function=self._execute)
+
+
+class CloudbaseinitWinrmRecipe(CloudbaseinitRecipe):
+    """A recipe for testing the WinRM configuration plugin."""
+
+    def pre_sysprep(self):
+        introspection.set_config_option(
+            option="plugins",
+            value="cloudbaseinit.plugins.windows.winrmcertificateauth",
+            execute_function=self._execute)

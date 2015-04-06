@@ -191,9 +191,20 @@ class TestSetTimezone(base.TestBaseArgus):
         self.assertEqual("Georgian Standard Time", timezone.strip())
 
 
+class TestNoError(base.TestBaseArgus):
+    """Test class which verifies that no traceback occurs."""
+
+    def test_any_exception_occurred(self):
+        # Verify that any exception occurred in the instance
+        # for cloudbaseinit.
+        instance_traceback = self.introspection.get_cloudbaseinit_traceback()
+        self.assertEqual('', instance_traceback)
+
+
 # pylint: disable=abstract-method
 class TestsBaseSmoke(TestCreatedUser,
                      TestPasswordSmoke,
+                     TestNoError,
                      base.TestBaseArgus):
     """Various smoke tests for testing cloudbaseinit."""
 
@@ -241,12 +252,6 @@ class TestsBaseSmoke(TestCreatedUser,
         mtu = self.introspection.get_instance_mtu()
         expected_mtu = _get_dhcp_value('26')
         self.assertEqual(expected_mtu, mtu)
-
-    def test_any_exception_occurred(self):
-        # Verify that any exception occurred in the instance
-        # for cloudbaseinit.
-        instance_traceback = self.introspection.get_cloudbaseinit_traceback()
-        self.assertEqual('', instance_traceback)
 
     def test_user_belongs_to_group(self):
         # Check that the created user belongs to the specified local groups
