@@ -370,5 +370,5 @@ class CloudbaseinitWinrmRecipe(CloudbaseinitRecipe):
         # wasn't created, use the CI admin user.
         introspection.set_config_option(
             option="username",
-            value=CONF.cloudbaseinit.created_user,
+            value=self._image.default_ci_username,
             execute_function=self._execute)
