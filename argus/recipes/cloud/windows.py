@@ -365,3 +365,10 @@ class CloudbaseinitWinrmRecipe(CloudbaseinitRecipe):
             value="cloudbaseinit.plugins.windows.winrmcertificateauth."
                   "ConfigWinRMCertificateAuthPlugin",
             execute_function=self._execute)
+
+        # Since the default username, `Admin`, does not exists, because it
+        # wasn't created, use the CI admin user.
+        introspection.set_config_option(
+            option="username",
+            value=CONF.cloudbaseinit.created_user,
+            execute_function=self._execute)
