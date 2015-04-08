@@ -16,6 +16,7 @@
 import binascii
 import os
 import time
+import unittest
 
 # pylint: disable=import-error
 from six.moves import urllib
@@ -45,48 +46,73 @@ def _get_dhcp_value(key):
             return value.strip()
 
 
-class TestPasswordRescueSmoke(base.TestBaseArgus):
-    """Test that the password can be used in case of rescued instances."""
+class BaseTestPassword(base.TestBaseArgus):
+    """Base test class for testing that passwords were set properly."""
 
-    def _run_remote_command(self, cmd):
+    def _run_remote_command(self, cmd, password):
+        # Test that the proper password was set.
         remote_client = self.manager.get_remote_client(
-            CONF.cloudbaseinit.created_user,
-            self.manager.instance_password())
+            CONF.cloudbaseinit.created_user, password)
+
         stdout = remote_client.run_command_verbose(cmd)
         return stdout
 
-    @test_util.requires_service('http')
-    def test_password_set(self):
-        stdout = self._run_remote_command("echo 1")
+    def is_password_set(self, password):
+        stdout = self._run_remote_command("echo 1", password)
+        self.assertEqual('1', stdout.strip())
+
+
+class TestPasswordMetadataSmoke(BaseTestPassword):
+    """Password test with a provided metadata password.
+
+    This should be used when the underlying metadata service does
+    not support password posting.
+    """
+
+    def test_password_set_from_metadata(self):
+        metadata = self.manager.get_metadata()
+        if metadata and metadata.get('admin_pass'):
+            password = metadata['admin_pass']
+            self.is_password_set(password)
+        else:
+            raise unittest.SkipTest("No metadata password")
+
+
+@test_util.requires_service('http')
+class TestPasswordPostedSmoke(BaseTestPassword):
+    """Test that the password was set and posted to the metadata service
+
+    This will attempt a WinRM login on the instance, which will use the
+    password which was correctly set by the underlying cloud
+    initialisation software.
+    """
+
+    @property
+    def password(self):
+        return self.manager.instance_password()
+
+    def test_password_set_posted(self):
+        self.is_password_set(password=self.password)
+
+
+@test_util.requires_service('http')
+class TestPasswordPostedRescueSmoke(TestPasswordPostedSmoke):
+    """Test that the password can be used in case of rescued instances."""
+
+    def test_password_set_on_rescue(self):
+        password = self.password
+
+        stdout = self._run_remote_command("echo 1", password=password)
         self.assertEqual('1', stdout.strip())
 
         self.manager.rescue_server()
         self.manager.prepare_instance()
-        stdout = self._run_remote_command("echo 2")
+        stdout = self._run_remote_command("echo 2", password=password)
         self.assertEqual('2', stdout.strip())
 
         self.manager.unrescue_server()
-        stdout = self._run_remote_command("echo 3")
+        stdout = self._run_remote_command("echo 3", password=password)
         self.assertEqual('3', stdout.strip())
-
-
-class TestPasswordSmoke(base.TestBaseArgus):
-    """Test that the proper password was set.
-
-    This will attempt a WinRM login on the instance,
-    which will use the password which was correctly
-    set by the underlying cloud initialisation software.
-    """
-
-    @test_util.requires_service('http')
-    def test_password_set(self):
-        # Test that the proper password was set.
-        remote_client = self.manager.get_remote_client(
-            CONF.cloudbaseinit.created_user,
-            self.manager.instance_password())
-
-        stdout = remote_client.run_command_verbose("echo 1")
-        self.assertEqual('1', stdout.strip())
 
 
 class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
@@ -201,7 +227,8 @@ class TestSetTimezone(base.TestBaseArgus):
 
 # pylint: disable=abstract-method
 class TestsBaseSmoke(TestCreatedUser,
-                     TestPasswordSmoke,
+                     TestPasswordPostedSmoke,
+                     TestPasswordMetadataSmoke,
                      base.TestBaseArgus):
     """Various smoke tests for testing cloudbaseinit."""
 
