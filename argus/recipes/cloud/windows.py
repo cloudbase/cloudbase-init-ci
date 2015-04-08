@@ -356,19 +356,13 @@ class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
                                             execute_function=self._execute)
 
 
-class CloudbaseinitWinrmRecipe(CloudbaseinitRecipe):
+class CloudbaseinitWinrmRecipe(CloudbaseinitCreateUserRecipe):
     """A recipe for testing the WinRM configuration plugin."""
 
     def pre_sysprep(self):
+        super(CloudbaseinitWinrmRecipe, self).pre_sysprep()
         introspection.set_config_option(
             option="plugins",
             value="cloudbaseinit.plugins.windows.winrmcertificateauth."
                   "ConfigWinRMCertificateAuthPlugin",
-            execute_function=self._execute)
-
-        # Since the default username, `Admin`, does not exists, because it
-        # wasn't created, use the CI admin user.
-        introspection.set_config_option(
-            option="username",
-            value=self._image.default_ci_username,
             execute_function=self._execute)
