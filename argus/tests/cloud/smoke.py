@@ -78,7 +78,6 @@ class TestPasswordMetadataSmoke(BaseTestPassword):
             raise unittest.SkipTest("No metadata password")
 
 
-@test_util.requires_service('http')
 class TestPasswordPostedSmoke(BaseTestPassword):
     """Test that the password was set and posted to the metadata service
 
@@ -91,14 +90,15 @@ class TestPasswordPostedSmoke(BaseTestPassword):
     def password(self):
         return self.manager.instance_password()
 
+    @test_util.requires_service('http')
     def test_password_set_posted(self):
         self.is_password_set(password=self.password)
 
 
-@test_util.requires_service('http')
 class TestPasswordPostedRescueSmoke(TestPasswordPostedSmoke):
     """Test that the password can be used in case of rescued instances."""
 
+    @test_util.requires_service('http')
     def test_password_set_on_rescue(self):
         password = self.password
 
