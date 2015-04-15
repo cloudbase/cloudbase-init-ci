@@ -364,5 +364,7 @@ class CloudbaseinitWinrmRecipe(CloudbaseinitCreateUserRecipe):
         introspection.set_config_option(
             option="plugins",
             value="cloudbaseinit.plugins.windows.winrmcertificateauth."
-                  "ConfigWinRMCertificateAuthPlugin",
+                  "ConfigWinRMCertificateAuthPlugin,"
+                  "cloudbaseinit.plugins.windows.winrmlistener."
+                  "ConfigWinRMListenerPlugin",
             execute_function=self._execute)
