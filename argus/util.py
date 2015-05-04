@@ -16,6 +16,7 @@
 import argparse
 import base64
 import contextlib
+import collections
 import importlib
 import itertools
 import logging
@@ -371,6 +372,11 @@ def restore_excepthook():
         yield
     finally:
         sys.excepthook = original
+
+
+def get_namedtuple(name, members, values):
+    nt_class = collections.namedtuple(name, members)
+    return nt_class(*values)
 
 
 class ConfigurationPatcher(object):
