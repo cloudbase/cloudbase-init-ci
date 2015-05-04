@@ -14,6 +14,7 @@
 #    under the License.
 
 
+import collections
 import contextlib
 import ntpath
 import os
@@ -30,6 +31,10 @@ CONF = util.get_config()
 # escaped characters for powershell paths
 ESC = "( )"
 SEP = "----\r\n"    # default separator for network details blocks
+
+NIC_KEYS = ["mac", "address", "gateway", "netmask", "dns", "dhcp"]
+Address = collections.namedtuple("Address", ["v4", "v6"])
+NICDetails = collections.namedtuple("NICDetails", NIC_KEYS)
 
 
 @contextlib.contextmanager
@@ -66,6 +71,56 @@ def _escape_path(path):
     for char in ESC:
         path = path.replace(char, "`{}".format(char))
     return path
+
+
+def _get_ips(ips_as_string):
+    """Returns viable v4 and v6 IPs from a space separated string."""
+    ips = ips_as_string.split(" ")[1:]    # skip the header
+    ips_v4, ips_v6 = [], []
+    # There is no guarantee if all the IPs are valid and sorted by type.
+    for ip in ips:
+        if not ip:
+            continue
+        if "." in ip and ":" not in ip:
+            ips_v4.append(ip)
+        else:
+            ips_v6.append(ip)
+    return ips_v4, ips_v6
+
+
+def _get_nic_details(details):
+    """Get parsed network details from the raw ones."""
+    nic_details = dict.fromkeys(NIC_KEYS)
+    for detail in details:
+        if detail.startswith("mac"):
+            nic_details["mac"] = detail.split(" ")[1]
+        elif detail.startswith("address"):
+            v4s, v6s = _get_ips(detail)
+            if len(v6s) >= 2:
+                v6 = v6s[1]
+            else:
+                v6 = None
+            nic_details["address"] = Address(v4s[0], v6)
+        elif detail.startswith("gateway"):
+            v4s, v6s = _get_ips(detail)
+            v4 = v4s[0] if v4s else None
+            v6 = v6s[0] if v6s else None
+            nic_details["gateway"] = Address(v4, v6)
+        elif detail.startswith("netmask"):
+            # Similar to "address" field.
+            v4s, v6s = _get_ips(detail)
+            v4 = v4s[0]
+            if len(v6s) >= 2:
+                v6 = v6s[1]
+            else:
+                v6 = None
+            nic_details["netmask"] = Address(v4, v6)
+        elif detail.startswith("dns"):
+            v4s, v6s = _get_ips(detail)
+            nic_details["dns"] = Address(v4s, v6s)
+        elif detail.startswith("dhcp"):
+            nic_details["dhcp"] = detail.split(" ")[1].lower() == "true"
+    return NICDetails(**nic_details)
 
 
 def get_cbinit_dir(execute_function):
@@ -276,23 +331,25 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         cmd = "powershell C:\\network_details.ps1"
         output = self.remote_client.run_command_verbose(cmd)
 
-        # Do NOT remove any extra space, but remove the first separator.
-        # There's a possibility for the block to end with spaces,
-        # which are in fact missing details under the fields.
         output = output.replace(SEP, "", 1)
         nics = []
         for block in output.split(SEP):
-            details = block.splitlines()
+            details = block.strip().splitlines()
             if len(details) < 6:
-                continue
-
+                continue    # not enough, invalid data block
+            # Must follow `argus.util.NETWORK_KEYS` model.
+            nic_details = _get_nic_details(details)
             nic = {
-                "mac": details[0],
-                "address": details[1].split(" ")[0],
-                "gateway": details[2].split(" ")[0],
-                "netmask": details[3].split(" ")[0],
-                "dns": details[4].split(" "),
-                "dhcp": details[5].lower() == "true"
+                "mac": nic_details.mac,
+                "address": nic_details.address.v4,
+                "address6": nic_details.address.v6,
+                "gateway": nic_details.gateway.v4,
+                "gateway6": nic_details.gateway.v6,
+                "netmask": nic_details.netmask.v4,
+                "netmask6": nic_details.netmask.v6,
+                "dns": nic_details.dns.v4,
+                "dns6": nic_details.dns.v6,
+                "dhcp": nic_details.dhcp
             }
             nics.append(nic)
         return nics
