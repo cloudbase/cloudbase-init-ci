@@ -25,6 +25,9 @@ with util.restore_excepthook():
     from tempest.common import isolated_creds
 
 
+CONF = util.get_config()
+
+
 class named(collections.namedtuple("service", "application script_name "
                                               "host port")):
 
@@ -67,8 +70,7 @@ class NetworkWindowsScenario(BaseWindowsScenario):
         this step is achieved by allowing/forcing tenant isolation.
         """
         # Extract the just created private network.
-        resources = self._isolated_creds.isolated_net_resources["primary"]
-        return resources[0]
+        return self._credentials().network
 
     def _get_networks(self):
         """Explicitly gather and return the private networks.
@@ -95,16 +97,24 @@ class NetworkWindowsScenario(BaseWindowsScenario):
         """
         tenant_id = self._credentials().tenant_id
         # pylint: disable=protected-access
-        value = self._isolated_creds._create_network_resources(tenant_id)
+        net_resources = self._isolated_creds._create_network_resources(
+            tenant_id)
 
         # Store the network for later cleanup.
-        key = "extra"
-        self._isolated_creds.isolated_net_resources[key] = value
+        key = "fake"
+        fake_net_creds = util.get_namedtuple(
+            "FakeCreds",
+            ("network", "subnet", "router",
+             "user_id", "tenant_id", "username", "tenant_name"),
+            net_resources + (None,) * 4)
+        self._isolated_creds.isolated_creds[key] = fake_net_creds
 
-        # Disable DHCP for this network to test static configuration.
-        subnet_id = value[1]["id"]
-        net_client = self._isolated_creds.network_admin_client
-        net_client.update_subnet(subnet_id, enable_dhcp=False)
+        # Disable DHCP for this network to test static configuration and
+        # also add default DNS name servers.
+        subnet_id = fake_net_creds.subnet["id"]
+        net_client = self._network_client
+        net_client.update_subnet(subnet_id, enable_dhcp=False,
+                                 dns_nameservers=CONF.argus.dns_nameservers)
 
         # Change the allocation pool to configure any IP,
         # other the one used already with dynamic settings.

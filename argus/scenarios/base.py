@@ -27,8 +27,6 @@ from argus import util
 with util.restore_excepthook():
     from tempest import clients
     from tempest.common import credentials
-    from tempest.common import service_client
-    from tempest.services import network
 
 
 CONF = util.get_config()
@@ -38,41 +36,6 @@ LOG = util.get_logger()
 OUTPUT_SIZE = 128
 OUTPUT_EPSILON = int(OUTPUT_SIZE / 10)
 OUTPUT_STATUS_OK = [200]
-
-
-# TODO(cpopa): this is really a horrible hack!
-# But it solves the following problem, which can't
-# be solved easily otherwise:
-#    *  manager.ScenarioTest creates its clients in resource_setup
-#    * in order to create them, it needs credentials
-#      through a CredentialProvider
-#    * the credential provider, if the network resource is enabled, will
-#       look up in the list of known certs and will return them
-#    * if the credential provider can't find those creds at first,
-#      it retrieves them by creating the network and the subnet
-#    * the only problem is that the parameters to these functions aren't
-#       customizable at this point
-#    * and create_subnet doesn't receive the dns_nameservers option,
-#      which results in no internet connection inside the instance.
-#    * that's what the following function does, it patches create_subnet
-#      so that it is passing all the time the dns_nameservers
-#    * this could be fixed by manually creating the network, subnet
-#      and store the credentials before calling resource_setup
-#      for manager.ScenarioTest, but that requires a lot of
-#      code duplication.
-
-def _create_subnet(self, **kwargs):
-    resource_name = 'subnet'
-    kwargs['dns_nameservers'] = CONF.argus.dns_nameservers
-    plural = self.pluralize(resource_name)
-    uri = self.get_uri(plural)
-    post_data = self.serialize({resource_name: kwargs})
-    resp, body = self.post(uri, post_data)
-    body = self.deserialize_single(body)
-    self.expected_success(201, resp.status)
-    return service_client.ResponseBody(resp, body)
-
-network.json.network_client.NetworkClientJSON.create_subnet = _create_subnet
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -154,6 +117,12 @@ class BaseArgusScenario(object):
 
     def _credentials(self):
         return self._isolated_creds.get_primary_creds()
+
+    def _configure_networking(self):
+        subnet_id = self._credentials().subnet["id"]
+        self._network_client.update_subnet(
+            subnet_id,
+            dns_nameservers=CONF.argus.dns_nameservers)
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         server = self._servers_client.create_server(
@@ -239,6 +208,7 @@ class BaseArgusScenario(object):
         # pylint: disable=attribute-defined-outside-init
         LOG.info("Creating server for scenario %s...", self._name)
 
+        self._configure_networking()
         self._keypair = self._create_keypair()
         self._server = self._create_server(
             wait_until='ACTIVE',
