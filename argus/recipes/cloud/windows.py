@@ -368,3 +368,16 @@ class CloudbaseinitWinrmRecipe(CloudbaseinitCreateUserRecipe):
                   "cloudbaseinit.plugins.windows.winrmlistener."
                   "ConfigWinRMListenerPlugin",
             execute_function=self._execute)
+
+
+class CloudbaseinitMissingPlugin(CloudbaseinitRecipe):
+    """
+    A recipe which modifies the list of plugins, by adding
+    a plugin which doesn't exist.
+    """
+
+    def pre_sysprep(self):
+        introspection.set_config_option(
+            options="plugins",
+            value="nanana.batman",
+            execute_function=self._execute)
