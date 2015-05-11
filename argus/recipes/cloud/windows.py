@@ -378,6 +378,6 @@ class CloudbaseinitMissingPlugin(CloudbaseinitRecipe):
 
     def pre_sysprep(self):
         introspection.set_config_option(
-            options="plugins",
+            option="plugins",
             value="nanana.batman",
             execute_function=self._execute)
