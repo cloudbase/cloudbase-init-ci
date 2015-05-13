@@ -26,6 +26,8 @@ with util.restore_excepthook():
 
 
 CONF = util.get_config()
+SUBNET6_CIDR = "::ffff:a00:0/120"
+DNSES6 = ["::ffff:808:808", "::ffff:808:404"]
 
 
 class named(collections.namedtuple("service", "application script_name "
@@ -124,6 +126,19 @@ class NetworkWindowsScenario(BaseWindowsScenario):
             allocation_pools[0]["start"], step=2)
         net_client.update_subnet(subnet_id, allocation_pools=allocation_pools)
 
+        # Create and attach an IPv6 subnet for this network. Also, register
+        # it for later cleanup.
+        subnet6_name = util.rand_name(self.__class__.__name__) + "-subnet6"
+        network_id = fake_net_creds.network["id"]
+        net_client.create_subnet(
+            network_id=network_id,
+            cidr=SUBNET6_CIDR,
+            name=subnet6_name,
+            dns_nameservers=DNSES6,
+            tenant_id=tenant_id,
+            enable_dhcp=False,
+            ip_version=6)
+
     def _prepare_run(self):
         # Just like a normal preparer, but this time
         # with explicitly specified attached networks.
@@ -144,33 +159,43 @@ class NetworkWindowsScenario(BaseWindowsScenario):
         guest_nics = []
         for network in self._networks or []:
             network_id = network["uuid"]
-            details = net_client.show_network(network_id)["network"]
-            subnet_id = details["subnets"][0]
-            details = net_client.show_subnet(subnet_id)["subnet"]
+            net_details = net_client.show_network(network_id)["network"]
+            nic = dict.fromkeys(util.NETWORK_KEYS)
+            for subnet_id in net_details["subnets"]:
+                details = net_client.show_subnet(subnet_id)["subnet"]
 
-            # The network interface should follow the format found under
-            # `windows.InstanceIntrospection.get_network_interfaces` method.
-            nic = {}
-            nic["dhcp"] = details["enable_dhcp"]
-            nic["dns"] = details["dns_nameservers"]
-            nic["gateway"] = details["gateway_ip"]
-            nic["netmask"] = util.cidr2netmask(details["cidr"])
+                # The network interface should follow the format found under
+                # `windows.InstanceIntrospection.get_network_interfaces`
+                # method or `argus.util.NETWORK_KEYS` model.
+                v6switch = details["ip_version"] == 6
+                v6suffix = "6" if v6switch else ""
+                nic["dhcp"] = details["enable_dhcp"]
+                nic["dns" + v6suffix] = details["dns_nameservers"]
+                nic["gateway" + v6suffix] = details["gateway_ip"]
+                nic["netmask" + v6suffix] = (
+                    details["cidr"].split("/")[1] if v6switch
+                    else util.cidr2netmask(details["cidr"]))
 
-            # Find rest of the details under the ports using this subnet.
-            # There should be no conflicts because on the current architecture
-            # every instance is using its own router, subnet and network
-            # accessible only to it.
-            ports = net_client.list_ports()["ports"]
-            for port in ports:
-                # Select instance related ports only, with the
-                # corresponding subnet ID.
-                if ("compute" not in port["device_owner"] or
-                        port["fixed_ips"][0]["subnet_id"] != subnet_id):
-                    continue
-
-                nic["mac"] = port["mac_address"].upper()
-                nic["address"] = port["fixed_ips"][0]["ip_address"]
-                break
+                # Find rest of the details under the ports using this subnet.
+                # There should be no conflicts because on the current
+                # architecture every instance is using its own router,
+                # subnet and network accessible only to it.
+                ports = net_client.list_ports()["ports"]
+                for port in ports:
+                    # Select instance related ports only, with the
+                    # corresponding subnet ID.
+                    if "compute" not in port["device_owner"]:
+                        continue
+                    ip_address = None
+                    for fixed_ip in port["fixed_ips"]:
+                        if fixed_ip["subnet_id"] == subnet_id:
+                            ip_address = fixed_ip["ip_address"]
+                            break
+                    if not ip_address:
+                        continue
+                    nic["mac"] = port["mac_address"].upper()
+                    nic["address" + v6suffix] = ip_address
+                    break
 
             guest_nics.append(nic)
         return guest_nics

@@ -13,12 +13,12 @@ foreach ($nic in $nics)
     # normalize NULs to empty strings.
     $details = @(
         $sep,
-        ($nic.MACAddress -join " "),
-        ($nic.IPAddress -join " "),
-        ($nic.DefaultIPGateway -join " "),
-        ($nic.IPSubnet -join " "),
-        ($nic.DNSServerSearchOrder -join " "),
-        ($nic.DHCPEnabled -join " ")
+        ("mac " + ($nic.MACAddress -join " ")),
+        ("address " + ($nic.IPAddress -join " ")),
+        ("gateway " + ($nic.DefaultIPGateway -join " ")),
+        ("netmask " + ($nic.IPSubnet -join " ")),
+        ("dns " + ($nic.DNSServerSearchOrder -join " ")),
+        ("dhcp " + ($nic.DHCPEnabled -join " "))
     )
     foreach ($detail in $details)
     {

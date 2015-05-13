@@ -321,6 +321,11 @@ class TestStaticNetwork(base.TestBaseArgus):
 
         # Sort by hardware address and compare results.
         sort_func = lambda arg: arg["mac"]
-        instance_nics.sort(key=sort_func)
         guest_nics.sort(key=sort_func)
+        instance_nics.sort(key=sort_func)
+        # Do not take into account v6 DNSes, because
+        # they aren't retrieved even when they are set.
+        for nics in (guest_nics, instance_nics):
+            for nic in nics:
+                nic["dns6"] = None
         self.assertEqual(guest_nics, instance_nics)

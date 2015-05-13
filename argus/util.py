@@ -15,8 +15,8 @@
 
 import argparse
 import base64
-import contextlib
 import collections
+import contextlib
 import importlib
 import itertools
 import logging
@@ -55,6 +55,19 @@ __all__ = (
 
 DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 DEFAULT_LOG_FILE = 'argus.log'
+
+NETWORK_KEYS = [
+    "mac",
+    "address",
+    "address6",
+    "gateway",
+    "gateway6",
+    "netmask",
+    "netmask6",
+    "dns",
+    "dns6",
+    "dhcp"
+]
 
 
 class WinRemoteClient(remote_client.WinRemoteClient):
