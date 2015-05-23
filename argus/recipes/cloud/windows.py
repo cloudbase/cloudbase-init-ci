@@ -386,3 +386,31 @@ class CloudbaseinitMissingPlugin(CloudbaseinitRecipe):
             option="plugins",
             value="nanana.batman",
             execute_function=self._execute)
+
+
+class CloudbaseinitHTTPRecipe(CloudbaseinitMockServiceRecipe):
+    """Recipe for http metadata service mocking."""
+
+    config_entry = "metadata_base_url"
+    pattern = "http://{}:2003/"
+
+
+class CloudbaseinitKeysRecipe(CloudbaseinitHTTPRecipe,
+                              CloudbaseinitCreateUserRecipe):
+    """Recipe that facilitates x509 certificates and public keys testing."""
+
+    def pre_sysprep(self):
+        super(CloudbaseinitKeysRecipe, self).pre_sysprep()
+        introspection.set_config_option(
+            option="plugins",
+            value="cloudbaseinit.plugins.windows.createuser."
+                  "CreateUserPlugin,"
+                  "cloudbaseinit.plugins.common.setuserpassword."
+                  "SetUserPasswordPlugin,"
+                  "cloudbaseinit.plugins.common.sshpublickeys."
+                  "SetUserSSHPublicKeysPlugin,"
+                  "cloudbaseinit.plugins.windows.winrmcertificateauth."
+                  "ConfigWinRMCertificateAuthPlugin,"
+                  "cloudbaseinit.plugins.windows.winrmlistener."
+                  "ConfigWinRMListenerPlugin",
+            execute_function=self._execute)

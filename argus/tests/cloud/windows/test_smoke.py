@@ -156,9 +156,9 @@ class TestCertificateWinRM(base.TestBaseArgus):
 
     def test_winrm_certificate_auth(self):
         cert_pem = pkg_resources.resource_filename(
-            "argus.resources", "windows/cert.pem")
+            "argus.resources", "cert.pem")
         cert_key = pkg_resources.resource_filename(
-            "argus.resources", "windows/key.pem")
+            "argus.resources", "key.pem")
         client = self.manager.get_remote_client(cert_pem=cert_pem,
                                                 cert_key=cert_key)
         stdout = client.run_command_verbose("echo 1")

@@ -51,6 +51,8 @@ __all__ = (
     'run_once',
     'rand_name',
     'with_retry',
+    'get_public_keys',
+    'get_certificate',
 )
 
 DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
@@ -390,6 +392,14 @@ def restore_excepthook():
 def get_namedtuple(name, members, values):
     nt_class = collections.namedtuple(name, members)
     return nt_class(*values)
+
+
+def get_public_keys():
+    return get_resource("public_keys").splitlines()
+
+
+def get_certificate():
+    return get_resource("certificate")
 
 
 class ConfigurationPatcher(object):

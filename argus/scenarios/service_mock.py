@@ -14,6 +14,7 @@
 #    under the License.
 
 import contextlib
+import json
 import textwrap
 import time
 
@@ -23,6 +24,8 @@ import cherrypy
 # pylint: disable=import-error
 from six.moves import http_client
 from six.moves import urllib
+
+from argus import util
 
 
 CLOUDSTACK_EXPECTED_HEADER = "Domu-Request"
@@ -268,3 +271,35 @@ class MaasMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
             TO9FwPXIRcR/XrcMDn7slaHtbILM3P4pIbaXUhvel+qLOAMp6k2iDl2Q
             -----END CERTIFICATE-----
             """.strip())
+
+
+class HTTPKeysMetadataServiceApp(BaseServiceApp):
+    """Custom OpenStack http metadata."""
+
+    @util.cached_property
+    def _get_metadata(self):
+        """Fill-in the metadata password provided by the config file."""
+        metadata = {
+            "keys": [
+                {
+                    "name": "argus_cert",
+                    "type": "x509",
+                    "data": util.get_certificate()
+                }
+            ] + [{
+                "name": "argus_key",
+                "type": "ssh",
+                "data": data
+            } for data in util.get_public_keys()]
+        }
+        key = "admin_pass"
+        metadata[key] = self.scenario.get_metadata()[key]
+        return metadata
+
+    @cherrypy.expose
+    def default(self, *args):
+        link = "/".join(args)
+        if "latest/meta_data.json" not in link:
+            # Handle invalid and password posting cases.
+            raise cherrypy.HTTPError(404)
+        return json.dumps(self._get_metadata)

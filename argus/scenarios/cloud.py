@@ -284,3 +284,15 @@ class MaasWindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
               host="0.0.0.0",
               port=2002),
     ]
+
+
+class HTTPKeysWindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
+
+    """Scenario for testing custom OpenStack http metadata service."""
+
+    services = [
+        named(application=service_mock.HTTPKeysMetadataServiceApp,
+              script_name="/openstack",
+              host="0.0.0.0",
+              port=2003)
+    ]
