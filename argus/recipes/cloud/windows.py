@@ -244,6 +244,7 @@ class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):
     """A recipe which adds support for testing .exe scripts."""
 
     def pre_sysprep(self):
+        super(CloudbaseinitScriptRecipe, self).pre_sysprep()
         LOG.info("Doing last step before sysprepping.")
 
         cmd = ("powershell Invoke-WebRequest -uri "
@@ -260,6 +261,7 @@ class CloudbaseinitCreateUserRecipe(CloudbaseinitRecipe):
     """
 
     def pre_sysprep(self):
+        super(CloudbaseinitCreateUserRecipe, self).pre_sysprep()
         LOG.info("Creating the user %s...", CONF.cloudbaseinit.created_user)
         cmd = ("powershell Invoke-webrequest -uri "
                "{}/windows/create_user.ps1 -outfile C:\\\\create_user.ps1"
@@ -279,6 +281,7 @@ class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
     """
 
     def pre_sysprep(self):
+        super(CloudbaseinitSpecializeRecipe, self).pre_sysprep()
         LOG.info("Preparing cloudbaseinit for failure.")
         python_dir = introspection.get_python_dir(self._execute)
         path = ntpath.join(python_dir, "Lib", "site-packages",
@@ -296,6 +299,7 @@ class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
     pattern = "{}"
 
     def pre_sysprep(self):
+        super(CloudbaseinitMockServiceRecipe, self).pre_sysprep()
         LOG.info("Inject guest IP for mocked service access.")
 
         # Append service IP as a config option.
@@ -377,6 +381,7 @@ class CloudbaseinitMissingPlugin(CloudbaseinitRecipe):
     """
 
     def pre_sysprep(self):
+        super(CloudbaseinitMissingPlugin, self).pre_sysprep()
         introspection.set_config_option(
             option="plugins",
             value="nanana.batman",
