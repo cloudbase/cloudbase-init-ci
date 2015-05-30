@@ -364,8 +364,8 @@ class BaseArgusScenario(object):
     def private_key(self):
         return self._keypair['private_key']
 
-    def get_image_ref(self):
-        return self._images_client.get_image(self._image.image_ref)
+    def get_image_by_ref(self):
+        return self._images_client.show_image(self._image.image_ref)
 
     def get_metadata(self):
         return self._metadata
