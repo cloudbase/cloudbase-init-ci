@@ -131,12 +131,6 @@ class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
         generated = binascii.hexlify(os.urandom(14)).decode()
         return generated + "!*"
 
-    def _run_remote_command(self, password, cmd):
-        remote_client = self.manager.get_remote_client(
-            CONF.cloudbaseinit.created_user, password)
-        stdout = remote_client.run_command_verbose(cmd)
-        return stdout
-
     def _update_password(self, password):
         url = urllib.parse.urljoin(self.service_url, 'password')
         params = urllib.parse.urlencode({'password': password})
@@ -166,6 +160,16 @@ class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
 
         return False
 
+    def _wait_for_completion(self, password):
+        wait_cmd = ('powershell (Get-Service "| where -Property Name '
+                    '-match cloudbase-init").Status')
+        remote_client = self.manager.get_remote_client(
+            CONF.cloudbaseinit.created_user, password)
+        remote_client.run_command_until_condition(
+            wait_cmd,
+            lambda out: out.strip() == 'Stopped',
+            count=util.RETRY_COUNT, delay=util.RETRY_DELAY)
+
     def _test_password(self, password, expected):
         # Set the password in the Password Server.
         response = self._update_password(password)
@@ -175,8 +179,7 @@ class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
         self.manager.reboot_instance()
 
         # Check if the password was set properly.
-        response = self._run_remote_command(expected, 'echo 1')
-        self.assertEqual('1', response.strip())
+        self._wait_for_completion(expected)
 
     def test_update_password(self):
         # Get the password from the metadata.
