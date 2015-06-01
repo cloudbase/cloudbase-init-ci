@@ -199,6 +199,9 @@ class CloudstackPasswordManagerApp(BaseServiceApp):
             return "saved_password"
         return self._password
 
+    def saved_password(self):
+        self._password = None
+
     @cherrypy.expose
     def password(self, password=None):
         if cherrypy.request.method != 'POST':
