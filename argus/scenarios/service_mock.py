@@ -203,7 +203,7 @@ class CloudstackPasswordManagerApp(BaseServiceApp):
         self._password = None
 
     @cherrypy.expose
-    def password(self, password):
+    def password(self, password=None):
         if cherrypy.request.method != 'POST':
             raise cherrypy.HTTPError(405, 'Method not allowed')
         self._password = password
