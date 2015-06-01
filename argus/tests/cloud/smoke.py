@@ -133,8 +133,12 @@ class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
 
     def _update_password(self, password):
         url = urllib.parse.urljoin(self.service_url, 'password')
-        params = urllib.parse.urlencode({'password': password})
-        request = urllib.request.Request(url, data=params)
+        if password:
+            params = {'password': password}
+        else:
+            params = {}
+        data = urllib.parse.urlencode(params)
+        request = urllib.request.Request(url, data=data)
         try:
             response = urllib.request.urlopen(request)
         except urllib.error.HTTPError as exc:
