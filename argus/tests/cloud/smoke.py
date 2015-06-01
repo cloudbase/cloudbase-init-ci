@@ -284,9 +284,10 @@ class TestsBaseSmoke(TestCreatedUser,
     def test_sshpublickeys_set(self):
         # Verify that we set the expected ssh keys.
         authorized_keys = self.introspection.get_instance_keys_path()
-        public_key = self.introspection.get_instance_file_content(
-            authorized_keys).replace('\r\n', '\n')
-        self.assertEqual(self.manager.public_key(), public_key)
+        public_keys = self.introspection.get_instance_file_content(
+            authorized_keys).splitlines()
+        self.assertEqual(set(self.manager.public_key().splitlines()),
+                         set(public_keys))
 
     @test_util.skip_unless_dnsmasq_configured
     def test_mtu(self):

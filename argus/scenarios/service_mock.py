@@ -105,7 +105,9 @@ class MetadataServiceAppMixin(object):
         return self.scenario.instance_server()['name'][:15].lower()
 
     def public_keys(self):
-        return self.scenario.public_key().strip()
+        # The public key(s) should be let prefixed with EOL
+        # (as the metadata providers will do).
+        return self.scenario.public_key()
 
 
 class EC2MetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
