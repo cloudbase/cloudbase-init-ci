@@ -336,3 +336,14 @@ class TestStaticNetwork(base.TestBaseArgus):
             for nic in nics:
                 nic["dns6"] = None
         self.assertEqual(guest_nics, instance_nics)
+
+
+class TestPublicKeys(base.TestBaseArgus):
+
+    def test_public_keys(self):
+        # Check multiple ssh keys case.
+        authorized_keys = self.introspection.get_instance_keys_path()
+        public_keys = self.introspection.get_instance_file_content(
+            authorized_keys).splitlines()
+        self.assertEqual(set(util.get_public_keys()),
+                         set(public_keys))
