@@ -31,6 +31,10 @@ from argus import util
 CONF = util.get_config()
 LOG = util.get_logger()
 
+# Default values for an instance under booting step.
+COUNT = 20
+DELAY = 20
+
 __all__ = (
     'CloudbaseinitRecipe',
     'CloudbaseinitScriptRecipe',
@@ -74,9 +78,10 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
                     'where -Property Name -contains {0}).Name"'
                     .format(self._image.default_ci_username))
-        self._run_cmd_until_condition(
+        self._execute_until_condition(
             wait_cmd,
-            lambda stdout: stdout.strip() == self._image.default_ci_username)
+            lambda stdout: stdout.strip() == self._image.default_ci_username,
+            count=COUNT, delay=DELAY)
 
     def execution_prologue(self):
         LOG.info("Retrieve common module for proper script execution.")
@@ -155,7 +160,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             cmd = ("powershell Invoke-webrequest -uri "
                    "{} -outfile 'C:\\install.zip'"
                    .format(link))
-        self._execute_with_retry(cmd)
+        self._execute(cmd)
         cmds = [
             "Add-Type -A System.IO.Compression.FileSystem",
             "[IO.Compression.ZipFile]::ExtractToDirectory("
@@ -215,29 +220,31 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                .format(CONF.argus.resources))
         self._execute(cmd)
         try:
-            self._execute('powershell C:\\sysprep.ps1')
+            self._execute('powershell C:\\sysprep.ps1', count=1)
         except Exception:
-            # This could fail, since it's blocking until the
-            # restart occurs.
+            # This will fail, since it's blocking until the
+            # restart occurs, so there will be transport issues.
             pass
 
     def wait_cbinit_finalization(self):
         """Wait for the finalization of CloudbaseInit.
 
-        The function waits until cloudbaseinit fininished.
+        The function waits until cloudbaseinit finished.
         """
         LOG.info("Waiting for the finalization of CloudbaseInit execution...")
         wait_cmd = ('powershell (Get-Service "| where -Property Name '
                     '-match cloudbase-init").Status')
-        self._run_cmd_until_condition(
+        self._execute_until_condition(
             wait_cmd,
-            lambda out: out.strip() == 'Stopped')
+            lambda out: out.strip() == 'Stopped',
+            count=COUNT, delay=DELAY)
 
 
 class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):
     """A recipe which adds support for testing .exe scripts."""
 
     def pre_sysprep(self):
+        super(CloudbaseinitScriptRecipe, self).pre_sysprep()
         LOG.info("Doing last step before sysprepping.")
 
         cmd = ("powershell Invoke-WebRequest -uri "
@@ -254,14 +261,15 @@ class CloudbaseinitCreateUserRecipe(CloudbaseinitRecipe):
     """
 
     def pre_sysprep(self):
-        LOG.info("Creating the user %s...", self._image.created_user)
+        super(CloudbaseinitCreateUserRecipe, self).pre_sysprep()
+        LOG.info("Creating the user %s...", CONF.cloudbaseinit.created_user)
         cmd = ("powershell Invoke-webrequest -uri "
                "{}/windows/create_user.ps1 -outfile C:\\\\create_user.ps1"
                .format(CONF.argus.resources))
         self._execute(cmd)
 
         self._execute('powershell "C:\\\\create_user.ps1 -user {}"'.format(
-            self._image.created_user))
+            CONF.cloudbaseinit.created_user))
 
 
 class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
@@ -273,6 +281,7 @@ class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
     """
 
     def pre_sysprep(self):
+        super(CloudbaseinitSpecializeRecipe, self).pre_sysprep()
         LOG.info("Preparing cloudbaseinit for failure.")
         python_dir = introspection.get_python_dir(self._execute)
         path = ntpath.join(python_dir, "Lib", "site-packages",
@@ -290,16 +299,14 @@ class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
     pattern = "{}"
 
     def pre_sysprep(self):
+        super(CloudbaseinitMockServiceRecipe, self).pre_sysprep()
         LOG.info("Inject guest IP for mocked service access.")
-        cbdir = introspection.get_cbinit_dir(self._execute)
-        conf = ntpath.join(cbdir, "conf", "cloudbase-init.conf")
 
         # Append service IP as a config option.
         address = self.pattern.format(util.get_local_ip())
-        line = "{} = {}".format(self.config_entry, address)
-        cmd = ('powershell "((Get-Content {0!r}) + {1!r}) |'
-               ' Set-Content {0!r}"'.format(conf, line))
-        self._execute(cmd)
+        introspection.set_config_option(option=self.config_entry,
+                                        value=address,
+                                        execute_function=self._execute)
 
 
 class CloudbaseinitEC2Recipe(CloudbaseinitMockServiceRecipe):
@@ -341,10 +348,6 @@ class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
     def pre_sysprep(self):
         super(CloudbaseinitMaasRecipe, self).pre_sysprep()
 
-        # We'll have to send a couple of other config options as well.
-        cbdir = introspection.get_cbinit_dir(self._execute)
-        conf = ntpath.join(cbdir, "conf", "cloudbase-init.conf")
-
         required_fields = (
             "maas_oauth_consumer_key",
             "maas_oauth_consumer_secret",
@@ -353,7 +356,61 @@ class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
         )
 
         for field in required_fields:
-            line = "{} = secret".format(field)
-            cmd = ('powershell "((Get-Content {0!r}) + {1!r}) |'
-                   ' Set-Content {0!r}"'.format(conf, line))
-            self._execute(cmd)
+            introspection.set_config_option(option=field, value="secret",
+                                            execute_function=self._execute)
+
+
+class CloudbaseinitWinrmRecipe(CloudbaseinitCreateUserRecipe):
+    """A recipe for testing the WinRM configuration plugin."""
+
+    def pre_sysprep(self):
+        super(CloudbaseinitWinrmRecipe, self).pre_sysprep()
+        introspection.set_config_option(
+            option="plugins",
+            value="cloudbaseinit.plugins.windows.winrmcertificateauth."
+                  "ConfigWinRMCertificateAuthPlugin,"
+                  "cloudbaseinit.plugins.windows.winrmlistener."
+                  "ConfigWinRMListenerPlugin",
+            execute_function=self._execute)
+
+
+class CloudbaseinitMissingPlugin(CloudbaseinitRecipe):
+    """
+    A recipe which modifies the list of plugins, by adding
+    a plugin which doesn't exist.
+    """
+
+    def pre_sysprep(self):
+        super(CloudbaseinitMissingPlugin, self).pre_sysprep()
+        introspection.set_config_option(
+            option="plugins",
+            value="nanana.batman",
+            execute_function=self._execute)
+
+
+class CloudbaseinitHTTPRecipe(CloudbaseinitMockServiceRecipe):
+    """Recipe for http metadata service mocking."""
+
+    config_entry = "metadata_base_url"
+    pattern = "http://{}:2003/"
+
+
+class CloudbaseinitKeysRecipe(CloudbaseinitHTTPRecipe,
+                              CloudbaseinitCreateUserRecipe):
+    """Recipe that facilitates x509 certificates and public keys testing."""
+
+    def pre_sysprep(self):
+        super(CloudbaseinitKeysRecipe, self).pre_sysprep()
+        introspection.set_config_option(
+            option="plugins",
+            value="cloudbaseinit.plugins.windows.createuser."
+                  "CreateUserPlugin,"
+                  "cloudbaseinit.plugins.common.setuserpassword."
+                  "SetUserPasswordPlugin,"
+                  "cloudbaseinit.plugins.common.sshpublickeys."
+                  "SetUserSSHPublicKeysPlugin,"
+                  "cloudbaseinit.plugins.windows.winrmcertificateauth."
+                  "ConfigWinRMCertificateAuthPlugin,"
+                  "cloudbaseinit.plugins.windows.winrmlistener."
+                  "ConfigWinRMListenerPlugin",
+            execute_function=self._execute)

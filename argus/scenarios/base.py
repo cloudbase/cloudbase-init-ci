@@ -17,74 +17,25 @@
 import abc
 import base64
 import os
-import sys
 import unittest
 
-_ORIG_EXCEPTHOOK = sys.excepthook
-
 import six
-from tempest import clients
-from tempest.common import credentials
-from tempest.common import service_client
-from tempest.common.utils import data_utils
-from tempest.services import network
 
 from argus import exceptions
 from argus import util
 
+with util.restore_excepthook():
+    from tempest import clients
+    from tempest.common import credentials
+
+
 CONF = util.get_config()
 LOG = util.get_logger()
 
-SIZE = 128    # starting size as number of lines
-STATUS_OK = [200]
-
-# tempest sets its own excepthook, which will log the error
-# using the tempest logger. Unfortunately, we are not using
-# the tempest logger, so any uncaught error goes into nothingness.
-# The code which sets the excepthook is here:
-# https://github.com/openstack/tempest/blob/master/tempest/openstack/common/
-# log.py#L420
-# That's why we mock the logging.setup call to something which
-# won't affect us. This will work everytime tempest thinks to call
-# log.setup. Just in case, reset the excepthook to the original one.
-from tempest.openstack.common import log
-log.setup = lambda *args, **kwargs: None
-sys.excepthook = _ORIG_EXCEPTHOOK
-
-
-# TODO(cpopa): this is really a horrible hack!
-# But it solves the following problem, which can't
-# be solved easily otherwise:
-#    *  manager.ScenarioTest creates its clients in resource_setup
-#    * in order to create them, it needs credentials
-#      through a CredentialProvider
-#    * the credential provider, if the network resource is enabled, will
-#       look up in the list of known certs and will return them
-#    * if the credential provider can't find those creds at first,
-#      it retrieves them by creating the network and the subnet
-#    * the only problem is that the parameters to these functions aren't
-#       customizable at this point
-#    * and create_subnet doesn't receive the dns_nameservers option,
-#      which results in no internet connection inside the instance.
-#    * that's what the following function does, it patches create_subnet
-#      so that it is passing all the time the dns_nameservers
-#    * this could be fixed by manually creating the network, subnet
-#      and store the credentials before calling resource_setup
-#      for manager.ScenarioTest, but that requires a lot of
-#      code duplication.
-
-def _create_subnet(self, **kwargs):
-    resource_name = 'subnet'
-    kwargs['dns_nameservers'] = CONF.argus.dns_nameservers
-    plural = self.pluralize(resource_name)
-    uri = self.get_uri(plural)
-    post_data = self.serialize({resource_name: kwargs})
-    resp, body = self.post(uri, post_data)
-    body = self.deserialize_single(body)
-    self.expected_success(201, resp.status)
-    return service_client.ResponseBody(resp, body)
-
-network.json.network_client.NetworkClientJSON.create_subnet = _create_subnet
+# Starting size as number of lines and tolerance.
+OUTPUT_SIZE = 128
+OUTPUT_EPSILON = int(OUTPUT_SIZE / 10)
+OUTPUT_STATUS_OK = [200]
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -132,47 +83,50 @@ class BaseArgusScenario(object):
             self._userdata = base64.encodestring(userdata)
         else:
             self._userdata = None
+        self._networks = None    # list with UUIDs for future attached NICs
 
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
         self._isolated_creds = credentials.get_isolated_credentials(
             self.__class__.__name__, network_resources={})
         self._manager = clients.Manager(credentials=self._credentials())
-        self._admin_manager = clients.Manager(self._admin_credentials())
 
         # Clients (in alphabetical order)
         self._flavors_client = self._manager.flavors_client
         self._floating_ips_client = self._manager.floating_ips_client
+
         # Glance image client v1
         self._image_client = self._manager.image_client
+
         # Compute image client
         self._images_client = self._manager.images_client
         self._keypairs_client = self._manager.keypairs_client
-        self._networks_client = self._admin_manager.networks_client
+
         # Nova security groups client
         self._security_groups_client = self._manager.security_groups_client
         self._servers_client = self._manager.servers_client
         self._volumes_client = self._manager.volumes_client
         self._snapshots_client = self._manager.snapshots_client
         self._interface_client = self._manager.interfaces_client
+
         # Neutron network client
         self._network_client = self._manager.network_client
+
         # Heat client
         self._orchestration_client = self._manager.orchestration_client
 
     def _credentials(self):
         return self._isolated_creds.get_primary_creds()
 
-    def _admin_credentials(self):
-        try:
-            return self._isolated_creds.get_admin_creds()
-        except NotImplementedError:
-            raise exceptions.ArgusError(
-                'Admin Credentials are not available.')
+    def _configure_networking(self):
+        subnet_id = self._credentials().subnet["id"]
+        self._network_client.update_subnet(
+            subnet_id,
+            dns_nameservers=CONF.argus.dns_nameservers)
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         server = self._servers_client.create_server(
-            data_utils.rand_name(self.__class__.__name__ + "-instance"),
+            util.rand_name(self.__class__.__name__) + "-instance",
             self._image.image_ref,
             self._image.flavor_ref,
             **kwargs)
@@ -238,12 +192,12 @@ class BaseArgusScenario(object):
             yield sg_rule
 
     def _create_security_groups(self):
-        sg_name = data_utils.rand_name(self.__class__.__name__)
+        sg_name = util.rand_name(self.__class__.__name__)
         sg_desc = sg_name + " description"
         secgroup = self._security_groups_client.create_security_group(
             sg_name, sg_desc)
 
-        # Add rules to the security group
+        # Add rules to the security group.
         for rule in self._add_security_group_exceptions(secgroup['id']):
             self._security_groups_rules.append(rule['id'])
         self._servers_client.add_security_group(self._server['id'],
@@ -254,35 +208,43 @@ class BaseArgusScenario(object):
         # pylint: disable=attribute-defined-outside-init
         LOG.info("Creating server for scenario %s...", self._name)
 
+        self._configure_networking()
         self._keypair = self._create_keypair()
         self._server = self._create_server(
             wait_until='ACTIVE',
             key_name=self._keypair['name'],
             disk_config='AUTO',
             user_data=self._userdata,
-            meta=self._metadata)
+            meta=self._metadata,
+            networks=self._networks)
         self._floating_ip = self._assign_floating_ip()
         self._security_group = self._create_security_groups()
         self.prepare_instance()
 
-    def _save_instance_output(self):
+    def save_instance_output(self, suffix=None):
+        """Retrieve and save all data written through the COM port.
+
+        If a `suffix` is provided, then the log name is preceded by it.
+        """
         if not self._output_directory:
             return
 
+        content = ""
+        size = OUTPUT_SIZE
+        template = "{}{}.log".format("{}", "-" + suffix if suffix else "")
         path = os.path.join(self._output_directory,
-                            "{}.log".format(self._server["id"]))
-        # try to obtain the entire content
-        size = SIZE
+                            template.format(self._server["id"]))
         while True:
             resp, content = self.instance_output(size)
-            if resp.status not in STATUS_OK:
+            if resp.status not in OUTPUT_STATUS_OK:
                 LOG.error("Couldn't save console output <%d>.", resp.status)
                 return
-            if len(content.splitlines()) >= size:
+
+            if len(content.splitlines()) >= (size - OUTPUT_EPSILON):
                 size *= 2
             else:
                 break
-        # write (or not) the content
+
         if not content.strip():
             LOG.warn("Empty console output; nothing to save.")
             return
@@ -317,7 +279,7 @@ class BaseArgusScenario(object):
         self._isolated_creds.clear_isolated_creds()
 
     def run(self):
-        """Run the tests from the underlying test class.
+        """Run the tests from the underlying test classes.
 
         This will start a new instance and prepare it using the recipe.
         It will return a list of test results.
@@ -331,13 +293,12 @@ class BaseArgusScenario(object):
                 self._environment_preparer.cleanup_environment()
 
     def _run(self):
-        self._prepare_run()
 
         try:
+            self._prepare_run()
             self._setup()
-            self._save_instance_output()
+            self.save_instance_output()
 
-            # run the tests
             LOG.info("Running tests...")
             testloader = unittest.TestLoader()
             suite = unittest.TestSuite()
@@ -403,8 +364,11 @@ class BaseArgusScenario(object):
     def private_key(self):
         return self._keypair['private_key']
 
-    def get_image_ref(self):
-        return self._images_client.get_image(self._image.image_ref)
+    def get_image_by_ref(self):
+        return self._images_client.show_image(self._image.image_ref)
+
+    def get_metadata(self):
+        return self._metadata
 
     @abc.abstractmethod
     def get_remote_client(self, username=None, password=None, **kwargs):

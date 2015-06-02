@@ -15,11 +15,15 @@
 
 import argparse
 import base64
+import collections
+import contextlib
 import importlib
 import itertools
 import logging
 import pkgutil
+import random
 import socket
+import struct
 import subprocess
 import sys
 import time
@@ -31,16 +35,41 @@ from argus import exceptions
 from argus import remote_client
 
 
+RETRY_COUNT = 15
+RETRY_DELAY = 10
+
 __all__ = (
+    'ConfigurationPatcher',
     'WinRemoteClient',
     'decrypt_password',
-    'run_once',
+    'get_config',
+    'get_logger',
     'get_resource',
     'cached_property',
     'load_qualified_object',
+    'parse_cli',
+    'run_once',
+    'rand_name',
+    'with_retry',
+    'get_public_keys',
+    'get_certificate',
 )
 
 DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+DEFAULT_LOG_FILE = 'argus.log'
+
+NETWORK_KEYS = [
+    "mac",
+    "address",
+    "address6",
+    "gateway",
+    "gateway6",
+    "netmask",
+    "netmask6",
+    "dns",
+    "dns6",
+    "dhcp"
+]
 
 
 class WinRemoteClient(remote_client.WinRemoteClient):
@@ -58,66 +87,70 @@ class WinRemoteClient(remote_client.WinRemoteClient):
     def run_command_verbose(self, cmd):
         """Run the given command and log anything it returns.
 
+        Do this with retrying support.
+
         :rtype: string
         :returns: stdout
         """
-        stdout, stderr, exit_code = self.run_command(cmd)
+        stdout, stderr, exit_code = self.run_command_with_retry(cmd)
         LOG.info("The command returned the output: %s", stdout)
         LOG.info("The stderr of the command was: %s", stderr)
         LOG.info("The exit code of the command was: %s", exit_code)
         return stdout
 
-    def run_command_with_retry(self, cmd, retry_count=None,
-                               retry_count_interval=5):
+    def run_command_with_retry(self, cmd, count=RETRY_COUNT,
+                               delay=RETRY_DELAY):
         """Run the given `cmd` until succeeds.
 
         :param cmd:
             A string, representing a command which needs to
             be executed on the underlying remote client.
-        :param retry_count:
+        :param count:
             The number of retries which this function has.
             If the value is ``None``, then the function will retry *forever*.
-        :param retry_count_interval:
+        :param delay:
             The number of seconds to sleep when retrying a command.
 
-        :returns: stdout, stderr, exit_code
         :rtype: tuple
+        :returns: stdout, stderr, exit_code
         """
-        count = 0
+
+        # Countdown normalization.
+        if not count or count < 0:
+            count = 0
+
         while True:
             try:
                 return self.run_command(cmd)
             except Exception as exc:  # pylint: disable=broad-except
-                LOG.debug("Command failed with '%s'.\nRetrying...", exc)
-                count += 1
-                if retry_count and count >= retry_count:
+                LOG.debug("Command failed with %r.", exc)
+                # A negative `count` means no count at all.
+                if count >= 0:
+                    count -= 1
+                if count == 0:
                     raise exceptions.ArgusTimeoutError(
                         "Command {!r} failed too many times."
                         .format(cmd))
-                time.sleep(retry_count_interval)
+                LOG.debug("Retrying...")
+                time.sleep(delay)
 
-    def run_command_until_condition(self, cmd, cond, retry_count=None,
-                                    retry_count_interval=5):
-        """Run the given `cmd` until a condition *cond* occurs.
+    def run_command_until_condition(self, cmd, cond,
+                                    count=RETRY_COUNT, delay=RETRY_DELAY):
+        """Run the given `cmd` until a condition `cond` occurs.
 
-        :param cmd:
-            A string, representing a command which needs to
-            be executed on the underlying remote client.
         :param cond:
             A callable which receives the standard output returned by
             executing the command. It should return a boolean value,
             which tells to this function to stop execution.
-        :param retry_count:
-            The number of retries which this function
-            has until a successful run.
-            If the value is ``None``, then the function will retry *forever*.
-        :param retry_count_interval:
-            The number of seconds to sleep when retrying a command.
+        :raises:
+            `ArgusCLIError` if there is output found in the standard error.
+
+        This method uses and behaves like `run_command_with_retry` but
+        with an additional condition parameter.
         """
         while True:
             stdout, stderr, _ = self.run_command_with_retry(
-                cmd, retry_count=retry_count,
-                retry_count_interval=retry_count_interval)
+                cmd, count=count, delay=delay)
             if stderr:
                 raise exceptions.ArgusCLIError(
                     "Executing command {!r} failed with {!r}."
@@ -125,8 +158,8 @@ class WinRemoteClient(remote_client.WinRemoteClient):
             elif cond(stdout):
                 break
             else:
-                LOG.debug("Condition not met.")
-                time.sleep(retry_count_interval)
+                LOG.debug("Condition not met, retrying...")
+                time.sleep(delay)
 
 
 def get_local_ip():
@@ -134,6 +167,30 @@ def get_local_ip():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.connect(("google.com", 0))
     return sock.getsockname()[0]
+
+
+def next_ip(ip, step=1):
+    """Return the next IP address of the given one.
+
+    :type step: int
+    :param step: offset adjustment value
+    """
+    # Convert IP address to unsigned long.
+    data_type = "!L"
+    number = struct.unpack(data_type, socket.inet_aton(ip))[0]
+    # Get the next one.
+    number += step
+    # Convert it back and return the ascii value.
+    return socket.inet_ntoa(struct.pack(data_type, number))
+
+
+def cidr2netmask(cidr):
+    """Return the net mask deduced from the CIDR format network address."""
+    mask_length = int(cidr.split("/")[1])
+    mask_bits = "1" * mask_length + "0" * (32 - mask_length)
+    mask_number = int(mask_bits, 2)
+    mask_bytes = struct.pack("!L", mask_number)
+    return socket.inet_ntoa(mask_bytes)
 
 
 def decrypt_password(private_key, password):
@@ -233,12 +290,6 @@ def parse_cli():
                              "by a recipe.")
     parser.add_argument("-p", "--pause", action="store_true",
                         help="Pause argus before doing any test.")
-    parser.add_argument("--logging-format",
-                        type=str, default=DEFAULT_FORMAT,
-                        help="The logging format argus should use.")
-    parser.add_argument("--logging-file",
-                        type=str, default="argus.log",
-                        help="The logging file argus should use.")
     parser.add_argument("--test-os-types",
                         type=str, nargs="*",
                         help="Test only those scenarios with these OS types. "
@@ -267,26 +318,24 @@ def get_config():
     return config.ConfigurationParser(opts.conf).conf
 
 
-def get_logger(name="argus", format_string=None):
+def get_logger(name="argus",
+               format_string=DEFAULT_FORMAT,
+               logging_file=DEFAULT_LOG_FILE):
     """Obtain a new logger object.
 
-    The `name` parameter will be the name of the logger
-    and `format_string` will be the format it will
-    use for logging.
-    If it is not given, the the one given at command
-    line will be used, otherwise the default format.
+    The `name` parameter will be the name of the logger and `format_string`
+    will be the format it will use for logging. `logging_file` is a file
+    where the messages will be written.
     """
     logger = logging.getLogger(name)
-    opts = parse_cli()
-    formatter = logging.Formatter(
-        format_string or opts.logging_format or DEFAULT_FORMAT)
+    formatter = logging.Formatter(format_string)
 
     if not logger.handlers:
         # If the logger wasn't obtained another time,
         # then it shouldn't have any loggers
 
-        if opts.logging_file:
-            file_handler = logging.FileHandler(opts.logging_file)
+        if logging_file:
+            file_handler = logging.FileHandler(logging_file, delay=True)
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
 
@@ -314,24 +363,43 @@ def load_qualified_object(obj):
     return obj
 
 
-class ProxyLogger(object):
-    """Proxy class for the logging object.
+def rand_name(name=''):
+    randbits = str(random.randint(1, 0x7fffffff))
+    if name:
+        return name + '-' + randbits
+    else:
+        return randbits
 
-    This comes in hand when using argus as a library,
-    so there is no need to provide required CLI arguments,
-    just to import argus.util.
+
+@contextlib.contextmanager
+def restore_excepthook():
+    """Context manager used to preserve the original except hook.
+
+    *tempest* sets its own except hook, which will log the error
+    using the tempest logger. Unfortunately, we are not using
+    the tempest logger, so any uncaught error goes into nothingness.
+    So just reset the excepthook to the original.
     """
+    # pylint: disable=redefined-outer-name,reimported
+    import sys
+    original = sys.excepthook
+    try:
+        yield
+    finally:
+        sys.excepthook = original
 
-    def __init__(self):
-        self._logger = None
 
-    def __getattr__(self, attr):
-        # single instantiation on access only
-        if not self._logger:
-            self._logger = get_logger()
-        obj = getattr(self._logger, attr)
-        self.__dict__[attr] = obj
-        return obj
+def get_namedtuple(name, members, values):
+    nt_class = collections.namedtuple(name, members)
+    return nt_class(*values)
+
+
+def get_public_keys():
+    return get_resource("public_keys").splitlines()
+
+
+def get_certificate():
+    return get_resource("certificate")
 
 
 class ConfigurationPatcher(object):
@@ -389,4 +457,4 @@ class ConfigurationPatcher(object):
         self.unpatch()
 
 
-LOG = ProxyLogger()
+LOG = get_logger()

@@ -48,15 +48,22 @@ class WinRemoteClient(object):
     :param transport_protocol:
         The transport for the WinRM protocol. Only http and https makes
         sense.
+    :param cert_pem:
+        Client authentication certificate file path in PEM format.
+    :param cert_key:
+        Client authentication certificate key file path in PEM format.
     """
     def __init__(self, hostname, username, password,
-                 transport_protocol='http'):
+                 transport_protocol='http',
+                 cert_pem=None, cert_key=None):
         self.hostname = "{protocol}://{hostname}:{port}/wsman".format(
             protocol=transport_protocol,
             hostname=hostname,
             port=5985 if transport_protocol == 'http' else 5986)
         self.username = username
         self.password = password
+        self._cert_pem = cert_pem
+        self._cert_key = cert_key
 
     @staticmethod
     def _run_command(protocol_client, shell_id, command):
@@ -66,12 +73,13 @@ class WinRemoteClient(object):
             stdout, stderr, exit_code = protocol_client.get_command_output(
                 shell_id, command_id)
             if exit_code:
+                output = "\n\n".join([out for out in (stdout, stderr) if out])
                 raise exceptions.ArgusError(
                     "Executing command {command!r} failed with "
                     "exit code {exit_code!r} and output {output!r}."
                     .format(command=command,
                             exit_code=exit_code,
-                            output=stdout))
+                            output=output))
 
             return stdout, stderr, exit_code
         finally:
@@ -92,7 +100,9 @@ class WinRemoteClient(object):
         return protocol.Protocol(endpoint=self.hostname,
                                  transport='plaintext',
                                  username=self.username,
-                                 password=self.password)
+                                 password=self.password,
+                                 cert_pem=self._cert_pem,
+                                 cert_key_pem=self._cert_key)
 
     def run_remote_cmd(self, cmd):
         """Run the given remote command.

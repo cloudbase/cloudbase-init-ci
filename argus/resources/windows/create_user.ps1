@@ -6,5 +6,6 @@ param
 $Computer = [ADSI]"WinNT://$Env:COMPUTERNAME,Computer"
 
 $LocalUser = $Computer.Create("User", $user)
-$LocalUser.SetPassword("Passw0rd")
+$LocalUser.SetPassword("PASsw0r4&!=")
 $LocalUser.SetInfo()
+net localgroup Administrators $user /ADD

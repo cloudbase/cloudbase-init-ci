@@ -14,15 +14,21 @@
 #    under the License.
 
 import contextlib
+import json
 import textwrap
 import time
 
 import multiprocessing
 
 import cherrypy
-from six.moves import urllib, http_client  # pylint: disable=import-error
+# pylint: disable=import-error
+from six.moves import http_client
+from six.moves import urllib
+
+from argus import util
 
 
+CLOUDSTACK_EXPECTED_HEADER = "Domu-Request"
 STOP_LINK_RETRY_COUNT = 5
 
 
@@ -58,7 +64,7 @@ def instantiate_services(services, scenario):
     try:
         yield
     finally:
-        # Send the shutdown "signal"
+        # Send the shutdown "signal".
         for service in services:
             for _ in range(STOP_LINK_RETRY_COUNT):
                 # Do a best effort to stop the service.
@@ -99,10 +105,13 @@ class MetadataServiceAppMixin(object):
         return self.scenario.instance_server()['name'][:15].lower()
 
     def public_keys(self):
-        return self.scenario.public_key().strip()
+        # The public key(s) should be let prefixed with EOL
+        # (as the metadata providers will do).
+        return self.scenario.public_key()
 
 
 class EC2MetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
+    """Mock server for testing EC2 metadata service."""
 
     def __init__(self, *args, **kwargs):
         super(EC2MetadataServiceApp, self).__init__(*args, **kwargs)
@@ -183,7 +192,7 @@ class CloudstackPasswordManagerApp(BaseServiceApp):
 
     @cherrypy.expose
     def index(self):
-        expected_header = "Domu_request"
+        expected_header = CLOUDSTACK_EXPECTED_HEADER
         if expected_header not in cherrypy.request.headers:
             raise cherrypy.HTTPError(400, "DomU_Request not given")
 
@@ -197,6 +206,12 @@ class CloudstackPasswordManagerApp(BaseServiceApp):
 
     def saved_password(self):
         self._password = None
+
+    @cherrypy.expose
+    def password(self, password=None):
+        if cherrypy.request.method != 'POST':
+            raise cherrypy.HTTPError(405, 'Method not allowed')
+        self._password = password
 
 
 class MaasMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
@@ -258,3 +273,35 @@ class MaasMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
             TO9FwPXIRcR/XrcMDn7slaHtbILM3P4pIbaXUhvel+qLOAMp6k2iDl2Q
             -----END CERTIFICATE-----
             """.strip())
+
+
+class HTTPKeysMetadataServiceApp(BaseServiceApp):
+    """Custom OpenStack http metadata."""
+
+    @util.cached_property
+    def _get_metadata(self):
+        """Fill-in the metadata password provided by the config file."""
+        metadata = {
+            "keys": [
+                {
+                    "name": "argus_cert",
+                    "type": "x509",
+                    "data": util.get_certificate()
+                }
+            ] + [{
+                "name": "argus_key",
+                "type": "ssh",
+                "data": data
+            } for data in util.get_public_keys()]
+        }
+        key = "admin_pass"
+        metadata[key] = self.scenario.get_metadata()[key]
+        return metadata
+
+    @cherrypy.expose
+    def default(self, *args):
+        link = "/".join(args)
+        if "latest/meta_data.json" not in link:
+            # Handle invalid and password posting cases.
+            raise cherrypy.HTTPError(404)
+        return json.dumps(self._get_metadata)

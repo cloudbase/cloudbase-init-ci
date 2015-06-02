@@ -43,7 +43,7 @@ def _get_default(parser, section, option, default=None):
 
 
 class _Option(object):
-    def __init__(self, option, method='get', default=None):
+    def __init__(self, option, method='get', default=_SENTINEL):
         self._option = option
         self._method = method
         self._default = default
@@ -97,11 +97,11 @@ class _ScenarioSection(object):
     recipe = _Option(option='recipe')
     userdata = _Option(option='userdata')
     metadata = _Option(option='metadata')
-    image = _Option(option='image')
     scenario_type = _Option(option='type')
     service_type = _Option(option='service_type', default='http')
     introspection = _Option(option='introspection')
     environment = _Option(option='environment', default=None)
+    images = _Option(option='images', method='getlist')
 
 
 class ConfigurationParser(object):
@@ -195,8 +195,9 @@ class ConfigurationParser(object):
 
     @property
     def cloudbaseinit(self):
-        cloudbaseinit = collections.namedtuple('cloudbaseinit',
-                                               'expected_plugins_count')
+        cloudbaseinit = collections.namedtuple(
+            'cloudbaseinit',
+            'expected_plugins_count created_user group')
 
         try:
             expected_plugins_count = self._parser.getint(
@@ -205,15 +206,17 @@ class ConfigurationParser(object):
         except (six.moves.configparser.NoOptionError, ValueError):
             expected_plugins_count = 13
 
-        return cloudbaseinit(expected_plugins_count)
+        group = self._parser.get('cloudbaseinit', 'group')
+        created_user = self._parser.get('cloudbaseinit', 'created_user')
+
+        return cloudbaseinit(expected_plugins_count, created_user, group)
 
     @property
     def images(self):
         image = collections.namedtuple(
             'image',
             'name default_ci_username '
-            'default_ci_password image_ref flavor_ref '
-            'group created_user os_type')
+            'default_ci_password image_ref flavor_ref os_type')
 
         # Get the images section
         images = []
@@ -228,12 +231,9 @@ class ConfigurationParser(object):
                                        'Passw0rd')
             image_ref = self._parser.get(key, 'image_ref')
             flavor_ref = self._parser.get(key, 'flavor_ref')
-            group = self._parser.get(key, 'group')
-            created_user = self._parser.get(key, 'created_user')
             os_type = _get_default(self._parser, key, 'os_type', 'Windows')
             images.append(image(image_name, ci_user, ci_password,
-                                image_ref, flavor_ref, group, created_user,
-                                os_type))
+                                image_ref, flavor_ref, os_type))
         return images
 
     @property
@@ -241,7 +241,7 @@ class ConfigurationParser(object):
         # Get the scenarios section
         scenario = collections.namedtuple('scenario',
                                           'name scenario test_classes recipe '
-                                          'userdata metadata image type '
+                                          'userdata metadata images type '
                                           'service_type introspection '
                                           'environment')
         images_names = {image.name: image for image in self.images}
@@ -254,7 +254,7 @@ class ConfigurationParser(object):
             if not key.startswith("scenario_"):
                 continue
             section = _ScenarioSection(key, self._parser)
-            image = images_names[section.image]
+            images = [images_names[image] for image in section.images]
             environment = environment_names.get(section.environment)
             scenarios.append(scenario(section.scenario_name,
                                       section.scenario_class,
@@ -262,7 +262,7 @@ class ConfigurationParser(object):
                                       section.recipe,
                                       section.userdata,
                                       section.metadata,
-                                      image,
+                                      images,
                                       section.scenario_type,
                                       section.service_type,
                                       section.introspection,

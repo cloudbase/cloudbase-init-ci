@@ -15,9 +15,9 @@
 
 import collections
 import os
-import unittest
 import tempfile
 import textwrap
+import unittest
 
 from argus import config
 
@@ -46,14 +46,20 @@ class TestConfig(unittest.TestCase):
 
         [cloudbaseinit]
         expected_plugins_count = 4
+        created_user = 5
+        group = 4
 
         [image_8]
         default_ci_username = Admin
         default_ci_password = Passw0rd
         image_ref = image_ref
+        flavor_ref = flavor_ref        
+
+        [image_4]
+        default_ci_username = Admin
+        default_ci_password = Passw0rd
+        image_ref = image_ref
         flavor_ref = flavor_ref
-        group = 4
-        created_user = 5
 
         [scenario_windows]
         type = smoke
@@ -63,7 +69,8 @@ class TestConfig(unittest.TestCase):
         recipe = 5
         userdata = 6
         metadata = 7
-        image = 8
+        images = 8,
+                 4
         service_type = configdrive
         introspection = something
 
@@ -81,14 +88,20 @@ class TestConfig(unittest.TestCase):
 
         [cloudbaseinit]
         expected_plugins_count = 4
+        group = 4
+        created_user = 5
 
         [image_8]
         default_ci_username = Admin
         default_ci_password = Passw0rd
         image_ref = image_ref
         flavor_ref = flavor_ref
-        group = 4
-        created_user = 5
+
+        [image_4]
+        default_ci_username = Admin
+        default_ci_password = Passw0rd
+        image_ref = image_ref
+        flavor_ref = flavor_ref
 
         [base_scenario]
 
@@ -103,21 +116,23 @@ class TestConfig(unittest.TestCase):
         [scenario_windows : base_scenario]
         type = smoke
         scenario = 3
-        image = 8
+        images = 8, 4
         service_type = configdrive
         """)
 
     def test_parse_config_environment(self):
-        expected_environment = collections.namedtuple(
+        environment_factory = collections.namedtuple(
             'expected_environment',
             'name preparer config start_commands stop_commands')
-        expected_environment = expected_environment(
+        config_factory = collections.namedtuple('config', 'config_file values')
+
+        environment_config = config_factory('/etc/nova/nova.conf',
+                                            {'default': {'configdrive': '34',
+                                                         'tempest': '24'},
+                                             'nova': {'test': '24'}})
+        expected_environment = environment_factory(
             'environment_nova',
-            'fully.qualified:Name',
-            {'config_file': '/etc/nova/nova.conf',
-             'default': {'configdrive': '34',
-                         'tempest': '24'},
-             'nova': {'test': '24'}},
+            'fully.qualified:Name', environment_config,
             ['test', 'multiple', 'commands'],
             ['test', 'comma', 'commands']
         )
@@ -151,14 +166,20 @@ class TestConfig(unittest.TestCase):
 
         [cloudbaseinit]
         expected_plugins_count = 4
+        group = 4
+        created_user = 5
 
         [image_8]
         default_ci_username = Admin
         default_ci_password = Passw0rd
         image_ref = image_ref
         flavor_ref = flavor_ref
-        group = 4
-        created_user = 5
+
+        [image_4]
+        default_ci_username = Admin
+        default_ci_password = Passw0rd
+        image_ref = image_ref
+        flavor_ref = flavor_ref
 
         [base_scenario]
 
@@ -173,7 +194,7 @@ class TestConfig(unittest.TestCase):
         [scenario_windows : base_scenario]
         type = smoke
         scenario = 3
-        image = 8
+        images = 8, 4
         service_type = configdrive
         environment = environment_nova
         """, environment=expected_environment)
@@ -195,14 +216,14 @@ class TestConfig(unittest.TestCase):
         self.assertEqual(['a', 'b'], parsed.argus.dns_nameservers)
 
         self.assertEqual(4, parsed.cloudbaseinit.expected_plugins_count)
+        self.assertEqual('4', parsed.cloudbaseinit.group)
+        self.assertEqual('5', parsed.cloudbaseinit.created_user)
 
         self.assertIsInstance(parsed.images, list)
         self.assertEqual('Admin', parsed.images[0].default_ci_username)
         self.assertEqual('Passw0rd', parsed.images[0].default_ci_password)
         self.assertEqual('image_ref', parsed.images[0].image_ref)
         self.assertEqual('flavor_ref', parsed.images[0].flavor_ref)
-        self.assertEqual('4', parsed.images[0].group)
-        self.assertEqual('5', parsed.images[0].created_user)
 
         self.assertEqual('3', parsed.scenarios[0].scenario)
         self.assertEqual(['4', '5', '6', '7', '8', '0', '2'],
@@ -210,7 +231,7 @@ class TestConfig(unittest.TestCase):
         self.assertEqual('5', parsed.scenarios[0].recipe)
         self.assertEqual('6', parsed.scenarios[0].userdata)
         self.assertEqual('7', parsed.scenarios[0].metadata)
-        self.assertEqual(parsed.images[0], parsed.scenarios[0].image)
+        self.assertEqual(parsed.images, parsed.scenarios[0].images)
         self.assertEqual('configdrive', parsed.scenarios[0].service_type)
         self.assertEqual('something', parsed.scenarios[0].introspection)
         self.assertEqual('smoke', parsed.scenarios[0].type)
@@ -225,9 +246,8 @@ class TestConfig(unittest.TestCase):
                              parsed.scenarios[0].environment.stop_commands)
             self.assertEqual(environment.preparer,
                              parsed.scenarios[0].environment.preparer)
-
             self.assertEqual(
-                sorted(environment.config.items()),
-                sorted(parsed.scenarios[0].environment.config.items()))
+                environment.config,
+                parsed.scenarios[0].environment.config)
         else:
             self.assertFalse(parsed.scenarios[0].environment)

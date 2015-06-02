@@ -15,6 +15,8 @@
 
 """Smoke tests for the cloudbaseinit."""
 
+import pkg_resources
+
 from argus.tests import base
 from argus.tests.cloud import smoke
 from argus.tests.cloud import util as test_util
@@ -27,6 +29,7 @@ def _parse_licenses(output):
     license status.
     """
     licenses = {}
+
     # We are starting from 2, since the first line is the
     # list of fields and the second one is a separator.
     # We can't use csv to parse this, unfortunately.
@@ -37,7 +40,8 @@ def _parse_licenses(output):
     return licenses
 
 
-class TestSmoke(smoke.BaseSmokeTests):
+class TestSmoke(smoke.TestsBaseSmoke):
+    """Test additional Windows specific behaviour."""
 
     def test_service_display_name(self):
         cmd = ('powershell (Get-Service "| where -Property Name '
@@ -128,7 +132,8 @@ class TestScriptsUserdataSmoke(TestSmoke):
         self.assertEqual('True', stdout.strip())
 
 
-class TestEC2Userdata(base.BaseArgusTest):
+class TestEC2Userdata(base.TestBaseArgus):
+    """Test the EC2 config userdata."""
 
     def test_ec2_script(self):
         file_name = "ec2file.txt"
@@ -138,8 +143,23 @@ class TestEC2Userdata(base.BaseArgusTest):
         self.assertIn(directory_name, names)
 
 
-class TestCatchingSpecialize(base.BaseArgusTest):
+class TestCatchingSpecialize(base.TestBaseArgus):
+    """Test that errors are caught if they occur in the specialize phase."""
 
     def test_traceback_occurred(self):
         instance_traceback = self.introspection.get_cloudbaseinit_traceback()
         self.assertIn('ImportError: No module named mtu', instance_traceback)
+
+
+class TestCertificateWinRM(base.TestBaseArgus):
+    """Test that WinRM certificate authentication works as expected."""
+
+    def test_winrm_certificate_auth(self):
+        cert_pem = pkg_resources.resource_filename(
+            "argus.resources", "cert.pem")
+        cert_key = pkg_resources.resource_filename(
+            "argus.resources", "key.pem")
+        client = self.manager.get_remote_client(cert_pem=cert_pem,
+                                                cert_key=cert_key)
+        stdout = client.run_command_verbose("echo 1")
+        self.assertEqual(stdout.strip(), "1")
