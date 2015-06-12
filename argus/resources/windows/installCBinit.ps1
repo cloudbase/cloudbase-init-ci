@@ -1,6 +1,7 @@
 param
 (
-    [string]$serviceType = 'http'
+    [string]$serviceType = 'http',
+    [string]$installer = 'CloudbaseInitSetup_Beta_x64.msi'
 )
 
 Import-Module C:\common.psm1
@@ -66,19 +67,8 @@ try {
 
     $Host.UI.RawUI.WindowTitle = "Downloading Cloudbase-Init..."
 
-    $osArch = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
-
-    if($osArch -eq "64-bit")
-    {
-        $CloudbaseInitMsi = "CloudbaseInitSetup_Beta_x64.msi"
-    }
-    else
-    {
-        $CloudbaseInitMsi = "CloudbaseInitSetup_Beta_x86.msi"
-    }
-
-    $CloudbaseInitMsiPath = "$ENV:Temp\$CloudbaseInitMsi"
-    $CloudbaseInitMsiUrl = "http://www.cloudbase.it/downloads/$CloudbaseInitMsi"
+    $CloudbaseInitMsiPath = "$ENV:Temp\$installer"
+    $CloudbaseInitMsiUrl = "http://www.cloudbase.it/downloads/$installer"
     $CloudbaseInitMsiLog = "C:\\installation.log"
 
     (new-object System.Net.WebClient).DownloadFile($CloudbaseInitMsiUrl, $CloudbaseInitMsiPath)

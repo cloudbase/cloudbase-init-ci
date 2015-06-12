@@ -221,6 +221,11 @@ class BaseArgusScenario(object):
         self._security_group = self._create_security_groups()
         self.prepare_instance()
 
+    @staticmethod
+    def _get_log_template(suffix):
+        template = "{}{}.log".format("{}", "-" + suffix if suffix else "")
+        return template
+
     def save_instance_output(self, suffix=None):
         """Retrieve and save all data written through the COM port.
 
@@ -231,7 +236,7 @@ class BaseArgusScenario(object):
 
         content = ""
         size = OUTPUT_SIZE
-        template = "{}{}.log".format("{}", "-" + suffix if suffix else "")
+        template = self._get_log_template(suffix)
         path = os.path.join(self._output_directory,
                             template.format(self._server["id"]))
         while True:
@@ -315,19 +320,22 @@ class BaseArgusScenario(object):
         finally:
             self._cleanup()
 
-    def prepare_instance(self):
+    def _prepare_instance(self):
         if self._recipe is None:
             raise exceptions.ArgusError('Recipe must be set.')
 
-        LOG.info("Preparing instance...")
         # pylint: disable=not-callable
-        self._recipe(
+        return self._recipe(
             instance_id=self._server['id'],
             api_manager=self._manager,
             remote_client=self.remote_client,
             image=self._image,
             service_type=self._service_type,
-            output_directory=self._output_directory).prepare()
+            output_directory=self._output_directory)
+
+    def prepare_instance(self):
+        recipe = self._prepare_instance()
+        recipe.prepare()
 
     def userdata(self):
         """Get the userdata which will be injected."""

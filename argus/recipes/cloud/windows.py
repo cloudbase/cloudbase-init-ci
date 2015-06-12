@@ -102,10 +102,15 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
     def install_cbinit(self):
         """Run the installation script for CloudbaseInit."""
-        LOG.info("Run the downloaded installation script.")
+        installer = "CloudbaseInitSetup_{}_{}.msi".format(
+            self.build.capitalize(),
+            self.arch)
+        LOG.info("Run the downloaded installation script "
+                 "using the installer %r with service %r.",
+                 installer, self._service_type)
 
-        cmd = ('powershell "C:\\\\installcbinit.ps1 -serviceType {}"'
-               .format(self._service_type))
+        cmd = ('powershell "C:\\\\installcbinit.ps1 -serviceType {} '
+               '-installer {}"'.format(self._service_type, installer))
         self._execute(cmd)
 
         self._grab_cbinit_installation_log()
