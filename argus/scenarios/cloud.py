@@ -44,6 +44,25 @@ class named(collections.namedtuple("service", "application script_name "
 class BaseWindowsScenario(base.BaseArgusScenario):
     """Base class for Windows-based scenarios."""
 
+    def __init__(self, *args, **kwargs):
+        super(BaseWindowsScenario, self).__init__(*args, **kwargs)
+        # Installer details.
+        self.build = None
+        self.arch = None
+
+    def _get_log_template(self, suffix):
+        template = super(BaseWindowsScenario, self)._get_log_template(suffix)
+        if self.build and self.arch:
+            # Prepend the log with the installer information (cloud).
+            template = "{}-{}-{}".format(self.build, self.arch, template)
+        return template
+
+    def _prepare_instance(self):
+        recipe = super(BaseWindowsScenario, self)._prepare_instance()
+        recipe.build = self.build
+        recipe.arch = self.arch
+        return recipe
+
     def get_remote_client(self, username=None, password=None,
                           protocol='http', **kwargs):
         if username is None:

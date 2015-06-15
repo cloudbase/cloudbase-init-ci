@@ -133,11 +133,12 @@ def _load_metadata(metadata):
     return json.loads(metadata)
 
 
-def _build_scenario(scenario):
-    cli_opts = util.parse_cli()
-    if cli_opts.instance_output:
+def _build_scenarios_classes(scenario):
+    """Return generic scenarios classes available for further customization."""
+    opts = util.parse_cli()
+    if opts.instance_output:
         try:
-            os.makedirs(cli_opts.instance_output)
+            os.makedirs(opts.instance_output)
         except OSError:
             pass
 
@@ -174,9 +175,26 @@ def _build_scenario(scenario):
         service_type=scenario.service_type,
         introspection=introspection,
         result=test_result,
-        output_directory=cli_opts.instance_output,
+        output_directory=opts.instance_output,
         environment_preparer=environment_preparer)
-    return [partial_scenario(image=image) for image in scenario.images]
+    return [functools.partial(partial_scenario, image=image)
+            for image in scenario.images]
+
+
+def _cloud_scenarios_builder(partial_scenarios):
+    """Build cloud specific custom scenarios objects."""
+    opts = util.parse_cli()
+    builds = set(opts.builds) if opts.builds else {util.BUILDS.beta}
+    arches = set(opts.arches) if opts.arches else {util.ARCHES.x64}
+    scenarios = []
+    for partial_scenario in partial_scenarios:
+        for build in builds:
+            for arch in arches:
+                scenario = partial_scenario()
+                scenario.build = build
+                scenario.arch = arch
+                scenarios.append(scenario)
+    return scenarios
 
 
 def _filter_scenarios(scenarios):
@@ -214,8 +232,15 @@ def run_scenarios():
     The function will filter all scenarios according to the requested OSes
     and test type. By default, all scenarios are executed.
     """
-    scenarios = _filter_scenarios(CONF.scenarios)
-    scenario_classes = itertools.chain.from_iterable(
-        map(_build_scenario, scenarios)
-    )
-    return Runner(scenario_classes).run()
+    opts = util.parse_cli()
+    scenarios_builder = SCENARIOS_BUILDERS[opts.scenarios_builder]
+    conf_scenarios = _filter_scenarios(CONF.scenarios)
+    argus_scenarios = itertools.chain.from_iterable((
+        scenarios_builder(_build_scenarios_classes(scenario))
+        for scenario in conf_scenarios))
+    return Runner(argus_scenarios).run()
+
+
+SCENARIOS_BUILDERS = {
+    "cloud": _cloud_scenarios_builder
+}

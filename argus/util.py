@@ -271,9 +271,13 @@ class cached_property(object):  # pylint: disable=invalid-name
         return result
 
 
+@run_once
 def parse_cli():
     """Parse the command line and return an object with the given options."""
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(
+        description="Various unittest-like multi-purpose tests runner.")
+    subparsers = parser.add_subparsers(title="aspects")
+
     parser.add_argument('--failfast', action='store_true',
                         default=False,
                         help='Fail the tests on the first failure.')
@@ -307,6 +311,17 @@ def parse_cli():
                         help="Save the instance console output "
                              "content in this path. If this is given, "
                              "it can be reused for other files as well.")
+
+    cloud = subparsers.add_parser("cloud",
+                                  help="Run cloud(base)-init specific tests.")
+    cloud.add_argument("-b", "--builds", action="append",
+                       choices=list(BUILDS),
+                       help="Choose what installer builds to test.")
+    cloud.add_argument("-a", "--arches", action="append",
+                       choices=list(ARCHES),
+                       help="Choose what installer architectures to test.")
+    cloud.set_defaults(scenarios_builder="cloud")
+
     opts = parser.parse_args()
     return opts
 
@@ -458,3 +473,8 @@ class ConfigurationPatcher(object):
 
 
 LOG = get_logger()
+
+_BUILDS = ["beta", "stable"]
+_ARCHES = ["x64", "x86"]
+BUILDS = get_namedtuple("BUILDS", _BUILDS, _BUILDS)
+ARCHES = get_namedtuple("ARCHES", _ARCHES, _ARCHES)
