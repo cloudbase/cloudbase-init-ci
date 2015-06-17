@@ -289,7 +289,7 @@ class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
         super(CloudbaseinitSpecializeRecipe, self).pre_sysprep()
         LOG.info("Preparing cloudbaseinit for failure.")
         cmd = ("powershell Invoke-Webrequest -uri "
-               "{}/windows/patch_cloudstack.ps1 -outfile "
+               "{}/windows/patch_mtu.ps1 -outfile "
                "C:\\patch_mtu.ps1"
                .format(CONF.argus.resources))
         self._execute(cmd)
