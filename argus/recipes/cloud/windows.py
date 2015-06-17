@@ -288,13 +288,13 @@ class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
     def pre_sysprep(self):
         super(CloudbaseinitSpecializeRecipe, self).pre_sysprep()
         LOG.info("Preparing cloudbaseinit for failure.")
-        python_dir = introspection.get_python_dir(self._execute)
-        path = ntpath.join(python_dir, "Lib", "site-packages",
-                           "cloudbaseinit", "metadata", "services",
-                           "configdrive.py")
-        self._execute('del "{}"'.format(path))
-        # *.pyc
-        self._execute('del "{}c"'.format(path))
+        cmd = ("powershell Invoke-Webrequest -uri "
+               "{}/windows/patch_cloudstack.ps1 -outfile "
+               "C:\\patch_mtu.ps1"
+               .format(CONF.argus.resources))
+        self._execute(cmd)
+
+        self._execute("powershell C:\\\\patch_mtu.ps1")
 
 
 class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
