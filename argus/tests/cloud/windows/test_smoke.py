@@ -148,7 +148,7 @@ class TestCatchingSpecialize(base.TestBaseArgus):
 
     def test_traceback_occurred(self):
         instance_traceback = self.introspection.get_cloudbaseinit_traceback()
-        self.assertIn('ImportError: No module named configdrive',
+        self.assertIn('ZeroDivisionError: integer division or modulo',
                       instance_traceback)
 
 
