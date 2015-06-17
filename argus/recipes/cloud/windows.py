@@ -290,8 +290,8 @@ class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
         LOG.info("Preparing cloudbaseinit for failure.")
         python_dir = introspection.get_python_dir(self._execute)
         path = ntpath.join(python_dir, "Lib", "site-packages",
-                           "cloudbaseinit", "plugins", "common",
-                           "mtu.py")
+                           "cloudbaseinit", "metadata", "services",
+                           "configdrive.py")
         self._execute('del "{}"'.format(path))
         # *.pyc
         self._execute('del "{}c"'.format(path))
