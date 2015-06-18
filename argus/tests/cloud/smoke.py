@@ -304,11 +304,8 @@ class TestsBaseSmoke(TestCreatedUser,
 
     def test_get_console_output(self):
         # Verify that the product emits messages to the console output.
-        resp, output = self.manager.instance_output(10)
-        self.assertEqual(200, resp.status)
+        output = self.manager.instance_output()
         self.assertTrue(output, "Console output was empty.")
-        lines = len(output.split('\n'))
-        self.assertEqual(lines, 10)
 
 
 class TestStaticNetwork(base.TestBaseArgus):

@@ -20,6 +20,7 @@ import pkg_resources
 from argus.tests import base
 from argus.tests.cloud import smoke
 from argus.tests.cloud import util as test_util
+from argus import util
 
 
 def _parse_licenses(output):
@@ -164,3 +165,12 @@ class TestCertificateWinRM(base.TestBaseArgus):
                                                 cert_key=cert_key)
         stdout = client.run_command_verbose("echo 1")
         self.assertEqual(stdout.strip(), "1")
+
+
+class TestCertificateLeak(base.TestBaseArgus):
+    """Test that the certificate doesn't leak into the logs."""
+
+    def test_certificate_leaking(self):
+        output = self.manager.instance_output()
+        certificate = util.get_certificate()
+        self.assertNotIn(certificate, output)

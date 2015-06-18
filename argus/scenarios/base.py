@@ -234,25 +234,14 @@ class BaseArgusScenario(object):
         if not self._output_directory:
             return
 
-        content = ""
-        size = OUTPUT_SIZE
         template = self._get_log_template(suffix)
         path = os.path.join(self._output_directory,
                             template.format(self._server["id"]))
-        while True:
-            resp, content = self.instance_output(size)
-            if resp.status not in OUTPUT_STATUS_OK:
-                LOG.error("Couldn't save console output <%d>.", resp.status)
-                return
-
-            if len(content.splitlines()) >= (size - OUTPUT_EPSILON):
-                size *= 2
-            else:
-                break
-
+        content = self.instance_output()
         if not content.strip():
             LOG.warn("Empty console output; nothing to save.")
             return
+
         LOG.info("Saving instance console output to: %s", path)
         with open(path, "wb") as stream:
             stream.write(content)
@@ -356,11 +345,24 @@ class BaseArgusScenario(object):
             private_key=CONF.argus.path_to_private_key,
             password=encoded_password['password'])
 
-    def instance_output(self, limit):
-        """Get the console output, sent from the instance."""
+    def _instance_output(self, limit):
         ret = self._servers_client.get_console_output(self._server['id'],
                                                       limit)
         return ret.response, ret.data
+
+    def instance_output(self, limit=OUTPUT_SIZE):
+        """Get the console output, sent from the instance."""
+        while True:
+            resp, content = self._instance_output(limit)
+            if resp.status not in OUTPUT_STATUS_OK:
+                LOG.error("Couldn't get console output <%d>.", resp.status)
+                return
+
+            if len(content.splitlines()) >= (limit - OUTPUT_EPSILON):
+                limit *= 2
+            else:
+                break
+        return content
 
     def instance_server(self):
         """Get the instance server object."""
