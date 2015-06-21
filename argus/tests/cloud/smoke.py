@@ -232,6 +232,21 @@ class TestSetTimezone(base.TestBaseArgus):
         self.assertEqual("Georgian Standard Time", timezone.strip())
 
 
+class TestSetHostname(base.TestBaseArgus):
+    """Test that the expected hostname was set in the instance."""
+
+    def test_set_hostname(self):
+        # Verify that the instance hostname matches what we are
+        # expecting from it.
+
+        # remove explicit reboot after support is added for rebooting
+        # in cloudconfig
+        self.manager.reboot_instance()
+
+        hostname = self.introspection.get_instance_hostname()
+        self.assertEqual("newhostname", hostname.strip())
+
+
 class TestNoError(base.TestBaseArgus):
     """Test class which verifies that no traceback occurs."""
 
