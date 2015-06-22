@@ -211,11 +211,6 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         stdout = self.remote_client.run_command_verbose(cmd)
         return bool(stdout)
 
-    def get_instance_hostname(self):
-        cmd = 'powershell (Get-WmiObject "Win32_ComputerSystem").Name'
-        stdout = self.remote_client.run_command_verbose(cmd)
-        return stdout.lower().strip()
-
     def get_instance_ntp_peers(self):
         command = 'w32tm /query /peers'
         stdout = self.remote_client.run_command_verbose(command)
@@ -313,6 +308,11 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         stdout = self.remote_client.run_command_verbose(
             "powershell {}".format(command))
         return stdout
+
+    def get_instance_hostname(self):
+        command = "hostname"
+        stdout = self.remote_client.run_command_verbose(command)
+        return stdout.lower().strip()
 
     def get_network_interfaces(self):
         """Get a list with dictionaries of network details.

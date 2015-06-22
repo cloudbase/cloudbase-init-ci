@@ -322,6 +322,12 @@ class BaseArgusScenario(object):
             service_type=self._service_type,
             output_directory=self._output_directory)
 
+    def reboot_instance(self):
+        self._servers_client.reboot(server_id=self._server['id'],
+                                    reboot_type='soft')
+        self._servers_client.wait_for_server_status(self._server['id'],
+                                                    'ACTIVE')
+
     def prepare_instance(self):
         recipe = self._prepare_instance()
         recipe.prepare()
