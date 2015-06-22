@@ -410,7 +410,7 @@ class CloudbaseinitKeysRecipe(CloudbaseinitHTTPRecipe,
             option="plugins",
             value="cloudbaseinit.plugins.windows.createuser."
                   "CreateUserPlugin,"
-                  "cloudbaseinit.plugins.common.setuserpassword."
+                  "cloudbaseinit.plugins.windows.setuserpassword."
                   "SetUserPasswordPlugin,"
                   "cloudbaseinit.plugins.common.sshpublickeys."
                   "SetUserSSHPublicKeysPlugin,"
