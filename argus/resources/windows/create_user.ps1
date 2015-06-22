@@ -1,11 +1,13 @@
 param
 (
    [Parameter(Mandatory=$true)]
-   [string]$user
+   [string]$user,
+   [Parameter(Mandatory=$false)]
+   [string]$password="PASsw0r4&!="
 )
 $Computer = [ADSI]"WinNT://$Env:COMPUTERNAME,Computer"
 
 $LocalUser = $Computer.Create("User", $user)
-$LocalUser.SetPassword("PASsw0r4&!=")
+$LocalUser.SetPassword($password)
 $LocalUser.SetInfo()
 net localgroup Administrators $user /ADD
