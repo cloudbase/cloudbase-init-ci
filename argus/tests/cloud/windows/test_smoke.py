@@ -23,6 +23,9 @@ from argus.tests.cloud import util as test_util
 from argus import util
 
 
+CONF = util.get_config()
+
+
 def _parse_licenses(output):
     """Parse the licenses information.
 
@@ -174,3 +177,33 @@ class TestCertificateLeak(base.TestBaseArgus):
         output = self.manager.instance_output()
         certificate = util.get_certificate()
         self.assertNotIn(certificate, output)
+
+
+class TestNextLogonPassword(base.TestBaseArgus):
+    ads_uf_password_expired = 0x800000
+    password_expired_flag = 1
+
+    def _wait_for_completion(self):
+        wait_cmd = ('powershell (Get-Service "| where -Property Name '
+                    '-match cloudbase-init").Status')
+        remote_client = self.manager.get_remote_client(
+            self.image.default_ci_username,
+            self.image.default_ci_password)
+        remote_client.run_command_until_condition(
+            wait_cmd,
+            lambda out: out.strip() == 'Stopped',
+            count=util.RETRY_COUNT, delay=util.RETRY_DELAY)
+
+    def test_next_logon_password_not_changed(self):
+        self._wait_for_completion()
+
+        output = self.introspection.get_user_flags(
+            CONF.cloudbaseinit.created_user)
+        flags, password_expired = output.splitlines()
+        flags = int(flags)
+        password_expired = int(password_expired)
+
+        self.assertEqual(password_expired, self.password_expired_flag)
+        self.assertEqual(flags & self.ads_uf_password_expired,
+                         self.ads_uf_password_expired,
+                         "The user have different flags than expected.")

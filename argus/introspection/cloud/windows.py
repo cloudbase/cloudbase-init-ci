@@ -353,3 +353,12 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
             }
             nics.append(nic)
         return nics
+
+    def get_user_flags(self, user):
+        code = util.get_resource('windows/get_user_flags.ps1')
+        remote_script = "C:\\{}.ps1".format(util.rand_name())
+        with _create_tempfile(content=code) as tmp:
+            self.remote_client.copy_file(tmp, remote_script)
+            stdout = self.remote_client.run_command_verbose(
+                "powershell {0} {1}".format(remote_script, user))
+            return stdout.strip()
