@@ -35,13 +35,6 @@ LOG = util.get_logger()
 COUNT = 20
 DELAY = 20
 
-__all__ = (
-    'CloudbaseinitRecipe',
-    'CloudbaseinitScriptRecipe',
-    'CloudbaseinitCreateUserRecipe',
-    'CloudbaseinitSpecializeRecipe',
-)
-
 
 def _read_url(url):
     request = urllib.request.urlopen(url)
@@ -275,6 +268,32 @@ class CloudbaseinitCreateUserRecipe(CloudbaseinitRecipe):
 
         self._execute('powershell "C:\\\\create_user.ps1 -user {}"'.format(
             CONF.cloudbaseinit.created_user))
+
+
+class BaseNextLogonRecipe(CloudbaseinitRecipe):
+    """Useful for testing the next logon behaviour."""
+
+    behaviour = None
+
+    def pre_sysprep(self):
+        super(BaseNextLogonRecipe, self).pre_sysprep()
+
+        introspection.set_config_option(
+            option="first_logon_behaviour",
+            value=self.behaviour,
+            execute_function=self._execute)
+
+
+class AlwaysChangeLogonPasswordRecipe(BaseNextLogonRecipe):
+    """Always change the password at next logon."""
+
+    behaviour = 'always'
+
+
+class ClearPasswordLogonRecipe(BaseNextLogonRecipe):
+    """Change the password at next logon if the password is from metadata."""
+
+    behaviour = 'clear_text_injected_only'
 
 
 class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
