@@ -170,15 +170,6 @@ class TestCertificateWinRM(base.TestBaseArgus):
         self.assertEqual(stdout.strip(), "1")
 
 
-class TestCertificateLeak(base.TestBaseArgus):
-    """Test that the certificate doesn't leak into the logs."""
-
-    def test_certificate_leaking(self):
-        output = self.manager.instance_output()
-        certificate = util.get_certificate()
-        self.assertNotIn(certificate, output)
-
-
 class TestNextLogonPassword(base.TestBaseArgus):
     ads_uf_password_expired = 0x800000
     password_expired_flag = 1
