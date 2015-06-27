@@ -450,3 +450,18 @@ class CloudbaseinitKeysRecipe(CloudbaseinitHTTPRecipe,
                   "cloudbaseinit.plugins.windows.winrmlistener."
                   "ConfigWinRMListenerPlugin",
             execute_function=self._execute)
+
+
+class CloudbaseinitLocalScriptsRecipe(CloudbaseinitRecipe):
+    """Recipe for testing local scripts return codes."""
+
+    def pre_sysprep(self):
+        super(CloudbaseinitLocalScriptsRecipe, self).pre_sysprep()
+        LOG.info("Download reboot-required local script.")
+
+        cbdir = introspection.get_cbinit_dir(self._execute)
+        cmd = ("powershell Invoke-WebRequest -uri "
+               "{}/windows/reboot.cmd -outfile "
+               "'C:\\Scripts\\reboot.cmd'")
+        cmd = cmd.format(CONF.argus.resources, cbdir)
+        self._execute(cmd)

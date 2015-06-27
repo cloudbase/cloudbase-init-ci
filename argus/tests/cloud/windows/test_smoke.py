@@ -198,3 +198,12 @@ class TestNextLogonPassword(base.TestBaseArgus):
         self.assertEqual(flags & self.ads_uf_password_expired,
                          self.ads_uf_password_expired,
                          "The user have different flags than expected.")
+
+
+class TestLocalScripts(base.TestBaseArgus):
+
+    def test_local_scripts(self):
+        """Check if the script(s) executed entirely."""
+        names = self.introspection.list_location("C:\\")
+        self.assertIn("reboot", names)
+        self.assertIn("reboot2", names)
