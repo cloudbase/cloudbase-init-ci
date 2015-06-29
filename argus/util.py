@@ -278,41 +278,35 @@ def parse_cli():
         description="Various unittest-like multi-purpose tests runner.")
     subparsers = parser.add_subparsers(title="aspects")
 
-    parser.add_argument('--failfast', action='store_true',
+    common = argparse.ArgumentParser(add_help=False)
+    common.add_argument('--failfast', action='store_true',
                         default=False,
                         help='Fail the tests on the first failure.')
-    parser.add_argument('--conf', type=str, required=True,
+    common.add_argument('--conf', type=str, required=True,
                         help="Give a path to the argus conf. "
                              "It should be an .ini file format "
                              "with a section called [argus].")
-    parser.add_argument("--patch-install", metavar="URL",
-                        help='Pass a link that points *directly* to a '
-                             'zip file containing the installed version. '
-                             'The content will just replace the files.')
-    parser.add_argument("--git-command", type=str, default=None,
-                        help="Pass a git command which should be interpreted "
-                             "by a recipe.")
-    parser.add_argument("-p", "--pause", action="store_true",
+    common.add_argument("-p", "--pause", action="store_true",
                         help="Pause argus before doing any test.")
-    parser.add_argument("--test-os-types",
+    common.add_argument("--test-os-types",
                         type=str, nargs="*",
                         help="Test only those scenarios with these OS types. "
                              "By default, all scenarios are executed. "
                              "For instance, to run only the Windows and "
                              "FreeBSD scenarios, use "
                              "`--test-os-types Windows,FreeBSD`")
-    parser.add_argument("--test-scenario-type",
+    common.add_argument("--test-scenario-type",
                         type=str,
                         help="Test only the scenarios with this type. "
                              "The type can be `smoke` or `deep`. By default, "
                              "all scenarios types are executed.")
-    parser.add_argument("-o", "--instance-output",
+    common.add_argument("-o", "--instance-output",
                         metavar="DIRECTORY",
                         help="Save the instance console output "
                              "content in this path. If this is given, "
                              "it can be reused for other files as well.")
 
-    cloud = subparsers.add_parser("cloud",
+    cloud = subparsers.add_parser("cloud", parents=[common],
                                   help="Run cloud(base)-init specific tests.")
     cloud.add_argument("-b", "--builds", action="append",
                        choices=list(BUILDS),
@@ -320,6 +314,13 @@ def parse_cli():
     cloud.add_argument("-a", "--arches", action="append",
                        choices=list(ARCHES),
                        help="Choose what installer architectures to test.")
+    cloud.add_argument("--patch-install", metavar="URL",
+                       help='Pass a link that points *directly* to a '
+                            'zip file containing the installed version. '
+                            'The content will just replace the files.')
+    cloud.add_argument("--git-command", type=str, default=None,
+                       help="Pass a git command which should be interpreted "
+                            "by a recipe.")
     cloud.set_defaults(scenarios_builder="cloud")
 
     opts = parser.parse_args()
