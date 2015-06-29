@@ -62,11 +62,37 @@ class BaseOpenstackEnvironmentPreparer(BaseEnvironmentPreparer):
         self._start_commands = start_commands
         self._stop_commands = stop_commands
 
-    @staticmethod
-    def _run_commands(commands):
+    def _run_commands(self, commands):
         for command in commands:
+            self._run_command(command)
+
+    @staticmethod
+    def _run_command(command):
+        """Runs a command and returns the output.
+
+        Params:
+            command (string or list) - the command to be executed
+
+        Return value:
+            The stdout of the command as a list of string. Each string
+            represents a line of the output.
+
+        Raises:
+            TypeError if type(command) not in [list, str]
+
+        """
+        if type(command) is str:
             args = shlex.split(command)
-            subprocess.call(args, shell=False)
+        elif type(command) is list:
+            args = command
+        else:
+            raise TypeError(
+                'Expected string or list. Got %s instead.' % type(command))
+        p = subprocess.Popen(args, stdout=subprocess.PIPE)
+        stdout, _ = p.communicate()
+        stdout = stdout.decode()
+        stdout = stdout.splitlines()
+        return stdout
 
     @abc.abstractmethod
     def _wait_for_nova_services(self):
@@ -122,21 +148,14 @@ class DevstackEnvironmentPreparer(BaseOpenstackEnvironmentPreparer):
     # since the parent methods are actual methods.
     # pylint: disable=arguments-differ
 
-    @staticmethod
-    def _wait_for_nova_services():
+    def _wait_for_nova_services(self):
         # Wait until the nova services are up again
         LOG.info("Waiting for the services to be up again...")
 
-        command = [
-            "openstack", "compute", "service", "list",
-            "-f", "csv", "-c", "State", "--quote", "none"
-        ]
+        cmd = 'openstack compute service list -f csv -c State --quote none'
         while True:
-            popen = subprocess.Popen(command, stdout=subprocess.PIPE)
-            stdout, _ = popen.communicate()
-            stdout = stdout.decode()
-            # The first one is the column
-            statuses = stdout.splitlines()[1:]
+            stdout = self._run_command(cmd)
+            statuses = stdout[1:]
             if all(entry == "up"
                    for entry in statuses):
                 break
@@ -157,3 +176,61 @@ class DevstackEnvironmentPreparer(BaseOpenstackEnvironmentPreparer):
                 break
             except Exception:
                 time.sleep(1)
+
+
+class RDOEnvironmentPreparer(BaseOpenstackEnvironmentPreparer):
+    """An environment preparer for RDO hosts.
+
+    This preparer knows how to patch a configuration file
+    and how to start and stop the openstack services which are
+    running on the host.
+    """
+    # The following are staticmethods, disable this warning
+    # since the parent methods are actual methods.
+    # pylint: disable=arguments-differ
+
+    def _wait_for_nova_services(self):
+        # Wait until the nova services are up again
+        LOG.info("Waiting for the services to be up again...")
+
+        cmd = 'openstack compute service list -f csv -c State --quote none'
+        while True:
+            stdout = self._run_command(cmd)
+            statuses = stdout[1:]
+            if all(entry == "up"
+                   for entry in statuses):
+                break
+
+    @staticmethod
+    def _wait_for_api():
+        LOG.info("Waiting for the API to be up...")
+
+        username = os.environ['OS_USERNAME']
+        password = os.environ['OS_PASSWORD']
+        auth = os.environ['OS_AUTH_URL']
+        tenant = os.environ['OS_TENANT_NAME']
+
+        client = nova.Client(username, password, tenant, auth)
+        while True:
+            try:
+                client.images.list()
+                break
+            except Exception:
+                time.sleep(1)
+
+    def _get_services(self):
+        services = self._run_command(
+            "sudo systemctl -a | grep -Eo '^openstack[^ ]+'")
+        services.extend(self._run_command(
+            "sudo systemctl -a | grep -Eo '^neutron[^ ]+'"))
+        return services
+
+    def _stop_environment(self):
+        services = self._get_services()
+        for service in services:
+            self._run_command("systemctl stop %s" % service)
+
+    def _start_environment(self):
+        services = self._get_services()
+        for service in services:
+            self._run_command("systemctl stop %s" % service)
