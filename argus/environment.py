@@ -221,9 +221,8 @@ class RDOEnvironmentPreparer(BaseOpenstackEnvironmentPreparer):
     def _get_services(self):
         services = self._run_command("systemctl -a")
         services.extend(self._run_command("systemctl -a"))
-        services = [s.split()[0] for s in services]
-        services = [s if s.startswith('openstack') or
-                         s.startswith('neutron') for s in services]
+        services = [s for s in services if s.startswith('openstack') or s.startswith('neutron')]
+        services = [str(s.split()[0]) for s in services]
         return services
 
     def _stop_environment(self):
@@ -233,5 +232,7 @@ class RDOEnvironmentPreparer(BaseOpenstackEnvironmentPreparer):
 
     def _start_environment(self):
         services = self._get_services()
+        # nova-conductor needs to be started before nova-compute
+        self._run_command("systemctl start openstack-nova-conductor")
         for service in services:
-            self._run_command("systemctl stop %s" % service)
+            self._run_command("systemctl start %s" % service)
