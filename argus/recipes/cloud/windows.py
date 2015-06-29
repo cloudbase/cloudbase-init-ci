@@ -209,6 +209,18 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         self._execute('powershell "Copy-Item C:\\cloudbaseinit\\cloudbaseinit '
                       '\'{}\' -Recurse"'.format(cloudbaseinit))
 
+    def pre_sysprep(self):
+        """Disable first_logon_behaviour for testing purposes.
+
+        Because first_logon_behaviour will control how the password
+        should work on next logon, we could have troubles in tests,
+        so this is always disabled, excepting tests which sets
+        it manual to whatever they want.
+        """
+        introspection.set_config_option(
+            option="first_logon_behaviour", value="no",
+            execute_function=self._execute)
+
     def sysprep(self):
         """Prepare the instance for the actual tests, by running sysprep."""
         LOG.info("Running sysprep...")
