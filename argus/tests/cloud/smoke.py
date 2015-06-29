@@ -239,10 +239,6 @@ class TestSetHostname(base.TestBaseArgus):
         # Verify that the instance hostname matches what we are
         # expecting from it.
 
-        # remove explicit reboot after support is added for rebooting
-        # in cloudconfig
-        self.manager.reboot_instance()
-
         hostname = self.introspection.get_instance_hostname()
         self.assertEqual("newhostname", hostname.strip())
 
