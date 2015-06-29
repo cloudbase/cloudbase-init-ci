@@ -219,10 +219,11 @@ class RDOEnvironmentPreparer(BaseOpenstackEnvironmentPreparer):
                 time.sleep(1)
 
     def _get_services(self):
-        services = self._run_command(
-            "sudo systemctl -a | grep -Eo '^openstack[^ ]+'")
-        services.extend(self._run_command(
-            "sudo systemctl -a | grep -Eo '^neutron[^ ]+'"))
+        services = self._run_command("systemctl -a")
+        services.extend(self._run_command("systemctl -a"))
+        services = [s.split()[0] for s in services]
+        services = [s if s.startswith('openstack') or
+                         s.startswith('neutron') for s in services]
         return services
 
     def _stop_environment(self):
