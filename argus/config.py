@@ -129,8 +129,14 @@ class ConfigurationParser(object):
             values[section][subkey] = opt_value
         values = values_factory(config_file, values)
 
-        start_commands = self._parser.getlist(key, 'start_commands')
-        stop_commands = self._parser.getlist(key, 'stop_commands')
+        try:
+            start_commands = self._parser.getlist(key, 'start_commands')
+        except six.moves.configparser.ConfigParser.NoOptionError:
+            start_commands = None
+        try:
+            stop_commands = self._parser.getlist(key, 'stop_commands')
+        except six.moves.configparser.ConfigParser.NoOptionError:
+            stop_commands = None
         return key, values, preparer, start_commands, stop_commands
 
     @property
