@@ -131,11 +131,11 @@ class ConfigurationParser(object):
 
         try:
             start_commands = self._parser.getlist(key, 'start_commands')
-        except six.moves.configparser.ConfigParser.NoOptionError:
+        except six.moves.configparser.NoOptionError:
             start_commands = None
         try:
             stop_commands = self._parser.getlist(key, 'stop_commands')
-        except six.moves.configparser.ConfigParser.NoOptionError:
+        except six.moves.configparser.NoOptionError:
             stop_commands = None
         return key, values, preparer, start_commands, stop_commands
 
