@@ -95,9 +95,11 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
     def install_cbinit(self):
         """Run the installation script for CloudbaseInit."""
-        installer = "CloudbaseInitSetup_{}_{}.msi".format(
-            self.build.capitalize(),
-            self.arch)
+        opts = util.parse_cli()
+        installer = opts.installer_template.format(
+            build=self.build,
+            arch=self.arch
+        )
         LOG.info("Run the downloaded installation script "
                  "using the installer %r with service %r.",
                  installer, self._service_type)
