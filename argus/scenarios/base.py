@@ -207,7 +207,7 @@ class BaseArgusScenario(object):
 
     def _setup(self):
         # pylint: disable=attribute-defined-outside-init
-        LOG.info("Creating server for scenario %s...", self._name)
+        LOG.info("Creating server for scenario %s...", self.name)
 
         self._configure_networking()
         self._keypair = self._create_keypair()
