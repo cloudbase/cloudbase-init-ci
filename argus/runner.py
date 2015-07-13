@@ -82,9 +82,6 @@ class Runner(object):
                 # as failed and continue to the other ones.
                 tests = list(scenario.test_names())
                 errors += len(tests)
-                # Mark all these tests as executed, even though
-                # they weren't
-                tests_run += len(tests)
                 LOG.exception('Scenario %r failed', scenario.name)
             else:
                 result.printErrors()
