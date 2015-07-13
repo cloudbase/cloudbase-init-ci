@@ -61,7 +61,8 @@ class BaseArgusScenario(object):
                  result=None, introspection=None,
                  output_directory=None,
                  environment_preparer=None):
-        self._name = name
+        self.name = name
+
         self._recipe = recipe
         self._metadata = metadata
         self._test_classes = test_classes
@@ -226,6 +227,18 @@ class BaseArgusScenario(object):
         template = "{}{}.log".format("{}", "-" + suffix if suffix else "")
         return template
 
+    def test_names(self):
+        """Return an iterator of pairs between test classes and test names
+
+        This should return all the test names from the underlying
+        test classes, preceded by the test class they belong to.
+        """
+        testloader = unittest.TestLoader()
+        for test_class in self._test_classes:
+            testnames = testloader.getTestCaseNames(test_class)
+            for name in testnames:
+                yield test_class, name
+
     def save_instance_output(self, suffix=None):
         """Retrieve and save all data written through the COM port.
 
@@ -294,17 +307,14 @@ class BaseArgusScenario(object):
             self.save_instance_output()
 
             LOG.info("Running tests...")
-            testloader = unittest.TestLoader()
             suite = unittest.TestSuite()
-            for test_class in self._test_classes:
-                testnames = testloader.getTestCaseNames(test_class)
-                for name in testnames:
-                    suite.addTest(
-                        test_class(name,
-                                   manager=self,
-                                   service_type=self._service_type,
-                                   introspection=self._introspection,
-                                   image=self._image))
+            for test_class, name in self.test_names():
+                suite.addTest(
+                    test_class(name,
+                               manager=self,
+                               service_type=self._service_type,
+                               introspection=self._introspection,
+                               image=self._image))
             return suite.run(self._result)
         finally:
             self._cleanup()
