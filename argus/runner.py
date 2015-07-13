@@ -21,6 +21,7 @@ import sys
 import time
 import unittest
 
+from argus import exceptions
 from argus import util
 
 
@@ -73,15 +74,23 @@ class Runner(object):
         failures = errors = 0
 
         # pylint: disable=redefined-outer-name
-        for my_scenario in self._scenarios:
-            result = my_scenario.run()
-            result.printErrors()
-            tests_run += result.testsRun
-            expected_failures += len(result.expectedFailures)
-            unexpected_successes += len(result.unexpectedSuccesses)
-            skipped += len(result.skipped)
-            failures += len(result.failures)
-            errors += len(result.errors)
+        for scenario in self._scenarios:
+            try:
+                result = scenario.run()
+            except exceptions.ArgusError:
+                # Something failed internally, report this scenario
+                # as failed and continue to the other ones.
+                tests = list(scenario.test_names())
+                errors += len(tests)
+                LOG.exception('Scenario %r failed', scenario.name)
+            else:
+                result.printErrors()
+                tests_run += result.testsRun
+                expected_failures += len(result.expectedFailures)
+                unexpected_successes += len(result.unexpectedSuccesses)
+                skipped += len(result.skipped)
+                failures += len(result.failures)
+                errors += len(result.errors)
 
         time_taken = time.time() - start_time
 
