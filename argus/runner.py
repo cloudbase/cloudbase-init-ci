@@ -163,7 +163,11 @@ def _build_scenarios_classes(scenario):
             scenario.environment.config.config_file,
             scenario.environment.config.values,
             scenario.environment.start_commands,
-            scenario.environment.stop_commands)
+            scenario.environment.stop_commands,
+            scenario.environment.list_services_commands,
+            scenario.environment.filter_services_regexes,
+            scenario.environment.start_service_command,
+            scenario.environment.stop_service_command)
 
     partial_scenario = functools.partial(
         scenario_class,
