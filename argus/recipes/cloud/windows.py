@@ -45,23 +45,6 @@ def _read_url(url):
         return content
 
 
-@util.with_retry()
-def _get_git_link():
-    content = _read_url("http://git-scm.com/download/win")
-    soup = bs4.BeautifulSoup(content)
-    download_div = soup.find('div', {'class': 'callout downloading'})
-    if not download_div:
-        raise exceptions.ArgusError(
-            "Could not find callout_downloading div.")
-
-    for a_object in download_div.find_all('a'):
-        href = a_object.get('href', '')
-        if not href.endswith('.exe'):
-            continue
-        return href
-    raise exceptions.ArgusError("Git download link not found.")
-
-
 class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     """Recipe for preparing a Windows instance."""
 
@@ -121,21 +104,6 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                             "installation-{}.log".format(self._instance_id))
         with open(path, 'w') as stream:
             stream.write(content)
-
-    def install_git(self):
-        """Install git in the instance."""
-        LOG.info("Installing git...")
-
-        cmd = ("powershell Invoke-webrequest -uri "
-               "{}/windows/install_git.ps1 -outfile C:\\\\install_git.ps1"
-               .format(CONF.argus.resources))
-        self._execute(cmd)
-
-        git_link = _get_git_link()
-        git_base = os.path.basename(git_link)
-        cmd = ('powershell "C:\\install_git.ps1 {} {}"'
-               .format(git_link, git_base))
-        self._execute(cmd)
 
     def replace_install(self):
         """Replace the cb-init installed files with the downloaded ones.
