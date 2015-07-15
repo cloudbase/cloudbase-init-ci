@@ -58,9 +58,9 @@ class BaseOpenstackEnvironmentPreparer(BaseEnvironmentPreparer):
     """
 
     def __init__(self, config_file, config_opts,
-                 start_commands, stop_commands,
-                 list_services_commands, filter_services_regexes,
-                 start_service_command, stop_service_command):
+                 start_commands=None, stop_commands=None,
+                 list_services_commands=None, filter_services_regexes=None,
+                 start_service_command=None, stop_service_command=None):
         self._patcher = util.ConfigurationPatcher(config_file, **config_opts)
         self._start_commands = start_commands
         self._stop_commands = stop_commands
@@ -78,15 +78,15 @@ class BaseOpenstackEnvironmentPreparer(BaseEnvironmentPreparer):
         """Runs a command and returns the output.
 
         :param str command: The command to be executed
-        :return: The stdout of the command
+        :return: The lines of the stdout
         :rtype: list of strings
         """
         args = shlex.split(command)
         p = subprocess.Popen(args, stdout=subprocess.PIPE)
         stdout, _ = p.communicate()
         stdout = stdout.decode()
-        stdout = stdout.splitlines()
-        return stdout
+        lines = stdout.splitlines()
+        return lines
 
     def _wait_for_nova_services(self):
         # Wait until the nova services are up again
@@ -184,8 +184,9 @@ class RDOEnvironmentPreparer(BaseOpenstackEnvironmentPreparer):
     def _filter_services(self, services):
         filtered = []
         for filter_services_regex in self._filter_services_regexes:
+            regex = re.compile(filter_services_regex)
             for service in services:
-                r = re.search(filter_services_regex, service)
+                r = regex.search(service)
                 if r:
                     filtered.append(r.group(1))
         filtered = list(set(filtered))
@@ -199,6 +200,7 @@ class RDOEnvironmentPreparer(BaseOpenstackEnvironmentPreparer):
     def _start_environment(self):
         services = self._get_services()
         # nova-conductor needs to be started before nova-compute
-        self._run_command("systemctl start openstack-nova-conductor")
+        self._run_command(
+            self._start_service_command % "openstack-nova-conductor")
         for service in services:
             self._run_command(self._start_service_command % service)

@@ -137,9 +137,17 @@ class ConfigurationParser(object):
             key, 'filter_services_regexes')
         start_service_command = self._load_commands(key, 'start_service_command')
         stop_service_command = self._load_commands(key, 'stop_service_command')
-        return key, values, preparer, start_commands, stop_commands, \
-            list_services_commands, filter_services_regexes, \
-            start_service_command, stop_service_command
+
+        environment = collections.namedtuple(
+            'environment',
+            'name config preparer start_commands stop_commands '
+            'list_services_commands, filter_services_regexes '
+            'start_service_command', 'stop_service_command')
+
+        return environment(key, values, preparer, start_commands,
+                           stop_commands, list_services_commands,
+                           filter_services_regexes, start_service_command,
+                           stop_service_command)
 
     def _load_commands(self, key, command):
         try:
@@ -176,18 +184,11 @@ class ConfigurationParser(object):
            start_service_command = ...
            stop_service_command = ...
         """
-        environment = collections.namedtuple(
-            'environment',
-            'name config preparer start_commands stop_commands '
-            'list_services_commands, filter_services_regexes '
-            'start_service_command', 'stop_service_command')
-
         environments = []
         for key in self._parser.sections():
             if not key.startswith("environment_"):
                 continue
-
-            environ_obj = environment(*self._parse_environment(key))
+            environ_obj = self._parse_environment(key)
             environments.append(environ_obj)
         return environments
 
