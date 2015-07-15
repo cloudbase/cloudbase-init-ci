@@ -193,7 +193,7 @@ def _build_scenarios_classes(scenario):
 def _cloud_scenarios_builder(partial_scenarios):
     """Build cloud specific custom scenarios objects."""
     opts = util.parse_cli()
-    builds = set(opts.builds) if opts.builds else {util.BUILDS.beta}
+    builds = set(opts.builds) if opts.builds else {util.BUILDS.Beta}
     arches = set(opts.arches) if opts.arches else {util.ARCHES.x64}
     scenarios = []
     for partial_scenario in partial_scenarios:

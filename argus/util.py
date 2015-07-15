@@ -314,6 +314,10 @@ def parse_cli():
     cloud.add_argument("-a", "--arches", action="append",
                        choices=list(ARCHES),
                        help="Choose what installer architectures to test.")
+    cloud.add_argument("-i", "--installer-template", metavar="TEMPLATE",
+                       default="CloudbaseInitSetup_{build}_{arch}.msi",
+                       help="Specify a custom installer template. "
+                            "Default: CloudbaseInitSetup_{build}_{arch}.msi")
     cloud.add_argument("--patch-install", metavar="URL",
                        help='Pass a link that points *directly* to a '
                             'zip file containing the installed version. '
@@ -475,7 +479,7 @@ class ConfigurationPatcher(object):
 
 LOG = get_logger()
 
-_BUILDS = ["beta", "stable"]
+_BUILDS = ["Beta", "Stable", "test"]
 _ARCHES = ["x64", "x86"]
 BUILDS = get_namedtuple("BUILDS", _BUILDS, _BUILDS)
 ARCHES = get_namedtuple("ARCHES", _ARCHES, _ARCHES)
