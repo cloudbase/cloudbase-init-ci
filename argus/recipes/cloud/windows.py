@@ -310,26 +310,6 @@ class ClearPasswordLogonRecipe(BaseNextLogonRecipe):
     behaviour = 'clear_text_injected_only'
 
 
-class CloudbaseinitSpecializeRecipe(CloudbaseinitRecipe):
-    """A recipe for testing errors in specialize part.
-
-    We'll need to test the specialize part as well and
-    this recipe ensures us that something will fail there,
-    in order to see if argus catches that error.
-    """
-
-    def pre_sysprep(self):
-        super(CloudbaseinitSpecializeRecipe, self).pre_sysprep()
-        LOG.info("Preparing cloudbaseinit for failure.")
-        cmd = ("powershell Invoke-Webrequest -uri "
-               "{}/windows/patch_mtu.ps1 -outfile "
-               "C:\\patch_mtu.ps1"
-               .format(CONF.argus.resources))
-        self._execute(cmd)
-
-        self._execute("powershell C:\\\\patch_mtu.ps1")
-
-
 class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
     """A recipe for patching the cloudbaseinit's conf with a custom server."""
 

@@ -147,15 +147,6 @@ class TestEC2Userdata(base.TestBaseArgus):
         self.assertIn(directory_name, names)
 
 
-class TestCatchingSpecialize(base.TestBaseArgus):
-    """Test that errors are caught if they occur in the specialize phase."""
-
-    def test_traceback_occurred(self):
-        instance_traceback = self.introspection.get_cloudbaseinit_traceback()
-        self.assertIn('ZeroDivisionError: integer division or modulo',
-                      instance_traceback)
-
-
 class TestCertificateWinRM(base.TestBaseArgus):
     """Test that WinRM certificate authentication works as expected."""
 
