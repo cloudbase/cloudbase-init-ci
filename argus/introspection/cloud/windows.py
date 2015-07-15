@@ -298,7 +298,7 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         }
         files = {}
         for basefile in expected:
-            path = os.path.join("C:\\", basefile)
+            path = ntpath.join("C:\\", basefile)
             content = self.get_instance_file_content(path)
             files[basefile] = content.strip()
         return files
