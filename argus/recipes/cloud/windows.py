@@ -213,7 +213,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         # Autoinstall packages from the new requirements.txt
         python = ntpath.join(python_dir, "python.exe")
-        command = '{} -m pip install C:\\cloudbaseinit\\requirements.txt'
+        command = '"{}" -m pip install -r C:\\cloudbaseinit\\requirements.txt'
         self._execute(command.format(python))
 
     def pre_sysprep(self):
