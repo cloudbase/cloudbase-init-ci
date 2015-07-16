@@ -141,8 +141,8 @@ class ConfigurationParser(object):
         environment = collections.namedtuple(
             'environment',
             'name config preparer start_commands stop_commands '
-            'list_services_commands, filter_services_regexes '
-            'start_service_command', 'stop_service_command')
+            'list_services_commands filter_services_regexes '
+            'start_service_command stop_service_command')
 
         return environment(key, values, preparer, start_commands,
                            stop_commands, list_services_commands,
