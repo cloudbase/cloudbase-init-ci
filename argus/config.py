@@ -135,8 +135,14 @@ class ConfigurationParser(object):
             key, 'list_services_commands')
         filter_services_regexes = self._load_commands(
             key, 'filter_services_regexes')
-        start_service_command = self._load_commands(key, 'start_service_command')
-        stop_service_command = self._load_commands(key, 'stop_service_command')
+        start_service_command = self._load_commands(
+            key, 'start_service_command')
+        if start_service_command:
+            start_service_command = start_service_command[0]
+        stop_service_command = self._load_commands(
+            key, 'stop_service_command')
+        if stop_service_command:
+            stop_service_command = stop_service_command[0]
 
         environment = collections.namedtuple(
             'environment',
