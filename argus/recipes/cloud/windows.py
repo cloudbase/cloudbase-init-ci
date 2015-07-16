@@ -211,6 +211,11 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         self._execute('powershell "Copy-Item C:\\cloudbaseinit\\cloudbaseinit '
                       '\'{}\' -Recurse"'.format(cloudbaseinit))
 
+        # Autoinstall packages from the new requirements.txt
+        python = ntpath.join(python_dir, "python.exe")
+        command = '"{}" -m pip install -r C:\\cloudbaseinit\\requirements.txt'
+        self._execute(command.format(python))
+
     def pre_sysprep(self):
         """Disable first_logon_behaviour for testing purposes.
 
