@@ -27,6 +27,7 @@ from argus import util
 with util.restore_excepthook():
     from tempest import clients
     from tempest.common import credentials
+    from tempest.common import waiters
 
 
 CONF = util.get_config()
@@ -131,7 +132,8 @@ class BaseArgusScenario(object):
             self._image.image_ref,
             self._image.flavor_ref,
             **kwargs)
-        self._servers_client.wait_for_server_status(server['id'], wait_until)
+        waiters.wait_for_server_status(
+            self._servers_client, server['id'], wait_until)
         return server
 
     def _create_keypair(self):
@@ -335,8 +337,8 @@ class BaseArgusScenario(object):
     def reboot_instance(self):
         self._servers_client.reboot(server_id=self._server['id'],
                                     reboot_type='soft')
-        self._servers_client.wait_for_server_status(self._server['id'],
-                                                    'ACTIVE')
+        waiters.wait_for_server_status(
+            self._servers_client, self._server['id'], 'ACTIVE')
 
     def prepare_instance(self):
         recipe = self._prepare_instance()

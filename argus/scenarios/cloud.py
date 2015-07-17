@@ -23,6 +23,7 @@ from argus import util
 
 with util.restore_excepthook():
     from tempest.common import isolated_creds
+    from tempest.common import waiters
 
 
 CONF = util.get_config()
@@ -227,13 +228,13 @@ class RescueWindowsScenario(BaseWindowsScenario):
         admin_pass = self._image.default_ci_password
         self._servers_client.rescue_server(self._server['id'],
                                            adminPass=admin_pass)
-        self._servers_client.wait_for_server_status(self._server['id'],
-                                                    'RESCUE')
+        waiters.wait_for_server_status(
+            self._servers_client, self._server['id'], 'RESCUE')
 
     def unrescue_server(self):
         self._servers_client.unrescue_server(self._server['id'])
-        self._servers_client.wait_for_server_status(self._server['id'],
-                                                    'ACTIVE')
+        waiters.wait_for_server_status(
+            self._servers_client, self._server['id'], 'ACTIVE')
 
 
 class BaseServiceMockMixin(object):
