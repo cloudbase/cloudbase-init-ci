@@ -384,7 +384,7 @@ class BaseArgusScenario(object):
 
     def instance_server(self):
         """Get the instance server object."""
-        return self._servers_client.get_server(self._server['id'])
+        return self._servers_client.show_server(self._server['id'])
 
     def public_key(self):
         return self._keypair['public_key']
