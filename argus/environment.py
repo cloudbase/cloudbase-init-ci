@@ -74,6 +74,7 @@ class BaseOpenstackEnvironmentPreparer(BaseEnvironmentPreparer):
         primary_creds = isolated_creds.get_primary_creds()
         manager = clients.Manager(credentials=primary_creds)
         self._servers_client = manager.servers_client
+        self._images_client = manager.images_client
 
     def _run_commands(self, commands):
         for command in commands:
@@ -111,7 +112,8 @@ class BaseOpenstackEnvironmentPreparer(BaseEnvironmentPreparer):
 
         while True:
             try:
-                self._servers_client.images.list()
+                self._servers_client.list_servers()
+                self._images_client.list_images()
                 break
             except Exception:
                 time.sleep(1)
