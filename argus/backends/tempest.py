@@ -5,3 +5,6 @@ class TempestBackend(base.BaseBackend):
 
     def setup_instance(self):
         """Sets up an Openstack instance"""
+
+    def cleanup(self):
+        pass
