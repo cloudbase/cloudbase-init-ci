@@ -10,4 +10,4 @@ def get_backend(_type):
     """
     if _type is 'tempest':
         return TempestBackend()
-    return None
+    raise TypeError('Invalid backend type "%s"' % _type)

@@ -7,5 +7,5 @@ import six
 class BaseBackend(object):
 
     @abc.abstractmethod
-    def create_instance(self):
-        pass
+    def setup_instance(self):
+        """Called by setUpClass to setup an instance"""

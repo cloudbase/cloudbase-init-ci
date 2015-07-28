@@ -15,22 +15,30 @@
 
 import unittest
 
-from argus.backends import base
 from argus.backends import factory as backends_factory
 
 
 class BaseTestCase(unittest.TestCase):
-    """Test class which offers support for parametrization of the manager."""
+    """Test case which sets up an instance and prepares it using a recipe"""
 
     backend_type = None
+    introspection_type = None
+    recipe_type = None
+
+    backend = None
+    introspection = None
+    recipe = None
 
     @classmethod
     def setUpClass(cls):
-        cls.backend = cls._get_backend()
+        cls.backend = backends_factory.get_backend(cls.backend_type)
+        cls.backend.setup_instance()
+
+        # TODO (ionuthulub) setup introspection
+        # TODO (ionuthulub) setup the recipe
+
+        cls.recipe.prepare()
 
     @classmethod
-    def _get_backend(cls):
-        backend = backends_factory.get_backend(cls.backend_type)
-        if not isinstance(backend, base.BaseBackend):
-            raise TypeError('Invalid backend type "%s"' % cls.backend_type)
-        return backend
+    def tearDownClass(cls):
+        cls.backend.cleanup()
