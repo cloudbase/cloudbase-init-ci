@@ -3,5 +3,5 @@ from argus.backends import base
 
 class TempestBackend(base.BaseBackend):
 
-    def create_instance(self):
-        pass
+    def setup_instance(self):
+        """Sets up an Openstack instance"""
