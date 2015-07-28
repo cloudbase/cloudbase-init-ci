@@ -15,31 +15,22 @@
 
 import unittest
 
+from argus.backends import base
+from argus.backends import factory as backends_factory
 
-class TestBaseArgus(unittest.TestCase):
+
+class BaseTestCase(unittest.TestCase):
     """Test class which offers support for parametrization of the manager."""
 
-    def __init__(self, methodName='runTest',
-                 manager=None, image=None,
-                 service_type=None, introspection=None):
-        super(TestBaseArgus, self).__init__(methodName)
-        self.manager = manager
-        self.image = image
-        self.service_type = service_type
-        self.introspection = introspection(self.remote_client,
-                                           self.server['id'],
-                                           image=self.image)
+    backend_type = None
 
-    # Export a couple of APIs from the underlying manager.
+    @classmethod
+    def setUpClass(cls):
+        cls.backend = cls._get_backend()
 
-    @property
-    def server(self):
-        return self.manager.server()
-
-    @property
-    def remote_client(self):
-        return self.manager.remote_client
-
-    @property
-    def run_command_verbose(self):
-        return self.manager.remote_client.run_command_verbose
+    @classmethod
+    def _get_backend(cls):
+        backend = backends_factory.get_backend(cls.backend_type)
+        if not isinstance(backend, base.BaseBackend):
+            raise TypeError('Invalid backend type "%s"' % cls.backend_type)
+        return backend
