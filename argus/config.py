@@ -129,9 +129,37 @@ class ConfigurationParser(object):
             values[section][subkey] = opt_value
         values = values_factory(config_file, values)
 
-        start_commands = self._parser.getlist(key, 'start_commands')
-        stop_commands = self._parser.getlist(key, 'stop_commands')
-        return key, values, preparer, start_commands, stop_commands
+        start_commands = self._load_commands(key, 'start_commands')
+        stop_commands = self._load_commands(key, 'stop_commands')
+        list_services_commands = self._load_commands(
+            key, 'list_services_commands')
+        filter_services_regexes = self._load_commands(
+            key, 'filter_services_regexes')
+        start_service_command = self._load_commands(
+            key, 'start_service_command')
+        if start_service_command:
+            start_service_command = start_service_command[0]
+        stop_service_command = self._load_commands(
+            key, 'stop_service_command')
+        if stop_service_command:
+            stop_service_command = stop_service_command[0]
+
+        environment = collections.namedtuple(
+            'environment',
+            'name config preparer start_commands stop_commands '
+            'list_services_commands filter_services_regexes '
+            'start_service_command stop_service_command')
+
+        return environment(key, values, preparer, start_commands,
+                           stop_commands, list_services_commands,
+                           filter_services_regexes, start_service_command,
+                           stop_service_command)
+
+    def _load_commands(self, key, command):
+        try:
+            return self._parser.getlist(key, command)
+        except six.moves.configparser.NoOptionError:
+            return None
 
     @property
     def environments(self):
@@ -155,17 +183,18 @@ class ConfigurationParser(object):
                             ...
            stop_commands = ...
                            ...
+           list_services_commands = ...
+                                     ...
+           filter_services_regexes = ...
+                                      ...
+           start_service_command = ...
+           stop_service_command = ...
         """
-        environment = collections.namedtuple(
-            'environment',
-            'name config preparer start_commands stop_commands')
-
         environments = []
         for key in self._parser.sections():
             if not key.startswith("environment_"):
                 continue
-
-            environ_obj = environment(*self._parse_environment(key))
+            environ_obj = self._parse_environment(key)
             environments.append(environ_obj)
         return environments
 
