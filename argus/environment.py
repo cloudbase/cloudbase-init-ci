@@ -22,8 +22,6 @@ import subprocess
 import time
 
 import six
-from tempest import clients
-from tempest.common import credentials
 
 from argus import util
 
@@ -69,13 +67,6 @@ class BaseOpenstackEnvironmentPreparer(BaseEnvironmentPreparer):
         self._start_service_command = start_service_command
         self._stop_service_command = stop_service_command
 
-        isolated_creds = credentials.get_isolated_credentials(
-            self.__class__.__name__, network_resources={})
-        primary_creds = isolated_creds.get_primary_creds()
-        manager = clients.Manager(credentials=primary_creds)
-        self._servers_client = manager.servers_client
-        self._images_client = manager.images_client
-
     def _run_commands(self, commands):
         for command in commands:
             self._run_command(command)
@@ -107,15 +98,18 @@ class BaseOpenstackEnvironmentPreparer(BaseEnvironmentPreparer):
                    for entry in statuses):
                 break
 
-    def _wait_for_api(self):
+    @staticmethod
+    def _wait_for_api():
         LOG.info("Waiting for the API to be up...")
 
         while True:
             try:
-                self._servers_client.list_servers()
-                self._images_client.list_images()
+                subprocess.check_call(shlex.split('openstack image list'),
+                                      stdout=subprocess.PIPE)
+                subprocess.check_call(shlex.split('openstack server list'),
+                                      stdout=subprocess.PIPE)
                 break
-            except Exception:
+            except subprocess.CalledProcessError:
                 time.sleep(1)
 
     def _stop_environment(self):
