@@ -58,6 +58,9 @@ def stop_devstack():
     which will lead to a proper cleanup.
     """
     screen = _get_devstack_screen()
+    if not screen:
+        return
+
     for proc in _get_process_children(screen):
         try:
             os.kill(proc.pid, signal.SIGTERM)
