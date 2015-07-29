@@ -16,14 +16,14 @@
 # pylint: disable=no-name-in-module,import-error
 
 import abc
-import os
 import re
 import shlex
 import subprocess
 import time
 
-import novaclient.v1_1.client as nova
 import six
+from tempest import clients
+from tempest.common import credentials
 
 from argus import util
 
@@ -69,6 +69,13 @@ class BaseOpenstackEnvironmentPreparer(BaseEnvironmentPreparer):
         self._start_service_command = start_service_command
         self._stop_service_command = stop_service_command
 
+        isolated_creds = credentials.get_isolated_credentials(
+            self.__class__.__name__, network_resources={})
+        primary_creds = isolated_creds.get_primary_creds()
+        manager = clients.Manager(credentials=primary_creds)
+        self._servers_client = manager.servers_client
+        self._images_client = manager.images_client
+
     def _run_commands(self, commands):
         for command in commands:
             self._run_command(command)
@@ -100,19 +107,13 @@ class BaseOpenstackEnvironmentPreparer(BaseEnvironmentPreparer):
                    for entry in statuses):
                 break
 
-    @staticmethod
-    def _wait_for_api():
+    def _wait_for_api(self):
         LOG.info("Waiting for the API to be up...")
 
-        username = os.environ['OS_USERNAME']
-        password = os.environ['OS_PASSWORD']
-        auth = os.environ['OS_AUTH_URL']
-        tenant = os.environ['OS_TENANT_NAME']
-
-        client = nova.Client(username, password, tenant, auth)
         while True:
             try:
-                client.images.list()
+                self._servers_client.list_servers()
+                self._images_client.list_images()
                 break
             except Exception:
                 time.sleep(1)
