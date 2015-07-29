@@ -104,8 +104,10 @@ class BaseOpenstackEnvironmentPreparer(BaseEnvironmentPreparer):
 
         while True:
             try:
-                subprocess.check_call(shlex.split('openstack image list'))
-                subprocess.check_call(shlex.split('openstack server list'))
+                subprocess.check_call(shlex.split('openstack image list'),
+                                      stdout=subprocess.PIPE)
+                subprocess.check_call(shlex.split('openstack server list'),
+                                      stdout=subprocess.PIPE)
                 break
             except subprocess.CalledProcessError:
                 time.sleep(1)
