@@ -352,12 +352,17 @@ class CloudbaseinitCloudstackRecipe(CloudbaseinitMockServiceRecipe):
         cbinit = ntpath.join(python_dir, 'Lib', 'site-packages',
                              'cloudbaseinit')
 
+        # Install mock
+        python = ntpath.join(python_dir, "python.exe")
+        command = '"{}" -m pip install mock'
+        self._execute(command.format(python))
+
+        # Get the cloudstack patching script and patch the installation.
         cmd = ("powershell Invoke-Webrequest -uri "
                "{}/windows/patch_cloudstack.ps1 -outfile "
                "C:\\patch_cloudstack.ps1"
                .format(CONF.argus.resources))
         self._execute(cmd)
-
         self._execute('powershell C:\\\\patch_cloudstack.ps1 "{}"'
                       .format(cbinit))
 
