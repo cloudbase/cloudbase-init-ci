@@ -1,6 +1,6 @@
 param
 (
-    [string]$cloudbaseinitdir,
+    [string]$cloudbaseinitdir
 )
 
 $patch_code = @'
