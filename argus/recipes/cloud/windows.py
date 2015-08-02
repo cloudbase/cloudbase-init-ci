@@ -363,7 +363,7 @@ class CloudbaseinitCloudstackRecipe(CloudbaseinitMockServiceRecipe):
                "C:\\patch_cloudstack.ps1"
                .format(CONF.argus.resources))
         self._execute(cmd)
-        self._execute('powershell C:\\\\patch_cloudstack.ps1 "{}"'
+        self._execute('powershell "C:\\\\patch_cloudstack.ps1 \"{}\""'
                       .format(cbinit))
 
 
