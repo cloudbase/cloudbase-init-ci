@@ -4,6 +4,8 @@ param
 )
 
 $patch_code = @'
+from mock import patch
+
 def custom_setattr(self, attr, value):
     if attr == '_router_ip' and value:
         value = value.split(':')[0]
