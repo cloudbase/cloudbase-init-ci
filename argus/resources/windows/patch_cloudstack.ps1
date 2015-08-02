@@ -6,13 +6,15 @@ param
 $patch_code = @'
 from mock import patch
 
-def custom_setattr(self, attr, value):
+
+def custom_getattribute(self, attr):
+    value = object.__getattribute__(self, attr)
     if attr == '_router_ip' and value:
-        value = value.split(':')[0]
-    return super(self.__class__, self).__setattr__(attr, value)
+        return value.split(':')[0]
+    return value
 
 with patch('cloudbaseinit.metadata.services.cloudstack.'
-           'CloudStack.__setattr__', custom_setattr):  
+           'CloudStack.__getattribute__', custom_getattribute):  
     from cloudbaseinit._shell import main
     main()
 '@
