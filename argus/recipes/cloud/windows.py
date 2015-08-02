@@ -348,18 +348,18 @@ class CloudbaseinitCloudstackRecipe(CloudbaseinitMockServiceRecipe):
     def pre_sysprep(self):
         super(CloudbaseinitCloudstackRecipe, self).pre_sysprep()
 
-        # CloudStack uses the metadata service on port 80 and
-        # uses the passed metadata IP on port 8080 for the password manager.
-        # Since we need to mock the service, we'll have to provide
-        # a service on a custom port (apache is started on 80),
-        # so this code does what it's necessary to make this work.
+        python_dir = introspection.get_python_dir(self._execute)
+        cbinit = ntpath.join(python_dir, 'Lib', 'site-packages',
+                             'cloudbaseinit')
+
         cmd = ("powershell Invoke-Webrequest -uri "
                "{}/windows/patch_cloudstack.ps1 -outfile "
                "C:\\patch_cloudstack.ps1"
                .format(CONF.argus.resources))
         self._execute(cmd)
 
-        self._execute("powershell C:\\\\patch_cloudstack.ps1")
+        self._execute("powershell C:\\\\patch_cloudstack.ps1 {}"
+                      .format(cbinit))
 
 
 class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):

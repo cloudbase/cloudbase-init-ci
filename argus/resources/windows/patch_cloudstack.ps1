@@ -1,12 +1,20 @@
-# Look for any tracebacks in the code
+param
+(
+    [string]$cloudbaseinitdir,
+)
 
-Import-Module C:\common.psm1
-$programFilesDir = Get-ProgramDir
+$patch_code = @'
+def custom_setattr(self, attr, value):
+    if attr == '_router_ip' and value:
+        value = value.split(':')[0]
+    return super(self.__class__, self).__setattr__(attr, value)
 
-$cloudbaseinit = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init"
-$python_name = Get-Childitem $cloudbaseinit -Filter Python* -Name
-$cloudstack = "$cloudbaseinit\$python_name\Lib\site-packages\cloudbaseinit\metadata\services\cloudstack.py"
-$src = "self._router_ip = ip_address"
-$dest = "self._router_ip = ip_address.split(':')[0]"
+with patch('cloudbaseinit.metadata.services.cloudstack.'
+           'CloudStack.__setattr__', custom_setattr):  
+    from cloudbaseinit._shell import main
+    main()
+'@
 
-(Get-Content $cloudstack).replace($src, $dest) | Set-Content $cloudstack
+mv $cloudbaseinitdir\shell.py $cloudbaseinitdir\_shell.py
+rm $cloudbaseinitdir\shell.pyc -ErrorAction ignore
+echo $patch_code | Out-File -Encoding utf8 $cloudbaseinitdir\shell.py
