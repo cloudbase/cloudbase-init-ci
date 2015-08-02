@@ -17,6 +17,6 @@ with patch('cloudbaseinit.metadata.services.cloudstack.'
     main()
 '@
 
-mv $cloudbaseinitdir\shell.py $cloudbaseinitdir\_shell.py
+mv $cloudbaseinitdir\shell.py $cloudbaseinitdir\_shell.py -ErrorAction ignore
 rm $cloudbaseinitdir\shell.pyc -ErrorAction ignore
 echo $patch_code | Out-File -Encoding utf8 $cloudbaseinitdir\shell.py
