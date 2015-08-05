@@ -13,17 +13,54 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import types
 import unittest
 
-from argus.backends import factory as backends_factory
+import six
 
 
 class BaseTestCase(unittest.TestCase):
+    """
+    Extends unittest.TestCase by adding two member variables to instances,
+    backend and introspection.
+    """
+
+    def __init__(self, backend, introspection, *args, **kwargs):
+        super(BaseTestCase, self).__init__(*args, **kwargs)
+        self.backend = backend
+        self.introspection = introspection
+
+
+class ScenarioMeta(type):
+    def __new__(mcs, name, bases, attrs):
+        cls = super(ScenarioMeta, mcs).__new__(mcs, name, bases, attrs)
+        test_loader = unittest.TestLoader()
+        if not cls.test_classes:
+            return cls
+        for class_name in cls.test_classes:
+            test_names = test_loader.getTestCaseNames(class_name)
+            for test_name in test_names:
+
+                def delegator(self, class_name=class_name,
+                              test_name=test_name):
+                    getattr(class_name(self.backend, self.introspection,
+                                       test_name), test_name)()
+                # TODO (ionuthulub) avoid namespace collision
+                setattr(
+                    cls, test_name, types.FunctionType(
+                        delegator.func_code, delegator.func_globals,
+                        test_name, delegator.func_defaults))
+        return cls
+
+
+@six.add_metaclass(ScenarioMeta)
+class BaseScenario(unittest.TestCase):
     """Test case which sets up an instance and prepares it using a recipe"""
 
     backend_type = None
     introspection_type = None
     recipe_type = None
+    test_classes = None
 
     backend = None
     introspection = None
@@ -31,14 +68,22 @@ class BaseTestCase(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.backend = backends_factory.get_backend(cls.backend_type)
+        cls.backend = cls.backend_type()
         cls.backend.setup_instance()
 
-        # TODO (ionuthulub) setup introspection
-        # TODO (ionuthulub) setup the recipe
-
+        cls.recipe = cls.recipe_type()
         cls.recipe.prepare()
+
+        cls.introspection = cls.introspection_type()
 
     @classmethod
     def tearDownClass(cls):
         cls.backend.cleanup()
+
+
+class RandomTest(BaseTestCase):
+    def test_success(self):
+        self.assertTrue(True)
+
+    def test_failure(self):
+        self.assertTrue(False)
