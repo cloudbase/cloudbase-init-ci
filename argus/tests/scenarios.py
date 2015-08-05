@@ -1,6 +1,7 @@
 import mock
 
 from argus.tests import base
+from argus.tests.tests import mock_tests
 
 
 class TestScenario(base.BaseScenario):
@@ -8,5 +9,4 @@ class TestScenario(base.BaseScenario):
     recipe_type = mock.MagicMock()
     introspection_type = mock.MagicMock()
 
-    test_classes = [base.RandomTest, base.NamespaceCollisionTest]
-
+    test_classes = [mock_tests.RandomTest, mock_tests.NamespaceCollisionTest]

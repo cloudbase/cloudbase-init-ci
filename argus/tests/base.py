@@ -47,7 +47,8 @@ class ScenarioMeta(type):
                                        test_name), test_name)()
 
                 if hasattr(cls, test_name):
-                    test_name = 'test_%s_%s' % (test_class.__name__, test_name)
+                    test_name = 'test_%s_%s' % (test_class.__name__,
+                                                test_name)
 
                 setattr(
                     cls, test_name, types.FunctionType(
@@ -82,15 +83,3 @@ class BaseScenario(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.backend.cleanup()
-
-
-class RandomTest(BaseTestCase):
-    def test_success(self):
-        self.assertTrue(True)
-
-    def test_failure(self):
-        self.assertTrue(False)
-
-
-class NamespaceCollisionTest(RandomTest):
-    pass
