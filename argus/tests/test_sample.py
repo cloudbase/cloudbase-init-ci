@@ -8,5 +8,5 @@ class TestScenario(base.BaseScenario):
     recipe_type = mock.MagicMock()
     introspection_type = mock.MagicMock()
 
-    test_classes = [base.RandomTest]
+    test_classes = [base.RandomTest, base.NamespaceCollisionTest]
 

@@ -37,15 +37,18 @@ class ScenarioMeta(type):
         test_loader = unittest.TestLoader()
         if not cls.test_classes:
             return cls
-        for class_name in cls.test_classes:
-            test_names = test_loader.getTestCaseNames(class_name)
+        for test_class in cls.test_classes:
+            test_names = test_loader.getTestCaseNames(test_class)
             for test_name in test_names:
 
-                def delegator(self, class_name=class_name,
+                def delegator(self, class_name=test_class,
                               test_name=test_name):
                     getattr(class_name(self.backend, self.introspection,
                                        test_name), test_name)()
-                # TODO (ionuthulub) avoid namespace collision
+
+                if hasattr(cls, test_name):
+                    test_name = 'test_%s_%s' % (test_class.__name__, test_name)
+
                 setattr(
                     cls, test_name, types.FunctionType(
                         delegator.func_code, delegator.func_globals,
@@ -87,3 +90,7 @@ class RandomTest(BaseTestCase):
 
     def test_failure(self):
         self.assertTrue(False)
+
+
+class NamespaceCollisionTest(RandomTest):
+    pass
