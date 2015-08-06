@@ -13,33 +13,73 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import types
 import unittest
 
+import six
 
-class TestBaseArgus(unittest.TestCase):
-    """Test class which offers support for parametrization of the manager."""
 
-    def __init__(self, methodName='runTest',
-                 manager=None, image=None,
-                 service_type=None, introspection=None):
-        super(TestBaseArgus, self).__init__(methodName)
-        self.manager = manager
-        self.image = image
-        self.service_type = service_type
-        self.introspection = introspection(self.remote_client,
-                                           self.server['id'],
-                                           image=self.image)
+class BaseTestCase(unittest.TestCase):
+    """
+    Extends unittest.TestCase by adding two member variables to instances,
+    backend and introspection.
+    """
 
-    # Export a couple of APIs from the underlying manager.
+    def __init__(self, backend, introspection, *args, **kwargs):
+        super(BaseTestCase, self).__init__(*args, **kwargs)
+        self.backend = backend
+        self.introspection = introspection
 
-    @property
-    def server(self):
-        return self.manager.server()
 
-    @property
-    def remote_client(self):
-        return self.manager.remote_client
+class ScenarioMeta(type):
+    def __new__(mcs, name, bases, attrs):
+        cls = super(ScenarioMeta, mcs).__new__(mcs, name, bases, attrs)
+        test_loader = unittest.TestLoader()
+        if not cls.test_classes:
+            return cls
+        for test_class in cls.test_classes:
+            test_names = test_loader.getTestCaseNames(test_class)
+            for test_name in test_names:
 
-    @property
-    def run_command_verbose(self):
-        return self.manager.remote_client.run_command_verbose
+                def delegator(self, class_name=test_class,
+                              test_name=test_name):
+                    getattr(class_name(self.backend, self.introspection,
+                                       test_name), test_name)()
+
+                if hasattr(cls, test_name):
+                    test_name = 'test_%s_%s' % (test_class.__name__,
+                                                test_name)
+
+                setattr(
+                    cls, test_name, types.FunctionType(
+                        delegator.func_code, delegator.func_globals,
+                        test_name, delegator.func_defaults))
+        return cls
+
+
+@six.add_metaclass(ScenarioMeta)
+class BaseScenario(unittest.TestCase):
+    """Test case which sets up an instance and prepares it using a recipe"""
+
+    backend_type = None
+    introspection_type = None
+    recipe_type = None
+    test_classes = None
+
+    backend = None
+    introspection = None
+    recipe = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls.backend = cls.backend_type()
+        cls.backend.setup_instance()
+
+        cls.recipe = cls.recipe_type()
+        cls.recipe.prepare()
+
+        cls.introspection = cls.introspection_type()
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.backend.cleanup()
