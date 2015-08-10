@@ -16,6 +16,7 @@ function Set-LocalScripts([string]$ProgramFilesDir) {
     $scripts = $home_drive + '\Scripts'
     $value = "`nlocal_scripts_path=$scripts"
     ((Get-Content $path) + $value) | Set-Content $path
+    mkdir $scripts -ErrorAction Ignore
 }
 
 
