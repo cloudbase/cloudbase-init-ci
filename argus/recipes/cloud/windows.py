@@ -264,6 +264,8 @@ class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):
         super(CloudbaseinitScriptRecipe, self).pre_sysprep()
         LOG.info("Doing last step before sysprepping.")
 
+        self._execute("mkdir C:\\Scripts")
+
         cmd = ("powershell Invoke-WebRequest -uri "
                "{}/windows/test_exe.exe -outfile "
                "'C:\\Scripts\\test_exe.exe'".format(CONF.argus.resources))

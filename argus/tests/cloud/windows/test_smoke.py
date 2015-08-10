@@ -127,13 +127,7 @@ class TestScriptsUserdataSmoke(TestSmoke):
         self.assertEqual(5, userdata_executed_plugins)
 
     def test_local_scripts_executed(self):
-        # Verify that the shell script we provided as local script
-        # was executed.
-        self.assertTrue(self.introspection.instance_shell_script_executed())
         self.assertTrue(self.introspection.instance_exe_script_executed())
-        command = 'powershell "Test-Path C:\\Scripts\\powershell.output"'
-        stdout = self.remote_client.run_command_verbose(command)
-        self.assertEqual('True', stdout.strip())
 
 
 class TestEC2Userdata(base.TestBaseArgus):

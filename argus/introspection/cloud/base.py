@@ -68,13 +68,6 @@ class BaseInstanceIntrospection(object):
         """Return the traceback, if any, from the cloudbaseinit's logs."""
 
     @abc.abstractmethod
-    def instance_shell_script_executed(self):
-        """Check if the shell script executed in the instance.
-
-        The script was added when we prepared the instance.
-        """
-
-    @abc.abstractmethod
     def get_group_members(self, group):
         """Get the members of the local group given."""
 

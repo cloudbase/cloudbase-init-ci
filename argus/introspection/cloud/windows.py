@@ -253,9 +253,6 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
             'powershell "Test-Path {}"'.format(filepath))
         return stdout.strip() == 'True'
 
-    def instance_shell_script_executed(self):
-        return self._file_exist("C:\\Scripts\\shell.output")
-
     def instance_exe_script_executed(self):
         return self._file_exist("C:\\Scripts\\exe.output")
 
