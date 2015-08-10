@@ -253,6 +253,14 @@ class TestNoError(base.TestBaseArgus):
         self.assertEqual('', instance_traceback)
 
 
+class TestPowershellMultipartX86TxtExists(base.TestBaseArgus):
+    """Tests that the file powershell_multipart_x86.txt exists on C:"""
+
+    def test_file_exists(self):
+        names = self.introspection.list_location("C:\\")
+        self.assertIn("powershell_multipart_x86.txt", names)
+
+
 # pylint: disable=abstract-method
 class TestsBaseSmoke(TestCreatedUser,
                      TestPasswordPostedSmoke,

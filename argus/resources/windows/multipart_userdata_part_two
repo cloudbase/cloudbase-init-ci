@@ -17,3 +17,13 @@ Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment; filename="cloud-config"
 
 set_timezone: Asia/Tbilisi
+
+
+--===============1598784645116016685==
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment; filename="create_file_x86.ps1"
+
+#ps1_x86
+New-Item $env:SystemDrive\powershell_multipart_x86.txt -type file -ErrorAction Ignore
