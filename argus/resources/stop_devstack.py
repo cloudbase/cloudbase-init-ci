@@ -42,8 +42,8 @@ def _get_process_children(process):
 def _get_devstack_screen():
     """Heuristic for retrieving the devstack screen."""
     for process in psutil.process_iter():
-        if (process.name == 'screen'
-                and _looks_like_devstack_screen(process.cmdline)):
+        if (process.name == 'screen' and
+                _looks_like_devstack_screen(process.cmdline)):
             return process
 
 
