@@ -25,9 +25,8 @@ class TempestBackend(manager.ScenarioTest):
     @classmethod
     def setup_instance(cls):
         """Sets up an Openstack instance"""
-        cls.image = util.get_image_by_name(cls.image_name)
-        cls.server = cls._create_server(
-            image=cls.image.image_ref, flavor=cls.image.flavor_ref)
+        cls.image = None
+        cls.server = cls._create_server()
         cls.fip = cls._create_fip()
         cls.floating_ips_client.associate_floating_ip_to_server(
             cls.fip['ip'], cls.server['id'])
@@ -35,9 +34,7 @@ class TempestBackend(manager.ScenarioTest):
         cls.servers_client.add_security_group(cls.server['id'],
                                               cls.security_group['name'])
         cls.remote_client = cls.get_remote_client()
-        cls.introspection = cls.introspection_class(
-            cls.remote_client, cls.server, cls.image
-        )
+        cls.introspection = cls.introspection_class(cls.remote_client)
         if cls.recipe_class:
             recipe = cls.recipe_class(
                 cls.server['id'], cls.manager, cls.remote_client, cls.image, cls.service_type, None)
