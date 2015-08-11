@@ -334,8 +334,9 @@ def parse_cli():
 @run_once
 def get_config():
     """Get the argus config object."""
-    opts = parse_cli()
-    return config.ConfigurationParser(opts.conf).conf
+    #opts = parse_cli()
+    # TODO (ionuthulub) don't hardcode config file
+    return config.ConfigurationParser('/etc/argus/argus.conf').conf
 
 
 def get_logger(name="argus",
