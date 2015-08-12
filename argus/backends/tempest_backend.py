@@ -25,10 +25,12 @@ from argus.backends import base as base_backend
 
 with util.restore_excepthook():
     from tempest import clients
+    from tempest import config
     from tempest.common import credentials
     from tempest.common import waiters
 
 
+TEMPEST_CONFIG = config.CONF
 CONF = util.get_config()
 LOG = util.get_logger()
 
@@ -96,6 +98,8 @@ class BaseTempestScenario(base_backend.BaseBackend):
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         server = self._servers_client.create_server(
             util.rand_name(self.__class__.__name__) + "-instance",
+            TEMPEST_CONFIG.compute.image_ref,
+            TEMPEST_CONFIG.compute.flavor_ref,
             **kwargs)
         waiters.wait_for_server_status(
             self._servers_client, server['id'], wait_until)
