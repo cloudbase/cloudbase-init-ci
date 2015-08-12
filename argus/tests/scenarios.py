@@ -1,6 +1,6 @@
 import mock
 
-from argus.backends import tempest as tempest_backend
+from argus.backends import tempest_backend as tempest_backend
 from argus.introspection.cloud import windows
 from argus.tests import base
 from argus.tests.tests import mock_tests
@@ -15,7 +15,7 @@ class TestScenario(base.BaseScenario):
 
 
 class TempestScenario(base.BaseScenario):
-    backend_type = tempest_backend.TempestBackend
+    backend_type = tempest_backend.BaseWindowsScenario
     recipe_type = mock.MagicMock()
     introspection_type = windows.InstanceIntrospection
 

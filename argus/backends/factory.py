@@ -1,4 +1,4 @@
-from argus.backends.tempest import TempestBackend
+from argus.backends.tempest_backend import TempestBackend
 
 
 def get_backend(_type):
