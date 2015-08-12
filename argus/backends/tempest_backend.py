@@ -174,7 +174,7 @@ class BaseTempestScenario(base_backend.BaseBackend):
 
     def _setup(self):
         # pylint: disable=attribute-defined-outside-init
-        LOG.info("Creating server for scenario %s...", self.name)
+        LOG.info("Creating server...")
 
         self._configure_networking()
         self._keypair = self._create_keypair()
