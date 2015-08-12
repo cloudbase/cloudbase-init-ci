@@ -96,8 +96,6 @@ class BaseTempestScenario(base_backend.BaseBackend):
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         server = self._servers_client.create_server(
             util.rand_name(self.__class__.__name__) + "-instance",
-            self._image.image_ref,
-            self._image.flavor_ref,
             **kwargs)
         waiters.wait_for_server_status(
             self._servers_client, server['id'], wait_until)
