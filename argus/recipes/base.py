@@ -44,8 +44,8 @@ class BaseRecipe(object):
     some easy steps.
     """
 
-    def __init__(self, remote_client):
-        self._remote_client = remote_client
+    def __init__(self, backend):
+        self._backend = backend
 
     def _execute(self, cmd, count=RETRY_COUNT, delay=RETRY_DELAY):
         """Execute until success and return only the standard output."""
@@ -54,13 +54,13 @@ class BaseRecipe(object):
         # in the underlying methods as an `ArgusError`.
         # Also, if the retrying limit is reached, `ArgusTimeoutError`
         # will be raised.
-        return self._remote_client.run_command_with_retry(
+        return self._backend.remote_client.run_command_with_retry(
             cmd, count=count, delay=delay)[0]
 
     def _execute_until_condition(self, cmd, cond, count=RETRY_COUNT,
                                  delay=RETRY_DELAY):
         """Execute a command until the condition is met without returning."""
-        self._remote_client.run_command_until_condition(
+        self._backend.remote_client.run_command_until_condition(
             cmd, cond, count=count, delay=delay)
 
     @abc.abstractmethod

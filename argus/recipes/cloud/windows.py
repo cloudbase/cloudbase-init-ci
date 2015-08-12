@@ -87,9 +87,10 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                         "the log will not be grabbed.")
             return
 
-        content = self._remote_client.read_file("C:\\installation.log")
+        content = self._backend.remote_client.read_file("C:\\installation.log")
         path = os.path.join(self._output_directory,
-                            "installation-{}.log".format(self._instance_id))
+                            "installation-{}.log".format(
+                                self._backend.instance_server()['id']))
         with open(path, 'w') as stream:
             stream.write(content)
 
@@ -100,6 +101,8 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         will just be added and the other files will be left there.
         So it's more like an update.
         """
+        # TODO (ionuthulub) read patch_install from config file
+        return
         opts = util.parse_cli()
         link = opts.patch_install
         if not link:
