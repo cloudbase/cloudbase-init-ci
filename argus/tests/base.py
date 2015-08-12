@@ -75,7 +75,7 @@ class BaseScenario(unittest.TestCase):
         cls.backend = cls.backend_type()
         cls.backend.setup_instance()
 
-        cls.recipe = cls.recipe_type()
+        cls.recipe = cls.recipe_type(cls.backend.remote_client)
         cls.recipe.prepare()
 
         cls.introspection = cls.introspection_type(cls.backend.remote_client)

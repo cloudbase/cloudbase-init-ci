@@ -15,15 +15,9 @@
 
 """Windows cloudbaseinit recipes."""
 
-import contextlib
 import ntpath
 import os
 
-import bs4
-import six
-from six.moves import urllib  # pylint: disable=import-error
-
-from argus import exceptions
 from argus.introspection.cloud import windows as introspection
 from argus.recipes.cloud import base
 from argus import util
@@ -36,44 +30,19 @@ COUNT = 20
 DELAY = 20
 
 
-def _read_url(url):
-    request = urllib.request.urlopen(url)
-    with contextlib.closing(request) as stream:
-        content = stream.read()
-        if six.PY3:
-            content = content.decode(errors='replace')
-        return content
-
-
-@util.with_retry()
-def _get_git_link():
-    content = _read_url("http://git-scm.com/download/win")
-    soup = bs4.BeautifulSoup(content)
-    download_div = soup.find('div', {'class': 'callout downloading'})
-    if not download_div:
-        raise exceptions.ArgusError(
-            "Could not find callout_downloading div.")
-
-    for a_object in download_div.find_all('a'):
-        href = a_object.get('href', '')
-        if not href.endswith('.exe'):
-            continue
-        return href
-    raise exceptions.ArgusError("Git download link not found.")
-
-
 class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     """Recipe for preparing a Windows instance."""
 
     def wait_for_boot_completion(self):
         LOG.info("Waiting for boot completion...")
 
+        # TODO (ionuthulub) remove hardcoded username
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
                     'where -Property Name -contains {0}).Name"'
-                    .format(self._image.default_ci_username))
+                    .format('CiAdmin'))
         self._execute_until_condition(
             wait_cmd,
-            lambda stdout: stdout.strip() == self._image.default_ci_username,
+            lambda stdout: stdout.strip() == 'CiAdmin',
             count=COUNT, delay=DELAY)
 
     def execution_prologue(self):
@@ -123,21 +92,6 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                             "installation-{}.log".format(self._instance_id))
         with open(path, 'w') as stream:
             stream.write(content)
-
-    def install_git(self):
-        """Install git in the instance."""
-        LOG.info("Installing git...")
-
-        cmd = ("powershell Invoke-webrequest -uri "
-               "{}/windows/install_git.ps1 -outfile C:\\\\install_git.ps1"
-               .format(CONF.argus.resources))
-        self._execute(cmd)
-
-        git_link = _get_git_link()
-        git_base = os.path.basename(git_link)
-        cmd = ('powershell "C:\\install_git.ps1 {} {}"'
-               .format(git_link, git_base))
-        self._execute(cmd)
 
     def replace_install(self):
         """Replace the cb-init installed files with the downloaded ones.
