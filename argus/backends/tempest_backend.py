@@ -359,8 +359,9 @@ class BaseWindowsScenario(BaseTempestScenario):
             template = "{}-{}-{}".format(self.build, self.arch, template)
         return template
 
-    def get_remote_client(self, username=None, password=None,
+    def get_remote_client(self, username='CiAdmin', password='Passw0rd',
                           protocol='http', **kwargs):
+        # TODO (ionuthulub) remove hardcoded user and pass
         if username is None:
             username = self._image.default_ci_username
         if password is None:
