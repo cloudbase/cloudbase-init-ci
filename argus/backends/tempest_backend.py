@@ -24,9 +24,9 @@ from argus import util
 from argus.backends import base as base_backend
 
 with util.restore_excepthook():
-    from tempest_backend import clients
-    from tempest_backend.common import credentials
-    from tempest_backend.common import waiters
+    from tempest import clients
+    from tempest.common import credentials
+    from tempest.common import waiters
 
 
 CONF = util.get_config()
