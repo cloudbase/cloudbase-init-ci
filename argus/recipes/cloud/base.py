@@ -44,6 +44,8 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
 
     def __init__(self, *args, **kwargs):
         super(BaseCloudbaseinitRecipe, self).__init__(*args, **kwargs)
+        # TODO (ionuthulub) _service_type does not belong here
+        self._service_type = 'http'
         self.build = None
         self.arch = None
 
