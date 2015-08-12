@@ -138,7 +138,7 @@ class TestScriptsUserdataSmoke(TestSmoke):
 
 """
 class TestEC2Userdata(base.TestBaseArgus):
-    """Test the EC2 config userdata."""
+    "Test the EC2 config userdata."
 
     def test_ec2_script(self):
         file_name = "ec2file.txt"
@@ -149,7 +149,7 @@ class TestEC2Userdata(base.TestBaseArgus):
 
 
 class TestCertificateWinRM(base.TestBaseArgus):
-    """Test that WinRM certificate authentication works as expected."""
+    "Test that WinRM certificate authentication works as expected."
 
     def test_winrm_certificate_auth(self):
         cert_pem = pkg_resources.resource_filename(
