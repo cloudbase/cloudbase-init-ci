@@ -64,8 +64,9 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
     def install_cbinit(self):
         """Run the installation script for CloudbaseInit."""
-        opts = util.parse_cli()
-        installer = opts.installer_template.format(
+        #opts = util.parse_cli()
+        # TODO (ionuthulub) read installer template from config
+        installer = "CloudbaseInitSetup_{build}_{arch}.msi".format(
             build=self.build,
             arch=self.arch
         )
@@ -81,6 +82,8 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
     def _grab_cbinit_installation_log(self):
         """Obtain the installation logs."""
+        # TODO (ionuthulub) read output directory from config file
+        return
         LOG.info("Obtaining the installation logs.")
         if not self._output_directory:
             LOG.warning("The output directory wasn't given, "
@@ -133,6 +136,8 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
     def replace_code(self):
         """Replace the code of cloudbaseinit."""
+        # TODO (ionuthulub) read git_command from config file
+        return
         opts = util.parse_cli()
         if not opts.git_command:
             # Nothing to replace.
