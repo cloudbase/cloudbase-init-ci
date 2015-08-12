@@ -44,14 +44,8 @@ class BaseRecipe(object):
     some easy steps.
     """
 
-    def __init__(self, instance_id, api_manager, remote_client, image,
-                 service_type, output_directory=None):
-        self._api_manager = api_manager
-        self._instance_id = instance_id
+    def __init__(self, remote_client):
         self._remote_client = remote_client
-        self._image = image
-        self._service_type = service_type
-        self._output_directory = output_directory
 
     def _execute(self, cmd, count=RETRY_COUNT, delay=RETRY_DELAY):
         """Execute until success and return only the standard output."""

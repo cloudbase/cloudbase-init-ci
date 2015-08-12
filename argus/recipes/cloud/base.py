@@ -99,20 +99,14 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         * install CloudbaseInit by running the previously downloaded file.
         * wait until the instance is up and running.
         """
-        LOG.info("Preparing instance %s...", self._instance_id)
+        LOG.info("Preparing instance...")
         self.wait_for_boot_completion()
         self.execution_prologue()
         self.get_installation_script()
         self.install_cbinit()
         self.replace_install()
         self.replace_code()
-        # pause the process until user is satisfied with his changes
-        opts = util.parse_cli()
-
         self.pre_sysprep()
-        if opts.pause:
-            six.moves.input("Press Enter to continue...")
-
         self.sysprep()
         self.wait_cbinit_finalization()
-        LOG.info("Finished preparing instance %s.", self._instance_id)
+        LOG.info("Finished preparing instance")

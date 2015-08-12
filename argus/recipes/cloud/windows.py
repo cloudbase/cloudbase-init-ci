@@ -15,12 +15,8 @@
 
 """Windows cloudbaseinit recipes."""
 
-import contextlib
 import ntpath
 import os
-
-import six
-from six.moves import urllib  # pylint: disable=import-error
 
 from argus import exceptions
 from argus.introspection.cloud import windows as introspection
@@ -35,27 +31,19 @@ COUNT = 20
 DELAY = 20
 
 
-def _read_url(url):
-    request = urllib.request.urlopen(url)
-    with contextlib.closing(request) as stream:
-        content = stream.read()
-        if six.PY3:
-            content = content.decode(errors='replace')
-        return content
-
-
 class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     """Recipe for preparing a Windows instance."""
 
     def wait_for_boot_completion(self):
         LOG.info("Waiting for boot completion...")
 
+        # TODO (ionuthulub) remove hardcoded username
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
                     'where -Property Name -contains {0}).Name"'
-                    .format(self._image.default_ci_username))
+                    .format('CiAdmin'))
         self._execute_until_condition(
             wait_cmd,
-            lambda stdout: stdout.strip() == self._image.default_ci_username,
+            lambda stdout: stdout.strip() == 'CiAdmin',
             count=COUNT, delay=DELAY)
 
     def execution_prologue(self):
