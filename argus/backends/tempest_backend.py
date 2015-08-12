@@ -261,7 +261,7 @@ class BaseTempestScenario(base_backend.BaseBackend):
             self._prepare_run()
             self._setup()
             self.save_instance_output()
-        finally:
+        except:
             self.cleanup()
 
     def reboot_instance(self):
