@@ -44,6 +44,7 @@ class BaseTempestScenario(base_backend.BaseBackend):
 
     def __init__(self):
         self._userdata = None
+        self._metadata = None
         self._server = None
         self._keypair = None
         self._security_group = None
