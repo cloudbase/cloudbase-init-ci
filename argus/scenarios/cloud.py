@@ -22,8 +22,8 @@ from argus.scenarios import service_mock
 from argus import util
 
 with util.restore_excepthook():
-    from tempest.common import isolated_creds
-    from tempest.common import waiters
+    from tempest_backend.common import isolated_creds
+    from tempest_backend.common import waiters
 
 
 CONF = util.get_config()
@@ -299,7 +299,7 @@ class MaasWindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
               port=2002),
     ]
 
-
+f
 class HTTPKeysWindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
 
     """Scenario for testing custom OpenStack http metadata service."""
