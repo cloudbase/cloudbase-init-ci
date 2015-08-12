@@ -43,6 +43,7 @@ class BaseTempestScenario(base_backend.BaseBackend):
     """Base class for scenarios that use the tempest backend"""
 
     def __init__(self):
+        self._userdata = None
         self._server = None
         self._keypair = None
         self._security_group = None
