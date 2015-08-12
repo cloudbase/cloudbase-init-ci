@@ -261,8 +261,9 @@ class BaseTempestScenario(base_backend.BaseBackend):
             self._prepare_run()
             self._setup()
             self.save_instance_output()
-        except:
+        except Exception, err:
             self.cleanup()
+            raise err
 
     def reboot_instance(self):
         self._servers_client.reboot(server_id=self._server['id'],
