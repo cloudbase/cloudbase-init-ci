@@ -136,6 +136,7 @@ class TestScriptsUserdataSmoke(TestSmoke):
         self.assertEqual('True', stdout.strip())
 
 
+"""
 class TestEC2Userdata(base.TestBaseArgus):
     """Test the EC2 config userdata."""
 
@@ -194,7 +195,8 @@ class TestNextLogonPassword(base.TestBaseArgus):
 class TestLocalScripts(base.TestBaseArgus):
 
     def test_local_scripts(self):
-        """Check if the script(s) executed entirely."""
+        "Check if the script(s) executed entirely."
         names = self.introspection.list_location("C:\\")
         self.assertIn("reboot", names)
         self.assertIn("reboot2", names)
+"""
