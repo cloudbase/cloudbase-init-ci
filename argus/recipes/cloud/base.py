@@ -70,10 +70,6 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     def wait_cbinit_finalization(self):
         """Wait for the finalization of cloudbaseinit."""
 
-    @abc.abstractmethod
-    def install_git(self):
-        """Install git in the instance."""
-
     def pre_sysprep(self):
         """Run finalization code before sysprepping."""
 
