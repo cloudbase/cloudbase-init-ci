@@ -51,7 +51,7 @@ class TestSmoke(smoke.TestsBaseSmoke):
         cmd = ('powershell (Get-Service "| where -Property Name '
                '-match cloudbase-init").DisplayName')
 
-        stdout = self.run_command_verbose(cmd)
+        stdout = self.backend.remote_client.run_command_verbose(cmd)
         self.assertEqual("Cloud Initialization Service\r\n", str(stdout))
 
     @test_util.skip_unless_dnsmasq_configured
@@ -59,7 +59,7 @@ class TestSmoke(smoke.TestsBaseSmoke):
         # Test that the NTP service is started.
         cmd = ('powershell (Get-Service "| where -Property Name '
                '-match W32Time").Status')
-        stdout = self.run_command_verbose(cmd)
+        stdout = self.backend.remote_client.run_command_verbose(cmd)
 
         self.assertEqual("Running\r\n", str(stdout))
 
@@ -67,7 +67,7 @@ class TestSmoke(smoke.TestsBaseSmoke):
         # Check that the instance OS was licensed properly.
         command = ('powershell "Get-WmiObject SoftwareLicensingProduct | '
                    'where PartialProductKey | Select Name, LicenseStatus"')
-        stdout = self.remote_client.run_command_verbose(command)
+        stdout = self.backend.remote_client.run_command_verbose(command)
         licenses = _parse_licenses(stdout)
         if len(licenses) > 1:
             self.fail("Too many expected products in licensing output.")
