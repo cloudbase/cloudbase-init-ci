@@ -16,17 +16,16 @@
 import collections
 import contextlib
 
+from argus.backends.tempest import service_mock
+from argus.backends.tempest import tempest_backend
 from argus import exceptions
-from argus.scenarios import base
-from argus.scenarios import service_mock
 from argus import util
 
 with util.restore_excepthook():
-    from tempest_backend.common import isolated_creds
-    from tempest_backend.common import waiters
+    from tempest.common import isolated_creds
+    from tempest.common import waiters
 
 
-CONF = util.get_config()
 SUBNET6_CIDR = "::ffff:a00:0/120"
 DNSES6 = ["::ffff:808:808", "::ffff:808:404"]
 
@@ -42,44 +41,8 @@ class named(collections.namedtuple("service", "application script_name "
                            script_name=self.script_name)
 
 
-class BaseWindowsScenario(base.BaseArgusScenario):
-    """Base class for Windows-based scenarios."""
-
-    def __init__(self, *args, **kwargs):
-        super(BaseWindowsScenario, self).__init__(*args, **kwargs)
-        # Installer details.
-        self.build = None
-        self.arch = None
-
-    def _get_log_template(self, suffix):
-        template = super(BaseWindowsScenario, self)._get_log_template(suffix)
-        if self.build and self.arch:
-            # Prepend the log with the installer information (cloud).
-            template = "{}-{}-{}".format(self.build, self.arch, template)
-        return template
-
-    def _prepare_instance(self):
-        recipe = super(BaseWindowsScenario, self)._prepare_instance()
-        recipe.build = self.build
-        recipe.arch = self.arch
-        return recipe
-
-    def get_remote_client(self, username=None, password=None,
-                          protocol='http', **kwargs):
-        if username is None:
-            username = self._image.default_ci_username
-        if password is None:
-            password = self._image.default_ci_password
-        return util.WinRemoteClient(self._floating_ip['ip'],
-                                    username,
-                                    password,
-                                    transport_protocol=protocol)
-
-    remote_client = util.cached_property(get_remote_client, 'remote_client')
-
-
-class NetworkWindowsScenario(BaseWindowsScenario):
-    """Scenario for testing static network configuration.
+class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
+    """Backend for providing static network configuration.
 
     Creates an additional internal network which will be
     bound explicitly with the new created instance.
@@ -136,7 +99,7 @@ class NetworkWindowsScenario(BaseWindowsScenario):
         subnet_id = fake_net_creds.subnet["id"]
         net_client = self._network_client
         net_client.update_subnet(subnet_id, enable_dhcp=False,
-                                 dns_nameservers=CONF.argus.dns_nameservers)
+                                 dns_nameservers=self._conf.dns_nameservers)
 
         # Change the allocation pool to configure any IP,
         # other the one used already with dynamic settings.
@@ -162,7 +125,7 @@ class NetworkWindowsScenario(BaseWindowsScenario):
     def _prepare_run(self):
         # Just like a normal preparer, but this time
         # with explicitly specified attached networks.
-        super(NetworkWindowsScenario, self)._prepare_run()
+        super(NetworkWindowsBackend, self)._prepare_run()
 
         if not isinstance(self._isolated_creds,
                           isolated_creds.IsolatedCreds):
@@ -221,11 +184,11 @@ class NetworkWindowsScenario(BaseWindowsScenario):
         return guest_nics
 
 
-class RescueWindowsScenario(BaseWindowsScenario):
-    """Instance rescue Windows-based scenario."""
+class RescueWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
+    """Instance rescue Windows-based backend."""
 
     def rescue_server(self):
-        admin_pass = self._image.default_ci_password
+        admin_pass = self._conf.default_ci_password
         self._servers_client.rescue_server(self._server['id'],
                                            adminPass=admin_pass)
         waiters.wait_for_server_status(
@@ -243,7 +206,7 @@ class BaseServiceMockMixin(object):
     In order to have support for mocked metadata services, set a list
     of :meth:`named` entries in the class, as such::
 
-        class Test(BaseServiceMockMixin, BaseArgusScenario):
+        class Test(BaseServiceMockMixin, BaseWindowsTempestBackend):
             services = [
                  named(application, script_name, host, port)
             ]
@@ -299,7 +262,7 @@ class MaasWindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
               port=2002),
     ]
 
-f
+
 class HTTPKeysWindowsScenario(BaseServiceMockMixin, BaseWindowsScenario):
 
     """Scenario for testing custom OpenStack http metadata service."""
