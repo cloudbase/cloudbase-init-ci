@@ -67,6 +67,8 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             build=self._conf.build,
             arch=self._conf.arch
         )
+        # TODO(cpopa): the service type is specific to each scenario,
+        # find a way to pass it
         LOG.info("Run the downloaded installation script "
                  "using the installer %r with service %r.",
                  installer, self._conf.service_type)
