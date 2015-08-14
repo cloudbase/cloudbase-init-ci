@@ -25,10 +25,11 @@ class BaseTestCase(unittest.TestCase):
     backend and introspection.
     """
 
-    def __init__(self, backend, introspection, *args, **kwargs):
+    def __init__(self, backend, introspection, conf, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
-        self.backend = backend
-        self.introspection = introspection
+        self._backend = backend
+        self._introspection = introspection
+        self._conf = conf
 
 
 class ScenarioMeta(type):
