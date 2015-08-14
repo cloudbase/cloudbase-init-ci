@@ -27,6 +27,7 @@ from argus import util
 
 DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
 
+CONF = util.get_config()
 LOG = util.get_logger()
 
 
@@ -51,7 +52,7 @@ class BaseTestPassword(base.BaseTestCase):
     def _run_remote_command(self, cmd, password):
         # Test that the proper password was set.
         remote_client = self._backend.get_remote_client(
-            self._conf.created_user, password)
+            CONF.cloudbaseinit.created_user, password)
 
         stdout = remote_client.run_command_verbose(cmd)
         return stdout
@@ -168,7 +169,7 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
         wait_cmd = ('powershell (Get-Service "| where -Property Name '
                     '-match cloudbase-init").Status')
         remote_client = self._backend.get_remote_client(
-            self._conf.created_user, password)
+            CONF.cloudbaseinit.created_user, password)
         remote_client.run_command_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'Stopped',
@@ -218,7 +219,7 @@ class TestCreatedUser(base.BaseTestCase):
     def test_username_created(self):
         # Verify that the expected created user exists.
         exists = self._introspection.username_exists(
-            self._conf.created_user)
+            CONF.cloudbaseinit.created_user)
         self.assertTrue(exists)
 
 
@@ -264,7 +265,7 @@ class TestsBaseSmoke(TestCreatedUser,
     def test_plugins_count(self):
         # Test that we have the expected numbers of plugins.
         plugins_count = self._introspection.get_plugins_count()
-        self.assertEqual(self._conf.expected_plugins_count,
+        self.assertEqual(CONF.cloudbaseinit.expected_plugins_count,
                          plugins_count)
 
     def test_disk_expanded(self):
@@ -310,8 +311,8 @@ class TestsBaseSmoke(TestCreatedUser,
     def test_user_belongs_to_group(self):
         # Check that the created user belongs to the specified local groups
         members = self._introspection.get_group_members(
-            self._conf.group)
-        self.assertIn(self._conf.created_user, members)
+            CONF.cloudbaseinit.group)
+        self.assertIn(CONF.cloudbaseinit.created_user, members)
 
     def test_get_console_output(self):
         # Verify that the product emits messages to the console output.

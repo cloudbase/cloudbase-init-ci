@@ -19,8 +19,7 @@ import unittest
 class BaseTestCase(unittest.TestCase):
     """Test case parametrized with a backend and an introspection object."""
 
-    def __init__(self, backend, introspection, conf, *args, **kwargs):
+    def __init__(self, backend, introspection, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)
         self._backend = backend
         self._introspection = introspection
-        self._conf = conf
