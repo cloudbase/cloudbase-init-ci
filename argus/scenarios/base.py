@@ -71,10 +71,14 @@ class BaseScenario(unittest.TestCase):
         cls.backend = cls.backend_type()
         cls.backend.setup_instance()
 
-        cls.recipe = cls.recipe_type(cls.backend)
-        cls.recipe.prepare()
+        cls.prepare_instance()
 
         cls.introspection = cls.introspection_type(cls.backend.remote_client)
+
+    @classmethod
+    def prepare_instance(cls):
+        cls.recipe = cls.recipe_type(cls.backend)
+        cls.recipe.prepare()
 
     @classmethod
     def tearDownClass(cls):
