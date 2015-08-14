@@ -42,13 +42,6 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     * waits for the finalization of the installation.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(BaseCloudbaseinitRecipe, self).__init__(*args, **kwargs)
-        # TODO (ionuthulub) _service_type does not belong here, neither build and arch
-        self._service_type = 'http'
-        self.build = 'Beta'
-        self.arch = 'x64'
-
     @abc.abstractmethod
     def wait_for_boot_completion(self):
         """Wait for the instance to finish up booting."""
