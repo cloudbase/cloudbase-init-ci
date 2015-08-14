@@ -22,6 +22,8 @@ from argus.tests.cloud import smoke
 from argus.tests.cloud import util as test_util
 from argus import util
 
+CONF = util.get_config()
+
 
 def _parse_licenses(output):
     """Parse the licenses information.
@@ -76,8 +78,8 @@ class TestSmoke(smoke.TestsBaseSmoke):
         # Test that HTTPS transport protocol for WinRM is configured.
         # By default, the test images are built only for HTTP.
         remote_client = self._backend.get_remote_client(
-            self._conf.default_ci_username,
-            self._conf.default_ci_password,
+            self._backend.image_username,
+            self._backend.image_password,
             protocol='https')
         stdout = remote_client.run_command_verbose('echo 1')
         self.assertEqual('1', stdout.strip())
@@ -161,8 +163,8 @@ class TestNextLogonPassword(base.BaseTestCase):
         wait_cmd = ('powershell (Get-Service "| where -Property Name '
                     '-match cloudbase-init").Status')
         remote_client = self._backend.get_remote_client(
-            self._conf.default_ci_username,
-            self._conf.default_ci_password)
+            self._backend.image_username,
+            self._backend.image_password)
         remote_client.run_command_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'Stopped',
@@ -172,7 +174,7 @@ class TestNextLogonPassword(base.BaseTestCase):
         self._wait_for_completion()
 
         output = self._introspection.get_user_flags(
-            self._conf.created_user)
+            CONF.cloudbaseinit.created_user)
         flags, password_expired = output.splitlines()
         flags = int(flags)
         password_expired = int(password_expired)
