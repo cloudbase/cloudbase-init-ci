@@ -44,8 +44,9 @@ class BaseRecipe(object):
     some easy steps.
     """
 
-    def __init__(self, backend):
+    def __init__(self, backend, conf):
         self._backend = backend
+        self._conf = conf
 
     def _execute(self, cmd, count=RETRY_COUNT, delay=RETRY_DELAY):
         """Execute until success and return only the standard output."""
