@@ -13,6 +13,21 @@ debug = False
 dns_nameservers = 8.8.8.8
 
 
+[openstack]
+# The id of the image that is to be used for tests.
+image_ref = <none>
+
+# The id of the flavor that is to be used.
+flavor_ref = 3
+
+# The default username which can connect to the instance.
+# It should be created when the image is created.
+image_username = CiAdmin
+
+# The password for the default username.
+image_password = Passw0rd
+
+
 [cloudbaseinit]
 
 # The number of plugins of cloudbaseinit which are expected to run

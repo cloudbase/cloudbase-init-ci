@@ -13,10 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import collections
-import contextlib
-
-from argus.backends.tempest import service_mock
 from argus.backends.tempest import tempest_backend
 from argus import exceptions
 from argus import util
@@ -26,6 +22,7 @@ with util.restore_excepthook():
     from tempest.common import waiters
 
 
+CONF = util.get_config()
 SUBNET6_CIDR = "::ffff:a00:0/120"
 DNSES6 = ["::ffff:808:808", "::ffff:808:404"]
 
@@ -88,7 +85,7 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
         subnet_id = fake_net_creds.subnet["id"]
         net_client = self._network_client
         net_client.update_subnet(subnet_id, enable_dhcp=False,
-                                 dns_nameservers=self._conf.dns_nameservers)
+                                 dns_nameservers=CONF.argus.dns_nameservers)
 
         # Change the allocation pool to configure any IP,
         # other the one used already with dynamic settings.
@@ -177,7 +174,7 @@ class RescueWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
     """Instance rescue Windows-based backend."""
 
     def rescue_server(self):
-        admin_pass = self._conf.default_ci_password
+        admin_pass = CONF.argus.default_ci_password
         self._servers_client.rescue_server(self._server['id'],
                                            adminPass=admin_pass)
         waiters.wait_for_server_status(

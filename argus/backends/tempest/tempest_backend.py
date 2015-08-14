@@ -28,6 +28,7 @@ with util.restore_excepthook():
     from tempest.common import waiters
 
 
+CONF = util.get_config()
 LOG = util.get_logger()
 
 # Starting size as number of lines and tolerance.
@@ -40,8 +41,7 @@ OUTPUT_STATUS_OK = [200]
 class BaseTempestBackend(base_backend.BaseBackend):
     """Base class for backends built on top of Tempest."""
 
-    def __init__(self, conf):
-        self._conf = conf
+    def __init__(self):
         # TODO(cpopa): userdata and metadata?
         self._userdata = None
         self._metadata = None
@@ -91,14 +91,14 @@ class BaseTempestBackend(base_backend.BaseBackend):
         subnet_id = self._credentials().subnet["id"]
         self._network_client.update_subnet(
             subnet_id,
-            dns_nameservers=self._conf.dns_nameservers)
+            dns_nameservers=CONF.argus.dns_nameservers)
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         server = self._servers_client.create_server(
             util.rand_name(self.__class__.__name__) + "-instance",
             # TODO: take them from the conf
-            TEMPEST_CONFIG.compute.image_ref,
-            TEMPEST_CONFIG.compute.flavor_ref,
+            CONF.openstack.image_ref,
+            CONF.openstack.flavor_ref,
             **kwargs)
         waiters.wait_for_server_status(
             self._servers_client, server['id'], wait_until)
@@ -107,7 +107,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
     def _create_keypair(self):
         keypair = self._keypairs_client.create_keypair(
             self.__class__.__name__ + "-key")
-        with open(self._conf.path_to_private_key, 'w') as stream:
+        with open(CONF.argus.path_to_private_key, 'w') as stream:
             stream.write(keypair['private_key'])
         return keypair
 
@@ -201,7 +201,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
 
         If a `suffix` is provided, then the log name is preceded by it.
         """
-        if not self._conf.output_directory:
+        if not CONF.argus.output_directory:
             return
 
         template = self._get_log_template(suffix)
@@ -269,7 +269,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
         encoded_password = self._servers_client.get_password(
             self._server['id'])
         return util.decrypt_password(
-            private_key=self._conf.path_to_private_key,
+            private_key=CONF.argus.path_to_private_key,
             password=encoded_password['password'])
 
     def _instance_output(self, limit):
@@ -279,6 +279,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
 
     def instance_output(self, limit=OUTPUT_SIZE):
         """Get the console output, sent from the instance."""
+        content = None
         while True:
             resp, content = self._instance_output(limit)
             if resp.status not in OUTPUT_STATUS_OK:
@@ -331,19 +332,19 @@ class BaseWindowsTempestBackend(BaseTempestBackend):
 
     def _get_log_template(self, suffix):
         template = super(BaseWindowsTempestBackend, self)._get_log_template(suffix)
-        if self.build and self.arch:
+        if CONF.argus.build and CONF.argus.arch:
             # Prepend the log with the installer information (cloud).
-            template = "{}-{}-{}".format(self._conf.build,
-                                         self._conf.arch,
+            template = "{}-{}-{}".format(CONF.argus.build,
+                                         CONF.argus.arch,
                                          template)
         return template
 
     def get_remote_client(self, username=None, password=None,
                           protocol='http', **kwargs):
         if username is None:
-            username = self._conf.default_ci_username
+            username = CONF.openstack.image_username
         if password is None:
-            password = self._conf.default_ci_password
+            password = CONF.openstack.image_password
         return util.WinRemoteClient(self._floating_ip['ip'],
                                     username, password,
                                     transport_protocol=protocol)
