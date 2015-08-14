@@ -16,22 +16,18 @@
 
 import abc
 import os
-import unittest
 
 import six
 
-from argus import util
 from argus.backends import base as base_backend
+from argus import util
 
 with util.restore_excepthook():
     from tempest import clients
-    from tempest import config
     from tempest.common import credentials
     from tempest.common import waiters
 
 
-TEMPEST_CONFIG = config.CONF
-CONF = util.get_config()
 LOG = util.get_logger()
 
 # Starting size as number of lines and tolerance.
@@ -41,11 +37,12 @@ OUTPUT_STATUS_OK = [200]
 
 
 @six.add_metaclass(abc.ABCMeta)
-class BaseTempestScenario(base_backend.BaseBackend):
-    """Base class for scenarios that use the tempest backend"""
+class BaseTempestBackend(base_backend.BaseBackend):
+    """Base class for backends built on top of Tempest."""
 
-    def __init__(self):
-        self._output_directory = None
+    def __init__(self, conf):
+        self._conf = conf
+        # TODO(cpopa): userdata and metadata?
         self._userdata = None
         self._metadata = None
         self._server = None
@@ -94,11 +91,12 @@ class BaseTempestScenario(base_backend.BaseBackend):
         subnet_id = self._credentials().subnet["id"]
         self._network_client.update_subnet(
             subnet_id,
-            dns_nameservers=CONF.argus.dns_nameservers)
+            dns_nameservers=self._conf.dns_nameservers)
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         server = self._servers_client.create_server(
             util.rand_name(self.__class__.__name__) + "-instance",
+            # TODO: take them from the conf
             TEMPEST_CONFIG.compute.image_ref,
             TEMPEST_CONFIG.compute.flavor_ref,
             **kwargs)
@@ -109,7 +107,7 @@ class BaseTempestScenario(base_backend.BaseBackend):
     def _create_keypair(self):
         keypair = self._keypairs_client.create_keypair(
             self.__class__.__name__ + "-key")
-        with open(CONF.argus.path_to_private_key, 'w') as stream:
+        with open(self._conf.path_to_private_key, 'w') as stream:
             stream.write(keypair['private_key'])
         return keypair
 
@@ -198,24 +196,12 @@ class BaseTempestScenario(base_backend.BaseBackend):
         template = "{}{}.log".format("{}", "-" + suffix if suffix else "")
         return template
 
-    def test_names(self):
-        """Return an iterator of pairs between test classes and test names
-
-        This should return all the test names from the underlying
-        test classes, preceded by the test class they belong to.
-        """
-        testloader = unittest.TestLoader()
-        for test_class in self._test_classes:
-            testnames = testloader.getTestCaseNames(test_class)
-            for name in testnames:
-                yield test_class, name
-
     def save_instance_output(self, suffix=None):
         """Retrieve and save all data written through the COM port.
 
         If a `suffix` is provided, then the log name is preceded by it.
         """
-        if not self._output_directory:
+        if not self._conf.output_directory:
             return
 
         template = self._get_log_template(suffix)
@@ -252,18 +238,14 @@ class BaseTempestScenario(base_backend.BaseBackend):
 
         if self._keypair:
             self._keypairs_client.delete_keypair(self._keypair['name'])
-            os.remove(CONF.argus.path_to_private_key)
+            os.remove(self._path_to_private_key)
 
         self._isolated_creds.clear_isolated_creds()
 
     def setup_instance(self):
-        try:
-            self._prepare_run()
-            self._setup()
-            self.save_instance_output()
-        except Exception, err:
-            self.cleanup()
-            raise err
+        self._prepare_run()
+        self._setup()
+        self.save_instance_output()
 
     def reboot_instance(self):
         self._servers_client.reboot(server_id=self._server['id'],
@@ -287,7 +269,7 @@ class BaseTempestScenario(base_backend.BaseBackend):
         encoded_password = self._servers_client.get_password(
             self._server['id'])
         return util.decrypt_password(
-            private_key=CONF.argus.path_to_private_key,
+            private_key=self._conf.path_to_private_key,
             password=encoded_password['password'])
 
     def _instance_output(self, limit):
@@ -344,32 +326,31 @@ class BaseTempestScenario(base_backend.BaseBackend):
         """An astract property which should return the default client."""
 
 
-class BaseWindowsScenario(BaseTempestScenario):
-    """Base class for Windows-based scenarios."""
+class BaseWindowsTempestBackend(BaseTempestBackend):
+    """Base Tempest backend for testing Windows."""
 
     def __init__(self, *args, **kwargs):
-        super(BaseWindowsScenario, self).__init__(*args, **kwargs)
+        super(BaseWindowsTempestBackend, self).__init__(*args, **kwargs)
         # Installer details.
+        # TODO(cpopa): pass this from the conf
         self.build = None
         self.arch = None
 
     def _get_log_template(self, suffix):
-        template = super(BaseWindowsScenario, self)._get_log_template(suffix)
+        template = super(BaseWindowsTempestBackend, self)._get_log_template(suffix)
         if self.build and self.arch:
             # Prepend the log with the installer information (cloud).
             template = "{}-{}-{}".format(self.build, self.arch, template)
         return template
 
-    def get_remote_client(self, username='CiAdmin', password='Passw0rd',
+    def get_remote_client(self, username=None, password=None,
                           protocol='http', **kwargs):
-        # TODO (ionuthulub) remove hardcoded user and pass
         if username is None:
-            username = self._image.default_ci_username
+            username = self._conf.default_ci_username
         if password is None:
-            password = self._image.default_ci_password
+            password = self._conf.default_ci_password
         return util.WinRemoteClient(self._floating_ip['ip'],
-                                    username,
-                                    password,
+                                    username, password,
                                     transport_protocol=protocol)
 
     remote_client = util.cached_property(get_remote_client, 'remote_client')
