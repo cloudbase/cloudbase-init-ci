@@ -50,10 +50,16 @@ class ScenarioMeta(type):
                     test_name = 'test_%s_%s' % (test_class.__name__,
                                                 test_name)
 
-                setattr(
-                    cls, test_name, types.FunctionType(
-                        delegator.func_code, delegator.func_globals,
-                        test_name, delegator.func_defaults))
+                # Create a new function from the delegator with the
+                # correct name, since tools such as nose test runner,
+                # will use func.func_name, which will be delegator otherwise.
+                code = six.get_function_code(delegator)
+                func_globals = six.get_function_globals(delegator)
+                func_defaults = six.get_function_defaults(delegator)
+                new_func = types.FunctionType(code, func_globals,
+                                              test_name, func_defaults)
+                setattr(cls, test_name, new_func)
+
         return cls
 
 
