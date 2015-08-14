@@ -32,6 +32,8 @@ class BaseTestCase(unittest.TestCase):
 
 
 class ScenarioMeta(type):
+    """Metaclass for merging test methods from a given list of test cases."""
+
     def __new__(mcs, name, bases, attrs):
         cls = super(ScenarioMeta, mcs).__new__(mcs, name, bases, attrs)
         test_loader = unittest.TestLoader()
@@ -65,7 +67,7 @@ class ScenarioMeta(type):
 
 @six.add_metaclass(ScenarioMeta)
 class BaseScenario(unittest.TestCase):
-    """Test case which sets up an instance and prepares it using a recipe"""
+    """Scenario which sets up an instance and prepares it using a recipe"""
 
     backend_type = None
     introspection_type = None
