@@ -25,7 +25,6 @@ from argus.tests import base
 from argus.tests.cloud import util as test_util
 from argus import util
 
-CONF = util.get_config()
 DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
 
 LOG = util.get_logger()
@@ -51,8 +50,8 @@ class BaseTestPassword(base.BaseTestCase):
 
     def _run_remote_command(self, cmd, password):
         # Test that the proper password was set.
-        remote_client = self.backend.get_remote_client(
-            CONF.cloudbaseinit.created_user, password)
+        remote_client = self._backend.get_remote_client(
+            self._conf.created_user, password)
 
         stdout = remote_client.run_command_verbose(cmd)
         return stdout
@@ -70,7 +69,7 @@ class TestPasswordMetadataSmoke(BaseTestPassword):
     """
 
     def test_password_set_from_metadata(self):
-        metadata = self.backend.get_metadata()
+        metadata = self._backend.get_metadata()
         if metadata and metadata.get('admin_pass'):
             password = metadata['admin_pass']
             self.is_password_set(password)
@@ -88,7 +87,7 @@ class TestPasswordPostedSmoke(BaseTestPassword):
 
     @property
     def password(self):
-        return self.backend.instance_password()
+        return self._backend.instance_password()
 
     @test_util.requires_service('http')
     def test_password_set_posted(self):
@@ -98,6 +97,7 @@ class TestPasswordPostedSmoke(BaseTestPassword):
 class TestPasswordPostedRescueSmoke(TestPasswordPostedSmoke):
     """Test that the password can be used in case of rescued instances."""
 
+    # TODO(cpopa): check this
     @test_util.requires_service('http')
     def test_password_set_on_rescue(self):
         password = self.password
@@ -105,12 +105,12 @@ class TestPasswordPostedRescueSmoke(TestPasswordPostedSmoke):
         stdout = self._run_remote_command("echo 1", password=password)
         self.assertEqual('1', stdout.strip())
 
-        self.backend.rescue_server()
-        self.backend.prepare_instance()
+        self._backend.rescue_server()
+        self._backend.prepare_instance()
         stdout = self._run_remote_command("echo 2", password=password)
         self.assertEqual('2', stdout.strip())
 
-        self.backend.unrescue_server()
+        self._backend.unrescue_server()
         stdout = self._run_remote_command("echo 3", password=password)
         self.assertEqual('3', stdout.strip())
 
@@ -167,8 +167,8 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
     def _wait_for_completion(self, password):
         wait_cmd = ('powershell (Get-Service "| where -Property Name '
                     '-match cloudbase-init").Status')
-        remote_client = self.backend.get_remote_client(
-            CONF.cloudbaseinit.created_user, password)
+        remote_client = self._backend.get_remote_client(
+            self._conf.created_user, password)
         remote_client.run_command_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'Stopped',
@@ -180,16 +180,16 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
         self.assertEqual(200, response)
 
         # Reboot the instance.
-        self.backend.reboot_instance()
+        self._backend.reboot_instance()
 
         # Check if the password was set properly.
         self._wait_for_completion(expected)
 
     def test_update_password(self):
         # Get the password from the metadata.
-        password = self.backend.get_metadata()['admin_pass']
+        password = self._backend.get_metadata()['admin_pass']
 
-        with self.backend.instantiate_mock_services():
+        with self._backend.instantiate_mock_services():
             # Wait until the web service starts serving requests.
             self.assertTrue(self._wait_for_service_status(status=400))
 
@@ -197,16 +197,16 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
             # plugin updates the password.
             new_password = self.password
             self._test_password(password=new_password, expected=new_password)
-            self.backend.save_instance_output(suffix="password-1")
+            self._backend.save_instance_output(suffix="password-1")
 
             # Remove the password from Password Server in order to check
             # if the plugin keeps the last password.
             self._test_password(password=None, expected=new_password)
-            self.backend.save_instance_output(suffix="password-2")
+            self._backend.save_instance_output(suffix="password-2")
 
             # Change the password again and check if the plugin updates it.
             self._test_password(password=password, expected=password)
-            self.backend.save_instance_output(suffix="password-3")
+            self._backend.save_instance_output(suffix="password-3")
 
 
 class TestCreatedUser(base.BaseTestCase):
@@ -217,8 +217,8 @@ class TestCreatedUser(base.BaseTestCase):
 
     def test_username_created(self):
         # Verify that the expected created user exists.
-        exists = self.introspection.username_exists(
-            CONF.cloudbaseinit.created_user)
+        exists = self._introspection.username_exists(
+            self._conf.created_user)
         self.assertTrue(exists)
 
 
@@ -228,7 +228,7 @@ class TestSetTimezone(base.BaseTestCase):
     def test_set_timezone(self):
         # Verify that the instance timezone matches what we are
         # expecting from it.
-        timezone = self.introspection.get_timezone()
+        timezone = self._introspection.get_timezone()
         self.assertEqual("Georgian Standard Time", timezone.strip())
 
 
@@ -239,7 +239,7 @@ class TestSetHostname(base.BaseTestCase):
         # Verify that the instance hostname matches what we are
         # expecting from it.
 
-        hostname = self.introspection.get_instance_hostname()
+        hostname = self._introspection.get_instance_hostname()
         self.assertEqual("newhostname", hostname.strip())
 
 
@@ -249,7 +249,7 @@ class TestNoError(base.BaseTestCase):
     def test_any_exception_occurred(self):
         # Verify that any exception occurred in the instance
         # for cloudbaseinit.
-        instance_traceback = self.introspection.get_cloudbaseinit_traceback()
+        instance_traceback = self._introspection.get_cloudbaseinit_traceback()
         self.assertEqual('', instance_traceback)
 
 
@@ -261,27 +261,23 @@ class TestsBaseSmoke(TestCreatedUser,
                      base.BaseTestCase):
     """Various smoke tests for testing cloudbaseinit."""
 
-    backend_type = 'tempest'
-    introspection_type = 'windows'
-    recipe_type = 'windows'
-
     def test_plugins_count(self):
         # Test that we have the expected numbers of plugins.
-        plugins_count = self.introspection.get_plugins_count()
-        self.assertEqual(CONF.cloudbaseinit.expected_plugins_count,
+        plugins_count = self._introspection.get_plugins_count()
+        self.assertEqual(self._conf.expected_plugins_count,
                          plugins_count)
 
     def test_disk_expanded(self):
         # Test the disk expanded properly.
-        image = self.backend.get_image_by_ref()
+        image = self._backend.get_image_by_ref()
         datastore_size = image['OS-EXT-IMG-SIZE:size']
-        disk_size = self.introspection.get_disk_size()
+        disk_size = self._introspection.get_disk_size()
         self.assertGreater(disk_size, datastore_size)
 
     def test_hostname_set(self):
         # Test that the hostname was properly set.
-        instance_hostname = self.introspection.get_instance_hostname()
-        server = self.backend.instance_server()
+        instance_hostname = self._introspection.get_instance_hostname()
+        server = self._backend.instance_server()
 
         self.assertEqual(instance_hostname,
                          str(server['name'][:15]).lower())
@@ -289,7 +285,7 @@ class TestsBaseSmoke(TestCreatedUser,
     @test_util.skip_unless_dnsmasq_configured
     def test_ntp_properly_configured(self):
         # Verify that the expected NTP peers are active.
-        peers = self.introspection.get_instance_ntp_peers()
+        peers = self._introspection.get_instance_ntp_peers()
         expected_peers = _get_dhcp_value('42').split(",")
         if expected_peers is None:
             self.fail('DHCP NTP option was not configured.')
@@ -298,28 +294,28 @@ class TestsBaseSmoke(TestCreatedUser,
 
     def test_sshpublickeys_set(self):
         # Verify that we set the expected ssh keys.
-        authorized_keys = self.introspection.get_instance_keys_path()
-        public_keys = self.introspection.get_instance_file_content(
+        authorized_keys = self._introspection.get_instance_keys_path()
+        public_keys = self._introspection.get_instance_file_content(
             authorized_keys).splitlines()
-        self.assertEqual(set(self.backend.public_key().splitlines()),
+        self.assertEqual(set(self._backend.public_key().splitlines()),
                          set(public_keys))
 
     @test_util.skip_unless_dnsmasq_configured
     def test_mtu(self):
         # Verify that we have the expected MTU in the instance.
-        mtu = self.introspection.get_instance_mtu()
+        mtu = self._introspection.get_instance_mtu()
         expected_mtu = _get_dhcp_value('26')
         self.assertEqual(expected_mtu, mtu)
 
     def test_user_belongs_to_group(self):
         # Check that the created user belongs to the specified local groups
-        members = self.introspection.get_group_members(
-            CONF.cloudbaseinit.group)
-        self.assertIn(CONF.cloudbaseinit.created_user, members)
+        members = self._introspection.get_group_members(
+            self._conf.group)
+        self.assertIn(self._conf.created_user, members)
 
     def test_get_console_output(self):
         # Verify that the product emits messages to the console output.
-        output = self.backend.instance_output()
+        output = self._backend.instance_output()
         self.assertTrue(output, "Console output was empty.")
 
 
@@ -329,10 +325,10 @@ class TestStaticNetwork(base.BaseTestCase):
     def test_static_network(self):
         """Check if the attached NICs were properly configured."""
         # Get network adapter details within the guest compute node.
-        guest_nics = self.backend.get_network_interfaces()
+        guest_nics = self._backend.get_network_interfaces()
 
         # Get network adapter details within the instance.
-        instance_nics = self.introspection.get_network_interfaces()
+        instance_nics = self._introspection.get_network_interfaces()
 
         # Filter them by DHCP disabled status for static checks.
         filter_nics = lambda nics: [nic for nic in nics if not nic["dhcp"]]
@@ -355,8 +351,8 @@ class TestPublicKeys(base.BaseTestCase):
 
     def test_public_keys(self):
         # Check multiple ssh keys case.
-        authorized_keys = self.introspection.get_instance_keys_path()
-        public_keys = self.introspection.get_instance_file_content(
+        authorized_keys = self._introspection.get_instance_keys_path()
+        public_keys = self._introspection.get_instance_file_content(
             authorized_keys).splitlines()
         self.assertEqual(set(util.get_public_keys()),
                          set(public_keys))

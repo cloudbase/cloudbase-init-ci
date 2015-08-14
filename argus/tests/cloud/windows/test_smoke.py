@@ -23,9 +23,6 @@ from argus.tests.cloud import util as test_util
 from argus import util
 
 
-CONF = util.get_config()
-
-
 def _parse_licenses(output):
     """Parse the licenses information.
 
@@ -51,7 +48,7 @@ class TestSmoke(smoke.TestsBaseSmoke):
         cmd = ('powershell (Get-Service "| where -Property Name '
                '-match cloudbase-init").DisplayName')
 
-        stdout = self.backend.remote_client.run_command_verbose(cmd)
+        stdout = self._backend.remote_client.run_command_verbose(cmd)
         self.assertEqual("Cloud Initialization Service\r\n", str(stdout))
 
     @test_util.skip_unless_dnsmasq_configured
@@ -59,7 +56,7 @@ class TestSmoke(smoke.TestsBaseSmoke):
         # Test that the NTP service is started.
         cmd = ('powershell (Get-Service "| where -Property Name '
                '-match W32Time").Status')
-        stdout = self.backend.remote_client.run_command_verbose(cmd)
+        stdout = self._backend.remote_client.run_command_verbose(cmd)
 
         self.assertEqual("Running\r\n", str(stdout))
 
@@ -67,7 +64,7 @@ class TestSmoke(smoke.TestsBaseSmoke):
         # Check that the instance OS was licensed properly.
         command = ('powershell "Get-WmiObject SoftwareLicensingProduct | '
                    'where PartialProductKey | Select Name, LicenseStatus"')
-        stdout = self.backend.remote_client.run_command_verbose(command)
+        stdout = self._backend.remote_client.run_command_verbose(command)
         licenses = _parse_licenses(stdout)
         if len(licenses) > 1:
             self.fail("Too many expected products in licensing output.")
@@ -78,9 +75,9 @@ class TestSmoke(smoke.TestsBaseSmoke):
     def test_https_winrm_configured(self):
         # Test that HTTPS transport protocol for WinRM is configured.
         # By default, the test images are built only for HTTP.
-        remote_client = self.manager.get_remote_client(
-            self.image.default_ci_username,
-            self.image.default_ci_password,
+        remote_client = self._backend.get_remote_client(
+            self._conf.default_ci_username,
+            self._conf.default_ci_password,
             protocol='https')
         stdout = remote_client.run_command_verbose('echo 1')
         self.assertEqual('1', stdout.strip())
@@ -89,7 +86,7 @@ class TestSmoke(smoke.TestsBaseSmoke):
     def test_w32time_triggers(self):
         # Test that w32time has network availability triggers, not
         # domain joined triggers
-        start_trigger, _ = self.introspection.get_service_triggers('w32time')
+        start_trigger, _ = self._introspection.get_service_triggers('w32time')
         self.assertEqual('IP ADDRESS AVAILABILITY', start_trigger)
 
 
@@ -104,7 +101,7 @@ class TestScriptsUserdataSmoke(TestSmoke):
 
     def test_cloudconfig_userdata(self):
         # Verify that the cloudconfig part handler plugin executed correctly.
-        files = self.introspection.get_cloudconfig_executed_plugins()
+        files = self._introspection.get_cloudconfig_executed_plugins()
         expected = {
             'b64', 'b64_1',
             'gzip', 'gzip_1',
@@ -123,32 +120,31 @@ class TestScriptsUserdataSmoke(TestSmoke):
         # Verify that we executed the expected number of
         # user data plugins.
         userdata_executed_plugins = (
-            self.introspection.get_userdata_executed_plugins())
+            self._introspection.get_userdata_executed_plugins())
         self.assertEqual(5, userdata_executed_plugins)
 
     def test_local_scripts_executed(self):
         # Verify that the shell script we provided as local script
         # was executed.
-        self.assertTrue(self.introspection.instance_shell_script_executed())
-        self.assertTrue(self.introspection.instance_exe_script_executed())
+        self.assertTrue(self._introspection.instance_shell_script_executed())
+        self.assertTrue(self._introspection.instance_exe_script_executed())
         command = 'powershell "Test-Path C:\\Scripts\\powershell.output"'
-        stdout = self.remote_client.run_command_verbose(command)
+        stdout = self._backend.remote_client.run_command_verbose(command)
         self.assertEqual('True', stdout.strip())
 
 
-"""
-class TestEC2Userdata(base.TestBaseArgus):
+class TestEC2Userdata(base.BaseTestCase):
     "Test the EC2 config userdata."
 
     def test_ec2_script(self):
         file_name = "ec2file.txt"
         directory_name = "ec2dir"
-        names = self.introspection.list_location("C:\\")
+        names = self._introspection.list_location("C:\\")
         self.assertIn(file_name, names)
         self.assertIn(directory_name, names)
 
 
-class TestCertificateWinRM(base.TestBaseArgus):
+class TestCertificateWinRM(base.BaseTestCase):
     "Test that WinRM certificate authentication works as expected."
 
     def test_winrm_certificate_auth(self):
@@ -156,22 +152,22 @@ class TestCertificateWinRM(base.TestBaseArgus):
             "argus.resources", "cert.pem")
         cert_key = pkg_resources.resource_filename(
             "argus.resources", "key.pem")
-        client = self.manager.get_remote_client(cert_pem=cert_pem,
-                                                cert_key=cert_key)
+        client = self._backend.get_remote_client(cert_pem=cert_pem,
+                                                 cert_key=cert_key)
         stdout = client.run_command_verbose("echo 1")
         self.assertEqual(stdout.strip(), "1")
 
 
-class TestNextLogonPassword(base.TestBaseArgus):
+class TestNextLogonPassword(base.BaseTestCase):
     ads_uf_password_expired = 0x800000
     password_expired_flag = 1
 
     def _wait_for_completion(self):
         wait_cmd = ('powershell (Get-Service "| where -Property Name '
                     '-match cloudbase-init").Status')
-        remote_client = self.manager.get_remote_client(
-            self.image.default_ci_username,
-            self.image.default_ci_password)
+        remote_client = self._backend.get_remote_client(
+            self._conf.default_ci_username,
+            self._conf.default_ci_password)
         remote_client.run_command_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'Stopped',
@@ -180,8 +176,8 @@ class TestNextLogonPassword(base.TestBaseArgus):
     def test_next_logon_password_not_changed(self):
         self._wait_for_completion()
 
-        output = self.introspection.get_user_flags(
-            CONF.cloudbaseinit.created_user)
+        output = self._introspection.get_user_flags(
+            self._conf.created_user)
         flags, password_expired = output.splitlines()
         flags = int(flags)
         password_expired = int(password_expired)
@@ -192,11 +188,10 @@ class TestNextLogonPassword(base.TestBaseArgus):
                          "The user have different flags than expected.")
 
 
-class TestLocalScripts(base.TestBaseArgus):
+class TestLocalScripts(base.BaseTestCase):
 
     def test_local_scripts(self):
         "Check if the script(s) executed entirely."
-        names = self.introspection.list_location("C:\\")
+        names = self._introspection.list_location("C:\\")
         self.assertIn("reboot", names)
         self.assertIn("reboot2", names)
-"""
