@@ -329,18 +329,13 @@ class BaseTempestBackend(base_backend.BaseBackend):
 class BaseWindowsTempestBackend(BaseTempestBackend):
     """Base Tempest backend for testing Windows."""
 
-    def __init__(self, *args, **kwargs):
-        super(BaseWindowsTempestBackend, self).__init__(*args, **kwargs)
-        # Installer details.
-        # TODO(cpopa): pass this from the conf
-        self.build = None
-        self.arch = None
-
     def _get_log_template(self, suffix):
         template = super(BaseWindowsTempestBackend, self)._get_log_template(suffix)
         if self.build and self.arch:
             # Prepend the log with the installer information (cloud).
-            template = "{}-{}-{}".format(self.build, self.arch, template)
+            template = "{}-{}-{}".format(self._conf.build,
+                                         self._conf.arch,
+                                         template)
         return template
 
     def get_remote_client(self, username=None, password=None,
