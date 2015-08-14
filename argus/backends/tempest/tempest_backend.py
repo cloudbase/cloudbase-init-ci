@@ -54,6 +54,13 @@ class BaseTempestBackend(base_backend.BaseBackend):
         self._floating_ip = None
         self._networks = None    # list with UUIDs for future attached NICs
 
+        # set some members from the configuration file needed by recipes
+        self.image_ref = CONF.openstack.image_ref
+        self.flavor_ref = CONF.openstack.flavor_ref
+        self.image_username = CONF.openstack.image_username
+        self.image_password = CONF.openstack.image_password
+        self.image_os_type = CONF.openstack.image_os_type
+
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
         self._isolated_creds = credentials.get_isolated_credentials(
@@ -96,9 +103,8 @@ class BaseTempestBackend(base_backend.BaseBackend):
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         server = self._servers_client.create_server(
             util.rand_name(self.__class__.__name__) + "-instance",
-            # TODO: take them from the conf
-            CONF.openstack.image_ref,
-            CONF.openstack.flavor_ref,
+            self.image_ref,
+            self.flavor_ref,
             **kwargs)
         waiters.wait_for_server_status(
             self._servers_client, server['id'], wait_until)
@@ -342,9 +348,9 @@ class BaseWindowsTempestBackend(BaseTempestBackend):
     def get_remote_client(self, username=None, password=None,
                           protocol='http', **kwargs):
         if username is None:
-            username = CONF.openstack.image_username
+            username = self.image_username
         if password is None:
-            password = CONF.openstack.image_password
+            password = self.image_password
         return util.WinRemoteClient(self._floating_ip['ip'],
                                     username, password,
                                     transport_protocol=protocol)
