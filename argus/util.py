@@ -13,13 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import argparse
 import base64
 import collections
 import contextlib
 import importlib
 import itertools
 import logging
+import os
 import pkgutil
 import random
 import socket
@@ -272,9 +272,16 @@ class cached_property(object):  # pylint: disable=invalid-name
 
 @run_once
 def get_config():
-    """Get the argus config object."""
-    # TODO (ionuthulub) don't hardcode config file
-    return config.ConfigurationParser('/etc/argus/argus.conf').conf
+    """Get the argus config object.
+
+    Looks for a file called argus.conf in the working directory.
+    If the file is not found it looks for it in /etc/argus/
+    """
+    if os.path.isfile('argus.conf'):
+        config_file = 'argus.conf'
+    else:
+        config_file = '/etc/argus/argus.conf'
+    return config.ConfigurationParser(config_file).conf
 
 
 def get_logger(name="argus",

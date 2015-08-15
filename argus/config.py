@@ -15,7 +15,6 @@
 
 import collections
 import itertools
-import operator
 
 import six
 
