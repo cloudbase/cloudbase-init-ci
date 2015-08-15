@@ -78,7 +78,7 @@ class BaseScenario(unittest.TestCase):
 
     @classmethod
     def prepare_instance(cls):
-        cls.recipe = cls.recipe_type(cls.backend)
+        cls.recipe = cls.recipe_type(cls.backend, cls.service_type)
         cls.recipe.prepare()
 
     @classmethod
