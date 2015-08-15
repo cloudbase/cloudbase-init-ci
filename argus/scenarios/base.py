@@ -60,6 +60,7 @@ class BaseScenario(unittest.TestCase):
     backend_type = None
     introspection_type = None
     recipe_type = None
+    service_type = 'http'
     test_classes = None
 
     backend = None
