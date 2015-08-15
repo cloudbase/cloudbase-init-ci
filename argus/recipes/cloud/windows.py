@@ -115,6 +115,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         log_template = "installation-{}.log".format(
             self._backend.instance_server()['id'])
         path = os.path.join(CONF.argus.output_directory, log_template)
+        # TODO (ionuthulub) create output_directory if it doesn't exist?
         with open(path, 'w') as stream:
             stream.write(content)
 
