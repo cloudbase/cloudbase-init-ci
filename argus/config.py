@@ -121,7 +121,7 @@ class ConfigurationParser(object):
             'image_os_type')
         image_ref = self._parser.get('openstack', 'image_ref')
         flavor_ref = self._parser.get('openstack', 'flavor_ref')
-        image_username = self._parser.get('openstack', 'image-username')
+        image_username = self._parser.get('openstack', 'image_username')
         image_password = self._parser.get('openstack', 'image_password')
         image_os_type = self._parser.get('openstack', 'image_os_type')
 
