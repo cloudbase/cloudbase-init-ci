@@ -106,6 +106,8 @@ class BaseArgusScenario(object):
 
         # Nova security groups client
         self._security_groups_client = self._manager.security_groups_client
+        self._security_group_rules_client = \
+            self._manager.security_group_rules_client
         self._servers_client = self._manager.servers_client
         self._volumes_client = self._manager.volumes_client
         self._snapshots_client = self._manager.snapshots_client
@@ -138,7 +140,7 @@ class BaseArgusScenario(object):
 
     def _create_keypair(self):
         keypair = self._keypairs_client.create_keypair(
-            self.__class__.__name__ + "-key")
+            name=self.__class__.__name__ + "-key")
         with open(CONF.argus.path_to_private_key, 'w') as stream:
             stream.write(keypair['private_key'])
         return keypair
@@ -151,54 +153,54 @@ class BaseArgusScenario(object):
         return floating_ip
 
     def _add_security_group_exceptions(self, secgroup_id):
-        _client = self._security_groups_client
+        _client = self._security_group_rules_client
         rulesets = [
             {
                 # http RDP
-                'ip_proto': 'tcp',
+                'ip_protocol': 'tcp',
                 'from_port': 3389,
                 'to_port': 3389,
                 'cidr': '0.0.0.0/0',
             },
             {
                 # http winrm
-                'ip_proto': 'tcp',
+                'ip_protocol': 'tcp',
                 'from_port': 5985,
                 'to_port': 5985,
                 'cidr': '0.0.0.0/0',
             },
             {
                 # https winrm
-                'ip_proto': 'tcp',
+                'ip_protocol': 'tcp',
                 'from_port': 5986,
                 'to_port': 5986,
                 'cidr': '0.0.0.0/0',
             },
             {
                 # ssh
-                'ip_proto': 'tcp',
+                'ip_protocol': 'tcp',
                 'from_port': 22,
                 'to_port': 22,
                 'cidr': '0.0.0.0/0',
             },
             {
                 # ping
-                'ip_proto': 'icmp',
+                'ip_protocol': 'icmp',
                 'from_port': -1,
                 'to_port': -1,
                 'cidr': '0.0.0.0/0',
             },
         ]
         for ruleset in rulesets:
-            sg_rule = _client.create_security_group_rule(secgroup_id,
-                                                         **ruleset)
+            sg_rule = _client.create_security_group_rule(
+                parent_group_id=secgroup_id, **ruleset)
             yield sg_rule
 
     def _create_security_groups(self):
         sg_name = util.rand_name(self.__class__.__name__)
         sg_desc = sg_name + " description"
         secgroup = self._security_groups_client.create_security_group(
-            sg_name, sg_desc)
+            name=sg_name, description=sg_desc)
 
         # Add rules to the security group.
         for rule in self._add_security_group_exceptions(secgroup['id']):
@@ -266,7 +268,7 @@ class BaseArgusScenario(object):
 
         if self._security_groups_rules:
             for rule in self._security_groups_rules:
-                self._security_groups_client.delete_security_group_rule(rule)
+                self._security_group_rules_client.delete_security_group_rule(rule)
 
         if self._security_group:
             self._servers_client.remove_security_group(
