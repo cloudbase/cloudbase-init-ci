@@ -71,10 +71,10 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         # find a way to pass it
         LOG.info("Run the downloaded installation script "
                  "using the installer %r with service %r.",
-                 installer, self._conf.service_type)
+                 installer, self._service_type)
 
         cmd = ('powershell "C:\\\\installcbinit.ps1 -serviceType {} '
-               '-installer {}"'.format(self._conf.service_type, installer))
+               '-installer {}"'.format(self._service_type, installer))
         self._execute(cmd)
 
         self._grab_cbinit_installation_log()
