@@ -244,7 +244,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
 
         if self._keypair:
             self._keypairs_client.delete_keypair(self._keypair['name'])
-            os.remove(self._path_to_private_key)
+            os.remove(CONF.argus.path_to_private_key)
 
         self._isolated_creds.clear_isolated_creds()
 
@@ -309,7 +309,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
         return self._keypair['private_key']
 
     def get_image_by_ref(self):
-        return self._images_client.show_image(self._image.image_ref)
+        return self._images_client.show_image(CONF.openstack.image_ref)
 
     def get_metadata(self):
         return self._metadata

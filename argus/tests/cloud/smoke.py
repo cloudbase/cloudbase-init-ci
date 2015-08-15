@@ -264,7 +264,8 @@ class TestsBaseSmoke(TestCreatedUser,
 
     def test_plugins_count(self):
         # Test that we have the expected numbers of plugins.
-        plugins_count = self._introspection.get_plugins_count()
+        plugins_count = self._introspection.get_plugins_count(
+            self._backend.instance_server()['id'])
         self.assertEqual(CONF.cloudbaseinit.expected_plugins_count,
                          plugins_count)
 
