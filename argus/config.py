@@ -117,7 +117,7 @@ class ConfigurationParser(object):
     def openstack(self):
         openstack = collections.namedtuple(
             'openstack',
-            'image_ref flavor_ref image_username image_password'
+            'image_ref flavor_ref image_username image_password '
             'image_os_type')
         image_ref = self._parser.get('openstack', 'image_ref')
         flavor_ref = self._parser.get('openstack', 'flavor_ref')
