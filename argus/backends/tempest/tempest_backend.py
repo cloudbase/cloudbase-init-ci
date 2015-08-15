@@ -211,7 +211,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
             return
 
         template = self._get_log_template(suffix)
-        path = os.path.join(self._output_directory,
+        path = os.path.join(CONF.argus.output_directory,
                             template.format(self._server["id"]))
         content = self.instance_output()
         if not content.strip():
