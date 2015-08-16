@@ -31,6 +31,12 @@ class ScenarioMeta(type):
             test_names = test_loader.getTestCaseNames(test_class)
             for test_name in test_names:
 
+                # skip tests that have required_service_type != cls.service_type
+                test_obj = getattr(test_class, test_name)
+                if hasattr(test_obj, 'required_service_type'):
+                    if test_obj.required_service_type != cls.service_type:
+                        continue
+
                 def delegator(self, class_name=test_class,
                               test_name=test_name):
                     getattr(class_name(self.backend, self.introspection,
