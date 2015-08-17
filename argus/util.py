@@ -16,8 +16,6 @@
 import base64
 import collections
 import contextlib
-import importlib
-import itertools
 import logging
 import os
 import pkgutil
@@ -39,17 +37,14 @@ RETRY_COUNT = 15
 RETRY_DELAY = 10
 
 __all__ = (
-    'ConfigurationPatcher',
     'WinRemoteClient',
     'decrypt_password',
     'get_config',
     'get_logger',
     'get_resource',
     'cached_property',
-    'load_qualified_object',
     'run_once',
     'rand_name',
-    'with_retry',
     'get_public_keys',
     'get_certificate',
 )
@@ -231,28 +226,6 @@ def run_once(func, state={}, errors={}):
     return wrapper
 
 
-class with_retry(object):  # pylint: disable=invalid-name
-    """A decorator that will retry function calls until success."""
-
-    def __init__(self, tries=5, delay=1):
-        self.tries = tries
-        self.delay = delay
-
-    def __call__(self, func):
-        @six.wraps(func)
-        def wrapper(*args, **kwargs):
-            while True:
-                try:
-                    return func(*args, **kwargs)
-                except Exception as exc:
-                    self.tries -= 1
-                    if self.tries <= 0:
-                        raise
-                    LOG.error("%s while calling %s", exc, func)
-                    time.sleep(self.delay)
-        return wrapper
-
-
 def get_resource(resource):
     """Get the given resource from the list of known resources."""
     return pkgutil.get_data('argus.resources', resource)
@@ -313,22 +286,6 @@ def get_logger(name="argus",
     return logger
 
 
-def load_qualified_object(obj):
-    """Load a qualified object name.
-
-    The name must be in the format module:qualname syntax.
-    """
-    mod_name, has_attrs, attrs = obj.partition(":")
-    obj = module = importlib.import_module(mod_name)
-
-    if has_attrs:
-        parts = attrs.split(".")
-        obj = module
-        for part in parts:
-            obj = getattr(obj, part)
-    return obj
-
-
 def rand_name(name=''):
     randbits = str(random.randint(1, 0x7fffffff))
     if name:
@@ -366,61 +323,6 @@ def get_public_keys():
 
 def get_certificate():
     return get_resource("certificate")
-
-
-class ConfigurationPatcher(object):
-    """Simple configuration patcher for .ini style configs.
-
-    This class can be used to modify values of a configuration
-    file with other predefined options. It also has support
-    for reverting the changes.
-
-    >>> patcher = ConfigurationPatcher('a.ini', DEFAULT={'a': '1'})
-    >>> patcher.patch() # the file was modified
-    >>> patcher.unpatch() # the file is as the original
-
-    It also supports context management protocol:
-
-    >>> with patcher: # the file is modified
-        ...
-    # the file was unpatched
-    >>>
-    """
-
-    def __init__(self, config_file, **opts):
-        self._config_file = config_file
-        self._opts = opts
-        self._original_content = None
-
-    def patch(self):
-        with open(self._config_file) as stream:
-            self._original_content = stream.read()
-
-        parser = six.moves.configparser.ConfigParser()
-        parser.read(self._config_file)
-        for section in itertools.chain(parser.sections(), ['DEFAULT']):
-            if section in self._opts:
-                # Needs to be patched
-                opts = self._opts[section]
-                for opt, value in opts.items():
-                    LOG.info("Patching file %s on section %r, with "
-                             "entry %s=%s",
-                             self._config_file, section, opt, value)
-
-                    parser.set(section, opt, str(value))
-        with open(self._config_file, 'w') as stream:
-            parser.write(stream)
-
-    def unpatch(self):
-        with open(self._config_file, 'w') as stream:
-            stream.write(self._original_content)
-
-    def __enter__(self):
-        self.patch()
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self.unpatch()
 
 
 LOG = get_logger()
