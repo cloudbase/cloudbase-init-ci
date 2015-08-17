@@ -41,19 +41,6 @@ def _get_default(parser, section, option, default=None):
         return default
 
 
-class _Option(object):
-    def __init__(self, option, method='get', default=_SENTINEL):
-        self._option = option
-        self._method = method
-        self._default = default
-
-    def __get__(self, instance, owner=None):
-        # pylint: disable=protected-access
-        return instance._get_option(self._option,
-                                    self._method,
-                                    self._default)
-
-
 class ConfigurationParser(object):
     """A parser class which knows how to parse argus configurations."""
 
