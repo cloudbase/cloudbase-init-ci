@@ -21,9 +21,10 @@ import six
 @six.add_metaclass(abc.ABCMeta)
 class BaseBackend(object):
 
-    def __init__(self, userdata, metadata):
+    def __init__(self, conf, userdata, metadata):
         self._userdata = userdata
         self._metadata = metadata
+        self._conf = conf
 
     @abc.abstractmethod
     def setup_instance(self):

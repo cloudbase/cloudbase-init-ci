@@ -41,8 +41,8 @@ OUTPUT_STATUS_OK = [200]
 class BaseTempestBackend(base_backend.BaseBackend):
     """Base class for backends built on top of Tempest."""
 
-    def __init__(self, userdata, metadata):
-        super(BaseTempestBackend, self).__init__(userdata, metadata)
+    def __init__(self, conf, userdata, metadata):
+        super(BaseTempestBackend, self).__init__(conf, userdata, metadata)
         self._server = None
         self._keypair = None
         self._security_group = None
@@ -53,11 +53,11 @@ class BaseTempestBackend(base_backend.BaseBackend):
         self._networks = None    # list with UUIDs for future attached NICs
 
         # set some members from the configuration file needed by recipes
-        self.image_ref = CONF.openstack.image_ref
-        self.flavor_ref = CONF.openstack.flavor_ref
-        self.image_username = CONF.openstack.image_username
-        self.image_password = CONF.openstack.image_password
-        self.image_os_type = CONF.openstack.image_os_type
+        self.image_ref = self._conf.openstack.image_ref
+        self.flavor_ref = self._conf.openstack.flavor_ref
+        self.image_username = self._conf.openstack.image_username
+        self.image_password = self._conf.openstack.image_password
+        self.image_os_type = self._conf.openstack.image_os_type
 
     def _prepare_run(self):
         # pylint: disable=attribute-defined-outside-init
@@ -96,7 +96,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
         subnet_id = self._credentials().subnet["id"]
         self._network_client.update_subnet(
             subnet_id,
-            dns_nameservers=CONF.argus.dns_nameservers)
+            dns_nameservers=self._conf.argus.dns_nameservers)
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         server = self._servers_client.create_server(
@@ -111,7 +111,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
     def _create_keypair(self):
         keypair = self._keypairs_client.create_keypair(
             self.__class__.__name__ + "-key")
-        with open(CONF.argus.path_to_private_key, 'w') as stream:
+        with open(self._conf.argus.path_to_private_key, 'w') as stream:
             stream.write(keypair['private_key'])
         return keypair
 
@@ -205,11 +205,11 @@ class BaseTempestBackend(base_backend.BaseBackend):
 
         If a `suffix` is provided, then the log name is preceded by it.
         """
-        if not CONF.argus.output_directory:
+        if not self._conf.argus.output_directory:
             return
 
         template = self._get_log_template(suffix)
-        path = os.path.join(CONF.argus.output_directory,
+        path = os.path.join(self._conf.argus.output_directory,
                             template.format(self._server["id"]))
         content = self.instance_output()
         if not content.strip():
@@ -242,7 +242,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
 
         if self._keypair:
             self._keypairs_client.delete_keypair(self._keypair['name'])
-            os.remove(CONF.argus.path_to_private_key)
+            os.remove(self._conf.argus.path_to_private_key)
 
         self._isolated_creds.clear_isolated_creds()
 
@@ -273,7 +273,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
         encoded_password = self._servers_client.get_password(
             self._server['id'])
         return util.decrypt_password(
-            private_key=CONF.argus.path_to_private_key,
+            private_key=self._conf.argus.path_to_private_key,
             password=encoded_password['password'])
 
     def _instance_output(self, limit):
@@ -307,7 +307,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
         return self._keypair['private_key']
 
     def get_image_by_ref(self):
-        return self._images_client.show_image(CONF.openstack.image_ref)
+        return self._images_client.show_image(self._conf.openstack.image_ref)
 
     def get_metadata(self):
         return self._metadata
@@ -336,10 +336,10 @@ class BaseWindowsTempestBackend(BaseTempestBackend):
 
     def _get_log_template(self, suffix):
         template = super(BaseWindowsTempestBackend, self)._get_log_template(suffix)
-        if CONF.argus.build and CONF.argus.arch:
+        if self._conf.argus.build and self._conf.argus.arch:
             # Prepend the log with the installer information (cloud).
-            template = "{}-{}-{}".format(CONF.argus.build,
-                                         CONF.argus.arch,
+            template = "{}-{}-{}".format(self._conf.argus.build,
+                                         self._conf.argus.arch,
                                          template)
         return template
 

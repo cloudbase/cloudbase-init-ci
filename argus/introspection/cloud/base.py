@@ -22,8 +22,9 @@ import six
 class BaseInstanceIntrospection(object):
     """Generic utility class for introspecting an instance."""
 
-    def __init__(self, remote_client):
+    def __init__(self, conf, remote_client):
         self.remote_client = remote_client
+        self._conf = conf
 
     @abc.abstractmethod
     def get_plugins_count(self, instance_id):

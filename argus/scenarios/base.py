@@ -18,6 +18,8 @@ import unittest
 
 import six
 
+from argus import util
+
 
 class ScenarioMeta(type):
     """Metaclass for merging test methods from a given list of test cases."""
@@ -27,6 +29,8 @@ class ScenarioMeta(type):
         test_loader = unittest.TestLoader()
         if not cls.test_classes:
             return cls
+
+        cls.conf = util.get_config()
         for test_class in cls.test_classes:
             test_names = test_loader.getTestCaseNames(test_class)
             for test_name in test_names:
@@ -74,19 +78,21 @@ class BaseScenario(unittest.TestCase):
     backend = None
     introspection = None
     recipe = None
+    conf = None
 
     @classmethod
     def setUpClass(cls):
-        cls.backend = cls.backend_type(cls.userdata, cls.metadata)
+        cls.backend = cls.backend_type(cls.conf, cls.userdata, cls.metadata)
         cls.backend.setup_instance()
 
         cls.prepare_instance()
 
-        cls.introspection = cls.introspection_type(cls.backend.remote_client)
+        cls.introspection = cls.introspection_type(
+            cls.conf, cls.backend.remote_client)
 
     @classmethod
     def prepare_instance(cls):
-        cls.recipe = cls.recipe_type(cls.backend, cls.service_type)
+        cls.recipe = cls.recipe_type(cls.conf, cls.backend, cls.service_type)
         cls.recipe.prepare()
 
     @classmethod
