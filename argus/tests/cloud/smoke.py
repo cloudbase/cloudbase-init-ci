@@ -98,7 +98,6 @@ class TestPasswordPostedSmoke(BaseTestPassword):
 class TestPasswordPostedRescueSmoke(TestPasswordPostedSmoke):
     """Test that the password can be used in case of rescued instances."""
 
-    # TODO(cpopa): check this
     @test_util.requires_service('http')
     def test_password_set_on_rescue(self):
         password = self.password
