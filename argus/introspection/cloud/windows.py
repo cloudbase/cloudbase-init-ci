@@ -221,7 +221,7 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         stdout = self.remote_client.run_command_verbose(cmd)
         homedir, _, _ = stdout.rpartition(ntpath.sep)
         return ntpath.join(
-            homedir, CONF.cloudbaseinit.created_user,
+            homedir, self._conf.cloudbaseinit.created_user,
             ".ssh", "authorized_keys")
 
     def get_instance_file_content(self, filepath):
@@ -321,7 +321,7 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         """
         cmd = ("powershell Invoke-WebRequest -uri "
                "{}/windows/network_details.ps1 -outfile "
-               "C:\\network_details.ps1".format(CONF.argus.resources))
+               "C:\\network_details.ps1".format(self._conf.argus.resources))
         self.remote_client.run_command_with_retry(cmd)
 
         # Run and parse the output, where each adapter details

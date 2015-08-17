@@ -15,7 +15,6 @@
 
 """Various utilities for the cloud base types of tests."""
 
-import functools
 import os
 import unittest
 

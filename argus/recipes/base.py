@@ -44,7 +44,8 @@ class BaseRecipe(object):
     some easy steps.
     """
 
-    def __init__(self, backend, service_type):
+    def __init__(self, conf, backend, service_type):
+        self._conf = conf
         self._backend = backend
         self._service_type = service_type
 
