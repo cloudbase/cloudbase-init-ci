@@ -358,20 +358,6 @@ class CloudbaseinitWinrmRecipe(CloudbaseinitCreateUserRecipe):
             execute_function=self._execute)
 
 
-class CloudbaseinitMissingPlugin(CloudbaseinitRecipe):
-    """
-    A recipe which modifies the list of plugins, by adding
-    a plugin which doesn't exist.
-    """
-
-    def pre_sysprep(self):
-        super(CloudbaseinitMissingPlugin, self).pre_sysprep()
-        introspection.set_config_option(
-            option="plugins",
-            value="nanana.batman",
-            execute_function=self._execute)
-
-
 class CloudbaseinitHTTPRecipe(CloudbaseinitMockServiceRecipe):
     """Recipe for http metadata service mocking."""
 
