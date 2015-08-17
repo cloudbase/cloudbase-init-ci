@@ -49,7 +49,7 @@ class BaseServiceMockMixin(object):
     @classmethod
     @contextlib.contextmanager
     def instantiate_mock_services(cls):
-        with service_mock.instantiate_services(cls.services, cls):
+        with service_mock.instantiate_services(cls.services, cls.backend):
             yield
 
     @classmethod

@@ -41,10 +41,8 @@ OUTPUT_STATUS_OK = [200]
 class BaseTempestBackend(base_backend.BaseBackend):
     """Base class for backends built on top of Tempest."""
 
-    def __init__(self):
-        # TODO(cpopa): userdata and metadata?
-        self._userdata = None
-        self._metadata = None
+    def __init__(self, userdata, metadata):
+        super(BaseTempestBackend, self).__init__(userdata, metadata)
         self._server = None
         self._keypair = None
         self._security_group = None

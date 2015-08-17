@@ -68,6 +68,8 @@ class BaseScenario(unittest.TestCase):
     recipe_type = None
     service_type = 'http'
     test_classes = None
+    userdata = None
+    metadata = None
 
     backend = None
     introspection = None
@@ -75,7 +77,7 @@ class BaseScenario(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.backend = cls.backend_type()
+        cls.backend = cls.backend_type(cls.userdata, cls.metadata)
         cls.backend.setup_instance()
 
         cls.prepare_instance()
