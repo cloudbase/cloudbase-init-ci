@@ -82,13 +82,19 @@ class BaseScenario(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.backend = cls.backend_type(cls.conf, cls.userdata, cls.metadata)
-        cls.backend.setup_instance()
+        try:
+            cls.backend = cls.backend_type(cls.conf,
+                                           cls.userdata,
+                                           cls.metadata)
+            cls.backend.setup_instance()
 
-        cls.prepare_instance()
+            cls.prepare_instance()
 
-        cls.introspection = cls.introspection_type(
-            cls.conf, cls.backend.remote_client)
+            cls.introspection = cls.introspection_type(
+                cls.conf, cls.backend.remote_client)
+        except:
+            cls.tearDownClass()
+            raise
 
     @classmethod
     def prepare_instance(cls):
@@ -97,4 +103,5 @@ class BaseScenario(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        cls.backend.cleanup()
+        if cls.backend:
+            cls.backend.cleanup()
