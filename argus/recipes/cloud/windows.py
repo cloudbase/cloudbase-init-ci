@@ -19,7 +19,6 @@ import contextlib
 import ntpath
 import os
 
-import bs4
 import six
 from six.moves import urllib  # pylint: disable=import-error
 
@@ -89,9 +88,29 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         cmd = ('powershell "C:\\\\installcbinit.ps1 -serviceType {} '
                '-installer {}"'.format(self._service_type, installer))
-        self._execute(cmd)
+        try:
+            self._execute(cmd, count=5, delay=5)
+        except exceptions.ArgusError:
+            # This can happen for multiple reasons,
+            # but one if them is the fact that the installer
+            # can't be installed through WinRM on some OSes
+            # for whatever reason. In this case, we're fallbacking
+            # to use a scheduled task.
+            self._deploy_using_scheduled_task(installer)
 
         self._grab_cbinit_installation_log()
+
+    def _deploy_using_scheduled_task(self, installer):
+        cmd = ("powershell Invoke-webrequest -uri "
+               "{}/windows/schedule_installer.bat -outfile "
+               "C:\\schedule_installer.bat"
+               .format(CONF.argus.resources))
+        self._execute(cmd)
+
+        # Now run it.
+        cmd = ("C:\\\\schedule_installer.bat {0} {1}"
+               .format(self._service_type, installer))
+        self._execute(cmd)
 
     def _grab_cbinit_installation_log(self):
         """Obtain the installation logs."""
