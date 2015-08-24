@@ -77,7 +77,7 @@ class Runner(object):
         for scenario in self._scenarios:
             try:
                 result = scenario.run()
-            except exceptions.ArgusError:
+            except Exception:
                 # Something failed internally, report this scenario
                 # as failed and continue to the other ones.
                 tests = list(scenario.test_names())
