@@ -233,11 +233,27 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         stdout = self.remote_client.run_command_verbose(cmd)
         return int(stdout)
 
+    @staticmethod
+    def _parse_netsh_output(output):
+        output = output.strip()
+        blocks = re.split(r"SubInterface\s+(.*?)-{46}\s+", output,
+                          flags=re.DOTALL)
+        blocks = blocks[1:]  # empty space
+
+        interfaces = blocks[0::2]
+        content = blocks[1::2]
+        for interface, block in zip(interfaces, content):
+            interface = interface.strip()
+            mtu = re.search(r"MTU\s*:\s*(\d+)\s+", block)
+            if not mtu:
+                continue
+            yield interface, mtu.group(1)
+
     def get_instance_mtu(self):
-        cmd = ('powershell "(Get-NetIpConfiguration -Detailed).'
-               'NetIPv4Interface.NlMTU"')
+        cmd = 'netsh interface ipv4 show subinterfaces'
         stdout = self.remote_client.run_command_verbose(cmd)
-        return stdout.strip('\r\n')
+        interfaces = dict(self._parse_netsh_output(stdout))
+        return interfaces.get('Local Area Connection')
 
     def get_cloudbaseinit_traceback(self):
         code = util.get_resource('windows/get_traceback.ps1')
