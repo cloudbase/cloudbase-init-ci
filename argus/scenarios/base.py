@@ -147,6 +147,7 @@ class BaseArgusScenario(object):
 
     def _assign_floating_ip(self):
         floating_ip = self._floating_ips_client.create_floating_ip()
+        floating_ip = floating_ip['floating_ip']
 
         self._floating_ips_client.associate_floating_ip_to_server(
             floating_ip['ip'], self._server['id'])
@@ -200,7 +201,7 @@ class BaseArgusScenario(object):
         sg_name = util.rand_name(self.__class__.__name__)
         sg_desc = sg_name + " description"
         secgroup = self._security_groups_client.create_security_group(
-            name=sg_name, description=sg_desc)
+            name=sg_name, description=sg_desc)['security_group']
 
         # Add rules to the security group.
         for rule in self._add_security_group_exceptions(secgroup['id']):
