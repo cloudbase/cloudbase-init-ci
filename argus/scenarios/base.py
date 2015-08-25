@@ -140,7 +140,7 @@ class BaseArgusScenario(object):
 
     def _create_keypair(self):
         keypair = self._keypairs_client.create_keypair(
-            name=self.__class__.__name__ + "-key")
+            name=self.__class__.__name__ + "-key")['keypair']
         with open(CONF.argus.path_to_private_key, 'w') as stream:
             stream.write(keypair['private_key'])
         return keypair
@@ -276,8 +276,8 @@ class BaseArgusScenario(object):
 
         if self._server:
             self._servers_client.delete_server(self._server['id'])
-            self._servers_client.wait_for_server_termination(
-                self._server['id'])
+            waiters.wait_for_server_termination(self._servers_client,
+                                                self._server['id'])
 
         if self._floating_ip:
             self._floating_ips_client.delete_floating_ip(
