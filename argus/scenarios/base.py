@@ -205,7 +205,8 @@ class BaseArgusScenario(object):
 
         # Add rules to the security group.
         for rule in self._add_security_group_exceptions(secgroup['id']):
-            self._security_groups_rules.append(rule['id'])
+            self._security_groups_rules.append(
+                    rule['security_group_rule']['id'])
         self._servers_client.add_security_group(self._server['id'],
                                                 secgroup['name'])
         return secgroup
