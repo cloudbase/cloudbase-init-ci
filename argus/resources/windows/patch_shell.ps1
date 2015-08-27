@@ -7,8 +7,20 @@ $patch_code = @'
 import os
 from cloudbaseinit.original_shell import main
 
-with open("C:\\cloudbaseinit_started", "w") as stream:
-    pass
+def create_file(path):
+    with open(path, 'w') as stream:
+        pass
+
+def heart_beat():
+    first = "C:\\cloudbaseinit_unattended"
+    second = "C:\\cloudbaseinit_normal"
+
+    if not os.path.exists(first):
+        create_file(first)
+    else:
+        create_file(second)
+
+heart_beat()
 main()
 '@
 
