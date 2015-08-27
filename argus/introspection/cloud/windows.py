@@ -309,6 +309,17 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
                              "given service.")
         return (match.group(1).strip(), match.group(2).strip())
 
+    def get_instance_os_version(self):
+        """Get the version of the underlying OS
+
+         Return a tuple of two elements, the major and the minor
+         version.
+        """
+        cmd = "powershell (Get-CimInstance Win32_OperatingSystem).Version"
+        stdout = self.remote_client.run_command_verbose(cmd)
+        elems = stdout.split(".")
+        return list(map(int, elems))[:2]
+
     def get_cloudconfig_executed_plugins(self):
         expected = {
             'b64', 'b64_1',
