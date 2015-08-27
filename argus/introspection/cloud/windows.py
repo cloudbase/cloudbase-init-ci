@@ -250,7 +250,7 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
             yield interface, mtu.group(1)
 
     def get_instance_mtu(self):
-        cmd = 'netsh interface ipv4 show subinterfaces'
+        cmd = 'netsh interface ipv4 show subinterfaces level=verbose'
         stdout = self.remote_client.run_command_verbose(cmd)
         interfaces = dict(self._parse_netsh_output(stdout))
 
