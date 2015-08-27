@@ -256,7 +256,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         The function waits until cloudbaseinit finished.
         """
         LOG.info("Waiting for the finalization of CloudbaseInit execution...")
-        wait_cmd = 'Test-Path C:\\cloudbaseinit_finished'
+        wait_cmd = 'powershell Test-Path C:\\cloudbaseinit_finished'
         self._execute_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'True',
