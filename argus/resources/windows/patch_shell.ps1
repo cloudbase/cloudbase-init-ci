@@ -7,12 +7,9 @@ $patch_code = @'
 import os
 from cloudbaseinit.original_shell import main
 
-if __name__ == "__main__":
-    try:
-        main()
-    finally:
-        with open("C:\\cloudbaseinit_finished", "w") as stream:
-           pass
+with open("C:\\cloudbaseinit_started", "w") as stream:
+    pass
+main()
 '@
 
 mv $cloudbaseinitdir\shell.py $cloudbaseinitdir\original_shell.py -ErrorAction ignore

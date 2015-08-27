@@ -256,10 +256,20 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         The function waits until cloudbaseinit finished.
         """
         LOG.info("Waiting for the finalization of CloudbaseInit execution...")
-        wait_cmd = 'powershell Test-Path C:\\cloudbaseinit_finished'
+
+        # Check if the service actually started.
+        wait_cmd = 'powershell Test-Path C:\\cloudbaseinit_started'
         self._execute_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'True',
+            count=COUNT, delay=DELAY)
+
+        # Check if the service finished
+        wait_cmd = ('powershell (Get-Service "| where -Property Name '
+                    '-match cloudbase-init").Status')
+        self._execute_until_condition(
+            wait_cmd,
+            lambda out: out.strip() == 'Stopped',
             count=COUNT, delay=DELAY)
 
 
