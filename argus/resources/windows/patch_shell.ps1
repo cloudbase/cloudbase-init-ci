@@ -6,13 +6,13 @@ param
 $patch_code = @'
 import os
 from cloudbaseinit.original_shell import main
-try:
-    main()
-finally:
-    user_path = os.path.expanduser("~")
-    finish_file = os.path.join(user_path, "cloudbaseinit_finished")
-    with open(finish_file, "w") as stream:
-        pass
+
+if __name__ == "__main__":
+    try:
+        main()
+    finally:
+        with open("C:\\cloudbaseinit_finished", "w") as stream:
+           pass
 '@
 
 mv $cloudbaseinitdir\shell.py $cloudbaseinitdir\original_shell.py -ErrorAction ignore
