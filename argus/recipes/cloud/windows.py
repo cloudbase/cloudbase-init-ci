@@ -215,6 +215,26 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             option="first_logon_behaviour", value="no",
             execute_function=self._execute)
 
+        # Patch the installation of cloudbaseinit in order to create
+        # a file when the execution ends. We're doing this instead of
+        # monitoring the service, because on some OSes, just checking the
+        # that the service is stopped leads to errors, due to the
+        # fact that the service starts later on.
+        python_dir = introspection.get_python_dir(self._execute)
+        cbinit = ntpath.join(python_dir, 'Lib', 'site-packages',
+                             'cloudbaseinit')
+
+        # Get the shell patching script and patch the installation.
+        cmd = ("powershell Invoke-Webrequest -uri "
+               "{}/windows/patch_shell.ps1 -outfile "
+               "C:\\patch_shell.ps1"
+               .format(CONF.argus.resources))
+        self._execute(cmd)
+
+        escaped = introspection._escape_path(cbinit)
+        self._execute('powershell "C:\\\\patch_shell.ps1 \"{}\""'
+                      .format(escaped))
+
     def sysprep(self):
         """Prepare the instance for the actual tests, by running sysprep."""
         LOG.info("Running sysprep...")
@@ -236,6 +256,17 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         The function waits until cloudbaseinit finished.
         """
         LOG.info("Waiting for the finalization of CloudbaseInit execution...")
+
+        # Check if the service actually started.
+        unattended_cmd = 'powershell Test-Path C:\\cloudbaseinit_unattended'
+        normal_cmd = 'powershell Test-Path C:\\cloudbaseinit_normal'
+        for check_cmd in (unattended_cmd, normal_cmd):
+            self._execute_until_condition(
+                check_cmd,
+                lambda out: out.strip() == 'True',
+                count=COUNT, delay=DELAY)
+
+        # Check if the service finished
         wait_cmd = ('powershell (Get-Service "| where -Property Name '
                     '-match cloudbase-init").Status')
         self._execute_until_condition(
