@@ -92,9 +92,9 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             self._execute(cmd, count=5, delay=5)
         except exceptions.ArgusError:
             # This can happen for multiple reasons,
-            # but one if them is the fact that the installer
+            # but one of them is the fact that the installer
             # can't be installed through WinRM on some OSes
-            # for whatever reason. In this case, we're fallbacking
+            # for whatever reason. In this case, we're falling back
             # to use a scheduled task.
             self._deploy_using_scheduled_task(installer)
 
