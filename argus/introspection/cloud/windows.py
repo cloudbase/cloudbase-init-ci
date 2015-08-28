@@ -247,19 +247,13 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
             mtu = re.search(r"MTU\s*:\s*(\d+)\s+", block)
             if not mtu:
                 continue
-            yield interface, mtu.group(1)
+            if 'loopback' not in interface.lower():
+                yield mtu.group(1)
 
     def get_instance_mtu(self):
         cmd = 'netsh interface ipv4 show subinterfaces level=verbose'
         stdout = self.remote_client.run_command_verbose(cmd)
-        interfaces = dict(self._parse_netsh_output(stdout))
-
-        expected_network = 'Local Area Connection'
-        for network, value in interfaces.items():
-            if network.startswith(expected_network):
-                # Some of the networks aren't called only `Local Area COnnection`
-                return value
-        return None
+        return next(self._parse_netsh_output(stdout), None)
 
     def get_cloudbaseinit_traceback(self):
         code = util.get_resource('windows/get_traceback.ps1')
