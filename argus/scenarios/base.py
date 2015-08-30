@@ -339,8 +339,8 @@ class BaseArgusScenario(object):
             output_directory=self._output_directory)
 
     def reboot_instance(self):
-        self._servers_client.reboot(server_id=self._server['id'],
-                                    reboot_type='soft')
+        self._servers_client.reboot_server(server_id=self._server['id'],
+                                           reboot_type='soft')
         waiters.wait_for_server_status(
             self._servers_client, self._server['id'], 'ACTIVE')
 
