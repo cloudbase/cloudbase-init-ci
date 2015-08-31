@@ -61,7 +61,7 @@ class BaseRecipe(object):
         # Also, if the retrying limit is reached, `ArgusTimeoutError`
         # will be raised.
         return self._remote_client.run_command_with_retry(
-            cmd, retry_count=count, delay=delay)[0]
+            cmd, count=count, delay=delay)[0]
 
     def _execute_until_condition(self, cmd, cond, count=RETRY_COUNT,
                                  delay=RETRY_DELAY):
