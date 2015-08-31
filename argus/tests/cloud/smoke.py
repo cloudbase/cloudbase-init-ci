@@ -172,7 +172,7 @@ class TestCloudstackUpdatePasswordSmoke(base.TestBaseArgus):
         remote_client.run_command_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'Stopped',
-            count=util.RETRY_COUNT, delay=util.RETRY_DELAY)
+            retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY)
 
     def _test_password(self, password, expected):
         # Set the password in the Password Server.
