@@ -242,7 +242,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         cmd = ("powershell Invoke-webrequest -uri "
                "{}/windows/sysprep.ps1 -outfile 'C:\\sysprep.ps1'"
                .format(CONF.argus.resources))
-        self._execute(cmd)
+        self._execute(cmd, count=0)
         try:
             self._execute('powershell C:\\sysprep.ps1', count=1)
         except Exception:
