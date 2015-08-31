@@ -153,29 +153,29 @@ class WinRemoteClient(remote_client.WinRemoteClient):
         if not retry_count or retry_count < 0:
             retry_count = 0
 
-        try:
-            stdout, stderr, _ = self.run_command(cmd)
-        except Exception as exc:  # pylint: disable-broad-except
-            LOG.debug("Command failed with %r.", exc)
-        else:
-            if stderr:
-                raise exceptions.ArgusCLIError(
-                    "Executing command {!r} failed with {!r}."
-                    .format(cmd, stderr))
-            elif cond(stdout):
-                return
+        while True:
+            try:
+                stdout, stderr, _ = self.run_command(cmd)
+            except Exception as exc:  # pylint: disable-broad-except
+                LOG.debug("Command failed with %r.", exc)
             else:
-                LOG.debug("Condition not met, retrying...")
+                if stderr:
+                    raise exceptions.ArgusCLIError(
+                        "Executing command {!r} failed with {!r}."
+                        .format(cmd, stderr))
+                elif cond(stdout):
+                    return
+                else:
+                    LOG.debug("Condition not met, retrying...")
 
-        if retry_count > 0:
-            LOG.debug("Retrying...")
-            time.sleep(delay)
-            self.run_command_until_condition(
-                cmd, cond, retry_count=retry_count - 1, delay=delay)
-        else:
-            raise exceptions.ArgusTimeoutError(
-                "Command {!r} failed too many times."
-                .format(cmd))
+            if retry_count > 0:
+                retry_count -= 1
+                LOG.debug("Retrying...")
+                time.sleep(delay)
+            else:
+                raise exceptions.ArgusTimeoutError(
+                    "Command {!r} failed too many times."
+                    .format(cmd))
 
 
 def get_local_ip():
