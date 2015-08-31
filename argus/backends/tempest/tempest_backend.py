@@ -80,6 +80,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
         self._security_groups_client = self._manager.security_groups_client
         self._security_group_rules_client = \
             self._manager.security_group_rules_client
+
         self._servers_client = self._manager.servers_client
         self._volumes_client = self._manager.volumes_client
         self._snapshots_client = self._manager.snapshots_client
