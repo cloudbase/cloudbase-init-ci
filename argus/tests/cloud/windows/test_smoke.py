@@ -22,8 +22,6 @@ from argus.tests.cloud import smoke
 from argus.tests.cloud import util as test_util
 from argus import util
 
-CONF = util.get_config()
-
 
 def _parse_licenses(output):
     """Parse the licenses information.
@@ -174,7 +172,7 @@ class TestNextLogonPassword(base.BaseTestCase):
         self._wait_for_completion()
 
         output = self._introspection.get_user_flags(
-            CONF.cloudbaseinit.created_user)
+            self._conf.cloudbaseinit.created_user)
         flags, password_expired = output.splitlines()
         flags = int(flags)
         password_expired = int(password_expired)

@@ -28,7 +28,6 @@ with util.restore_excepthook():
     from tempest.common import waiters
 
 
-CONF = util.get_config()
 LOG = util.get_logger()
 
 # Starting size as number of lines and tolerance.

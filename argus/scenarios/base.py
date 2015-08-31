@@ -43,7 +43,7 @@ class ScenarioMeta(type):
 
                 def delegator(self, class_name=test_class,
                               test_name=test_name):
-                    getattr(class_name(self.backend, self.introspection,
+                    getattr(class_name(cls.conf, self.backend, self.introspection,
                                        test_name), test_name)()
 
                 if hasattr(cls, test_name):

@@ -84,7 +84,6 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             # for whatever reason. In this case, we're falling back
             # to use a scheduled task.
             self._deploy_using_scheduled_task(installer)
-               '-installer {}"'.format(self._conf.service_type, installer))
 
         self._execute(cmd)
 
@@ -94,7 +93,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         cmd = ("powershell Invoke-webrequest -uri "
                "{}/windows/schedule_installer.bat -outfile "
                "C:\\schedule_installer.bat"
-               .format(CONF.argus.resources))
+               .format(self._conf.argus.resources))
         self._execute(cmd)
 
         # Now run it.
@@ -219,7 +218,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         cmd = ("powershell Invoke-Webrequest -uri "
                "{}/windows/patch_shell.ps1 -outfile "
                "C:\\patch_shell.ps1"
-               .format(CONF.argus.resources))
+               .format(self._conf.argus.resources))
         self._execute(cmd)
 
         escaped = introspection._escape_path(cbinit)

@@ -26,8 +26,6 @@ from argus.introspection.cloud import base
 from argus import util
 
 
-CONF = util.get_config()
-
 # escaped characters for powershell paths
 ESC = "( )"
 SEP = "----\r\n"    # default separator for network details blocks
