@@ -82,6 +82,13 @@ class BaseScenario(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # Create output_directory when given
+        if cls.conf.argus.output_directory:
+            try:
+                os.mkdir(cls.conf.argus.output_directory)
+            except OSError:
+                pass
+
         try:
             cls.backend = cls.backend_type(cls.conf,
                                            cls.userdata,

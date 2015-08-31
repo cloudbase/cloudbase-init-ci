@@ -112,8 +112,8 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         content = self._backend.remote_client.read_file("C:\\installation.log")
         log_template = "installation-{}.log".format(
             self._backend.instance_server()['id'])
+
         path = os.path.join(self._conf.argus.output_directory, log_template)
-        # TODO (ionuthulub) create output_directory if it doesn't exist?
         with open(path, 'w') as stream:
             stream.write(content)
 
