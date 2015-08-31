@@ -110,13 +110,14 @@ class BaseTempestBackend(base_backend.BaseBackend):
 
     def _create_keypair(self):
         keypair = self._keypairs_client.create_keypair(
-            self.__class__.__name__ + "-key")
+            self.__class__.__name__ + "-key")['keypair']
         with open(self._conf.argus.path_to_private_key, 'w') as stream:
             stream.write(keypair['private_key'])
         return keypair
 
     def _assign_floating_ip(self):
         floating_ip = self._floating_ips_client.create_floating_ip()
+        floating_ip = floating_ip['floating_ip']
 
         self._floating_ips_client.associate_floating_ip_to_server(
             floating_ip['ip'], self._server['id'])
@@ -170,7 +171,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
         sg_name = util.rand_name(self.__class__.__name__)
         sg_desc = sg_name + " description"
         secgroup = self._security_groups_client.create_security_group(
-            sg_name, sg_desc)
+            sg_name, sg_desc)['security_group']
 
         # Add rules to the security group.
         for rule in self._add_security_group_exceptions(secgroup['id']):
@@ -234,6 +235,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
         if self._server:
             self._servers_client.delete_server(self._server['id'])
             self._servers_client.wait_for_server_termination(
+                self._servers_client,
                 self._server['id'])
 
         if self._floating_ip:
@@ -252,8 +254,8 @@ class BaseTempestBackend(base_backend.BaseBackend):
         self.save_instance_output()
 
     def reboot_instance(self):
-        self._servers_client.reboot(server_id=self._server['id'],
-                                    reboot_type='soft')
+        self._servers_client.reboot_server(server_id=self._server['id'],
+                                           reboot_type='soft')
         waiters.wait_for_server_status(
             self._servers_client, self._server['id'], 'ACTIVE')
 
