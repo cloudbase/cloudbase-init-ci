@@ -169,7 +169,7 @@ class TestNextLogonPassword(base.TestBaseArgus):
         remote_client.run_command_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'Stopped',
-            count=util.RETRY_COUNT, delay=util.RETRY_DELAY)
+            retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY)
 
     def test_next_logon_password_not_changed(self):
         self._wait_for_completion()
