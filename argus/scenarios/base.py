@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import os
 import types
 import unittest
 
@@ -27,7 +28,8 @@ class ScenarioMeta(type):
     def __new__(mcs, name, bases, attrs):
         cls = super(ScenarioMeta, mcs).__new__(mcs, name, bases, attrs)
         test_loader = unittest.TestLoader()
-        if not cls.test_classes:
+        if not cls.is_final():
+            # TODO: emit a message?
             return cls
 
         cls.conf = util.get_config()
@@ -61,6 +63,12 @@ class ScenarioMeta(type):
                 setattr(cls, test_name, new_func)
 
         return cls
+
+    def is_final(cls):
+        """Check if the current class is final, if it has all the attributes set."""
+        return all(item for item in (cls.backend_type, cls.introspection_type,
+                                     cls.recipe_type, cls.service_type,
+                                     cls.test_classes))
 
 
 @six.add_metaclass(ScenarioMeta)
