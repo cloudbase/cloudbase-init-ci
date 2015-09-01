@@ -240,15 +240,10 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         """Prepare the instance for the actual tests, by running sysprep."""
         LOG.info("Running sysprep...")
 
-        # If sysprep hangs we don't want to execute it again but it's likely
-        # that we'll get some transport related errors at first se we execute
-        # a dummy command with retry to make sure that the transport is fine.
-        self._execute('echo 0')
-
         cmd = ("powershell Invoke-webrequest -uri "
                "{}/windows/sysprep.ps1 -outfile 'C:\\sysprep.ps1'"
                .format(CONF.argus.resources))
-        self._execute(cmd, count=0)
+        self._execute(cmd)
         try:
             self._execute('powershell C:\\sysprep.ps1', count=1)
         except winrm_exceptions.UnauthorizedError:
