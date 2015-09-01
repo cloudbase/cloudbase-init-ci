@@ -21,6 +21,7 @@ import os
 
 import six
 from six.moves import urllib  # pylint: disable=import-error
+from winrm import exceptions as winrm_exceptions
 
 from argus import exceptions
 from argus.introspection.cloud import windows as introspection
@@ -244,10 +245,11 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                .format(CONF.argus.resources))
         self._execute(cmd)
         try:
-            self._execute('powershell C:\\sysprep.ps1', count=1)
-        except Exception:
-            # This will fail, since it's blocking until the
-            # restart occurs, so there will be transport issues.
+            self._remote_client.run_command('powershell C:\\sysprep.ps1')
+        except winrm_exceptions.UnauthorizedError:
+            # This error is to be expected because the vm will restart
+            # before sysprep.ps1 finishes execution.
+            # Any other error should propagate.
             pass
 
     def wait_cbinit_finalization(self):
