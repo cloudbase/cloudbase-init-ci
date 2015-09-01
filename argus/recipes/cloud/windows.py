@@ -245,7 +245,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                .format(CONF.argus.resources))
         self._execute(cmd)
         try:
-            self._execute('powershell C:\\sysprep.ps1', count=1)
+            self._remote_client.run_command('powershell C:\\sysprep.ps1')
         except winrm_exceptions.UnauthorizedError:
             # This error is to be expected because the vm will restart
             # before sysprep.ps1 finishes execution.
