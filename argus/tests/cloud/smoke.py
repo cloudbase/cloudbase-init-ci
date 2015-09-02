@@ -352,6 +352,18 @@ class TestStaticNetwork(base.TestBaseArgus):
         for nics in (guest_nics, instance_nics):
             for nic in nics:
                 nic["dns6"] = None
+
+        # If os version < 6.2 then ip v6 configuration is not available
+        # so we need to remove all ip v6 related keys from the dicts
+        major, minor = self.introspection.get_instance_os_version()
+        if not (major >= 6 and minor >= 2):
+            for key in guest_nics:
+                if key.endswith('6'):
+                    del guest_nics[key]
+            for key in instance_nics:
+                if key.endswith('6'):
+                    del instance_nics[key]
+
         self.assertEqual(guest_nics, instance_nics)
 
 
