@@ -357,12 +357,14 @@ class TestStaticNetwork(base.TestBaseArgus):
         # so we need to remove all ip v6 related keys from the dicts
         major, minor = self.introspection.get_instance_os_version()
         if not (major >= 6 and minor >= 2):
-            for key in guest_nics:
-                if key.endswith('6'):
-                    del guest_nics[key]
-            for key in instance_nics:
-                if key.endswith('6'):
-                    del instance_nics[key]
+            for nic in guest_nics:
+                for key in nic:
+                    if key.endswith('6'):
+                        del nic[key]
+            for nic in instance_nics:
+                for key in nic:
+                    if key.endswith('6'):
+                        del nic[key]
 
         self.assertEqual(guest_nics, instance_nics)
 
