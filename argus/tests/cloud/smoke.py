@@ -358,11 +358,11 @@ class TestStaticNetwork(base.TestBaseArgus):
         major, minor = self.introspection.get_instance_os_version()
         if not (major >= 6 and minor >= 2):
             for nic in guest_nics:
-                for key in nic:
+                for key in nic.keys():
                     if key.endswith('6'):
                         del nic[key]
             for nic in instance_nics:
-                for key in nic:
+                for key in nic.keys():
                     if key.endswith('6'):
                         del nic[key]
 
