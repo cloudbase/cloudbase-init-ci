@@ -459,10 +459,10 @@ class CloudbaseinitKeysRecipe(CloudbaseinitHTTPRecipe,
                   "SetUserPasswordPlugin,"
                   "cloudbaseinit.plugins.common.sshpublickeys."
                   "SetUserSSHPublicKeysPlugin,"
-                  "cloudbaseinit.plugins.windows.winrmcertificateauth."
-                  "ConfigWinRMCertificateAuthPlugin,"
                   "cloudbaseinit.plugins.windows.winrmlistener."
-                  "ConfigWinRMListenerPlugin",
+                  "ConfigWinRMListenerPlugin,"
+                  "cloudbaseinit.plugins.windows.winrmcertificateauth."
+                  "ConfigWinRMCertificateAuthPlugin",
             execute_function=self._execute)
 
 
