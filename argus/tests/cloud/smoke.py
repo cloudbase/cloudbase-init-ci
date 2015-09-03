@@ -355,14 +355,14 @@ class TestStaticNetwork(base.TestBaseArgus):
 
         # If os version < 6.2 then ip v6 configuration is not available
         # so we need to remove all ip v6 related keys from the dicts
-        major, minor = self.introspection.get_instance_os_version()
-        if not (major >= 6 and minor >= 2):
+        version = self.introspection.get_instance_os_version()
+        if version < (6, 2):
             for nic in guest_nics:
-                for key in nic.keys():
+                for key in list(nic.keys()):
                     if key.endswith('6'):
                         del nic[key]
             for nic in instance_nics:
-                for key in nic.keys():
+                for key in list(nic.keys()):
                     if key.endswith('6'):
                         del nic[key]
 
