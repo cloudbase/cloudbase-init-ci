@@ -219,8 +219,8 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         # Patch the installation of cloudbaseinit in order to create
         # a file when the execution ends. We're doing this instead of
-        # monitoring the service, because on some OSes, just checking the
-        # that the service is stopped leads to errors, due to the
+        # monitoring the service, because on some OSes, just checking
+        # if the service is stopped leads to errors, due to the
         # fact that the service starts later on.
         python_dir = introspection.get_python_dir(self._execute)
         cbinit = ntpath.join(python_dir, 'Lib', 'site-packages',
