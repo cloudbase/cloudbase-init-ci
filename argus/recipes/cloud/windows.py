@@ -18,6 +18,7 @@
 import contextlib
 import ntpath
 import os
+import socket
 
 import six
 from six.moves import urllib  # pylint: disable=import-error
@@ -246,7 +247,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         self._execute(cmd)
         try:
             self._remote_client.run_command('powershell C:\\sysprep.ps1')
-        except winrm_exceptions.UnauthorizedError:
+        except (socket.error, winrm_exceptions.UnauthorizedError):
             # This error is to be expected because the vm will restart
             # before sysprep.ps1 finishes execution.
             # Any other error should propagate.
