@@ -89,6 +89,6 @@ which I was unable to make it work for our scenarios.
 15. Run ``.\Logon.ps1``. This script will configure WinRM and will finalize the image,
     by running sysprep.
 
-16. After the creationg script finished preparing the image, you can add it
+16. After the creation script finished preparing the image, you can add it
     to glance and use its id in argus.conf.
 
