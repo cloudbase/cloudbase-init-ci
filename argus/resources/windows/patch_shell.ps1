@@ -21,7 +21,8 @@ def heart_beat():
         create_file(second)
 
 heart_beat()
-main()
+if __name__ == '__main__':
+    main()
 '@
 
 mv $cloudbaseinitdir\shell.py $cloudbaseinitdir\original_shell.py -ErrorAction ignore
