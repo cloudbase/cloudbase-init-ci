@@ -112,7 +112,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
 
     def _create_keypair(self):
         keypair = self._keypairs_client.create_keypair(
-            self.__class__.__name__ + "-key")['keypair']
+            name=self.__class__.__name__ + "-key")['keypair']
         with open(self._conf.argus.path_to_private_key, 'w') as stream:
             stream.write(keypair['private_key'])
         return keypair

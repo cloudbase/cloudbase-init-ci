@@ -58,8 +58,10 @@ class ScenarioMeta(type):
                 code = six.get_function_code(delegator)
                 func_globals = six.get_function_globals(delegator)
                 func_defaults = six.get_function_defaults(delegator)
+                func_closure = six.get_function_closure(delegator)
                 new_func = types.FunctionType(code, func_globals,
-                                              test_name, func_defaults)
+                                              test_name, func_defaults,
+                                              func_closure)
                 setattr(cls, test_name, new_func)
 
         return cls
