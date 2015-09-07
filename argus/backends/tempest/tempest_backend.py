@@ -173,7 +173,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
         sg_name = util.rand_name(self.__class__.__name__)
         sg_desc = sg_name + " description"
         secgroup = self._security_groups_client.create_security_group(
-            sg_name, sg_desc)['security_group']
+            name=sg_name, description=sg_desc)['security_group']
 
         # Add rules to the security group.
         for rule in self._add_security_group_exceptions(secgroup['id']):
@@ -236,7 +236,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
 
         if self._server:
             self._servers_client.delete_server(self._server['id'])
-            self._servers_client.wait_for_server_termination(
+            waiters.wait_for_server_termination(
                 self._servers_client,
                 self._server['id'])
 
