@@ -125,7 +125,7 @@ class TestScriptsUserdataSmoke(TestSmoke):
         self.assertEqual(5, userdata_executed_plugins)
 
     def test_local_scripts_executed(self):
-        self.assertTrue(self.introspection.instance_exe_script_executed())
+        self.assertTrue(self._introspection.instance_exe_script_executed())
 
 
 class TestEC2Userdata(base.BaseTestCase):

@@ -252,11 +252,11 @@ class TestNoError(base.BaseTestCase):
         self.assertEqual('', instance_traceback)
 
 
-class TestPowershellMultipartX86TxtExists(base.TestBaseArgus):
+class TestPowershellMultipartX86TxtExists(base.BaseTestCase):
     """Tests that the file powershell_multipart_x86.txt exists on C:"""
 
     def test_file_exists(self):
-        names = self.introspection.list_location("C:\\")
+        names = self._introspection.list_location("C:\\")
         self.assertIn("powershell_multipart_x86.txt", names)
 
 
