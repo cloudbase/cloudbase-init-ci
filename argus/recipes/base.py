@@ -63,7 +63,7 @@ class BaseRecipe(object):
                                  delay=RETRY_DELAY):
         """Execute a command until the condition is met without returning."""
         self._backend.remote_client.run_command_until_condition(
-            cmd, cond, count=count, delay=delay)
+            cmd, cond, retry_count=count, delay=delay)
 
     @abc.abstractmethod
     def prepare(self):

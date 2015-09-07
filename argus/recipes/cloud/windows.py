@@ -19,6 +19,8 @@ import ntpath
 import os
 import socket
 
+from winrm import exceptions as winrm_exceptions
+
 from argus import exceptions
 from argus.introspection.cloud import windows as introspection
 from argus.recipes.cloud import base
@@ -235,7 +237,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                .format(self._conf.argus.resources))
         self._execute(cmd)
         try:
-            self._remote_client.run_command('powershell C:\\sysprep.ps1')
+            self._execute('powershell C:\\sysprep.ps1')
         except (socket.error, winrm_exceptions. WinRMTransportError):
             # This error is to be expected because the vm will restart
             # before sysprep.ps1 finishes execution.

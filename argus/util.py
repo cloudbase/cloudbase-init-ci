@@ -150,7 +150,7 @@ class WinRemoteClient(remote_client.WinRemoteClient):
         while True:
             try:
                 stdout, stderr, _ = self.run_command(cmd)
-            except Exception as exc:  # pylint: disable-broad-except
+            except Exception as exc:  # pylint: disable=broad-except
                 LOG.debug("Command failed with %r.", exc)
             else:
                 if stderr:

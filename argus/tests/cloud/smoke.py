@@ -355,7 +355,7 @@ class TestStaticNetwork(base.BaseTestCase):
 
         # If os version < 6.2 then ip v6 configuration is not available
         # so we need to remove all ip v6 related keys from the dicts
-        version = self.introspection.get_instance_os_version()
+        version = self._introspection.get_instance_os_version()
         if version < (6, 2):
             for nic in guest_nics:
                 for key in list(nic.keys()):

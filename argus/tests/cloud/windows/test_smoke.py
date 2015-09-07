@@ -86,8 +86,8 @@ class TestSmoke(smoke.TestsBaseSmoke):
     def test_w32time_triggers(self):
         # Test that w32time has network availability triggers, not
         # domain joined triggers
-        if self.introspection.get_instance_os_version() > (6, 0):
-            start_trigger, _ = self.introspection.get_service_triggers('w32time')
+        if self._introspection.get_instance_os_version() > (6, 0):
+            start_trigger, _ = self._introspection.get_service_triggers('w32time')
             self.assertEqual('IP ADDRESS AVAILABILITY', start_trigger)
 
 
