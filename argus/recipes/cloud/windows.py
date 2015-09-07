@@ -17,6 +17,7 @@
 
 import ntpath
 import os
+import socket
 
 from argus import exceptions
 from argus.introspection.cloud import windows as introspection
@@ -207,8 +208,8 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         # Patch the installation of cloudbaseinit in order to create
         # a file when the execution ends. We're doing this instead of
-        # monitoring the service, because on some OSes, just checking the
-        # that the service is stopped leads to errors, due to the
+        # monitoring the service, because on some OSes, just checking
+        # if the service is stopped leads to errors, due to the
         # fact that the service starts later on.
         python_dir = introspection.get_python_dir(self._execute)
         cbinit = ntpath.join(python_dir, 'Lib', 'site-packages',
@@ -234,10 +235,11 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                .format(self._conf.argus.resources))
         self._execute(cmd)
         try:
-            self._execute('powershell C:\\sysprep.ps1', count=1)
-        except Exception:
-            # This will fail, since it's blocking until the
-            # restart occurs, so there will be transport issues.
+            self._remote_client.run_command('powershell C:\\sysprep.ps1')
+        except (socket.error, winrm_exceptions. WinRMTransportError):
+            # This error is to be expected because the vm will restart
+            # before sysprep.ps1 finishes execution.
+            # Any other error should propagate.
             pass
 
     def wait_cbinit_finalization(self):
@@ -433,10 +435,10 @@ class CloudbaseinitKeysRecipe(CloudbaseinitHTTPRecipe,
                   "SetUserPasswordPlugin,"
                   "cloudbaseinit.plugins.common.sshpublickeys."
                   "SetUserSSHPublicKeysPlugin,"
-                  "cloudbaseinit.plugins.windows.winrmcertificateauth."
-                  "ConfigWinRMCertificateAuthPlugin,"
                   "cloudbaseinit.plugins.windows.winrmlistener."
-                  "ConfigWinRMListenerPlugin",
+                  "ConfigWinRMListenerPlugin,"
+                  "cloudbaseinit.plugins.windows.winrmcertificateauth."
+                  "ConfigWinRMCertificateAuthPlugin",
             execute_function=self._execute)
 
 

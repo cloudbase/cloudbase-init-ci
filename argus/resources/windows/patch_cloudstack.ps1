@@ -13,10 +13,11 @@ def custom_getattribute(self, attr):
         return value.split(':')[0]
     return value
 
-with patch('cloudbaseinit.metadata.services.cloudstack.'
-           'CloudStack.__getattribute__', custom_getattribute):  
-    from cloudbaseinit._shell import main
-    main()
+if __name__ == '__main__':
+    with patch('cloudbaseinit.metadata.services.cloudstack.'
+               'CloudStack.__getattribute__', custom_getattribute):  
+        from cloudbaseinit._shell import main
+        main()
 '@
 
 mv $cloudbaseinitdir\shell.py $cloudbaseinitdir\_shell.py -ErrorAction ignore

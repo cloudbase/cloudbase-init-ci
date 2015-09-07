@@ -15,7 +15,10 @@ try
     # cloudbaseinit service was stopped (it wasn't in fact started).
     # Since a restart will be called soon, block this until
     # the OS is ready to do the actual restart.
-    While (1) { Start-Sleep 5 }
+    # If sysprep doesn't finish within 10 minutes it means that it hang and
+    # we need to exit with non zero exit code.
+    Start-Sleep 600
+    exit 1
 }
 
 catch

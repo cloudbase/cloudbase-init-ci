@@ -171,7 +171,7 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
         remote_client.run_command_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'Stopped',
-            count=util.RETRY_COUNT, delay=util.RETRY_DELAY)
+            retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY)
 
     def _test_password(self, password, expected):
         # Set the password in the Password Server.
@@ -352,6 +352,20 @@ class TestStaticNetwork(base.BaseTestCase):
         for nics in (guest_nics, instance_nics):
             for nic in nics:
                 nic["dns6"] = None
+
+        # If os version < 6.2 then ip v6 configuration is not available
+        # so we need to remove all ip v6 related keys from the dicts
+        version = self.introspection.get_instance_os_version()
+        if version < (6, 2):
+            for nic in guest_nics:
+                for key in list(nic.keys()):
+                    if key.endswith('6'):
+                        del nic[key]
+            for nic in instance_nics:
+                for key in list(nic.keys()):
+                    if key.endswith('6'):
+                        del nic[key]
+
         self.assertEqual(guest_nics, instance_nics)
 
 
