@@ -166,7 +166,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
         ]
         for ruleset in rulesets:
             sg_rule = _client.create_security_group_rule(
-                parent_group_id=secgroup_id, **ruleset)
+                parent_group_id=secgroup_id, **ruleset)['security_group_rule']
             yield sg_rule
 
     def _create_security_groups(self):
