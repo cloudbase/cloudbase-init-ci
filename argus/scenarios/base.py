@@ -114,6 +114,7 @@ class BaseScenario(unittest.TestCase):
             cls.introspection = cls.introspection_type(
                 cls.conf, cls.backend.remote_client)
         except:
+            LOG.exception("Building scenario %s failed", cls.__name__)
             cls.tearDownClass()
             raise
 
