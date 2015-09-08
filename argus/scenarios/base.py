@@ -22,6 +22,9 @@ import six
 from argus import util
 
 
+LOG = util.get_logger()
+
+
 class ScenarioMeta(type):
     """Metaclass for merging test methods from a given list of test cases."""
 
@@ -29,7 +32,7 @@ class ScenarioMeta(type):
         cls = super(ScenarioMeta, mcs).__new__(mcs, name, bases, attrs)
         test_loader = unittest.TestLoader()
         if not cls.is_final():
-            # TODO: emit a message?
+            LOG.warning("Class %s is not a final class", cls)
             return cls
 
         cls.conf = util.get_config()
