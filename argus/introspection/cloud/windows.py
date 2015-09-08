@@ -23,6 +23,7 @@ import shutil
 import tempfile
 
 from argus.introspection.cloud import base
+from argus import exceptions
 from argus import util
 
 
@@ -147,6 +148,8 @@ def get_cbinit_dir(execute_function):
                 "Cloudbase Solutions",
                 "Cloudbase-Init"
             )
+
+    raise exceptions.ArgusError('cloudbase-init installation dir not found')
 
 
 def set_config_option(option, value, execute_function):
