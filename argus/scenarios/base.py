@@ -101,6 +101,7 @@ class BaseScenario(unittest.TestCase):
 
         try:
             cls.backend = cls.backend_type(cls.conf,
+                                           cls.__name__,
                                            cls.userdata,
                                            cls.metadata)
             cls.backend.setup_instance()

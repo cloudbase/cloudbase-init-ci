@@ -40,8 +40,8 @@ OUTPUT_STATUS_OK = [200]
 class BaseTempestBackend(base_backend.BaseBackend):
     """Base class for backends built on top of Tempest."""
 
-    def __init__(self, conf, userdata, metadata):
-        super(BaseTempestBackend, self).__init__(conf, userdata, metadata)
+    def __init__(self, conf, name, userdata, metadata):
+        super(BaseTempestBackend, self).__init__(conf, name, userdata, metadata)
         self._server = None
         self._keypair = None
         self._security_group = None
@@ -102,7 +102,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         server = self._servers_client.create_server(
-            util.rand_name(self.__class__.__name__) + "-instance",
+            util.rand_name(self._name) + "-instance",
             self.image_ref,
             self.flavor_ref,
             **kwargs)
