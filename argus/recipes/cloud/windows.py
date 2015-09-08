@@ -235,8 +235,9 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                .format(self._conf.argus.resources))
         self._execute(cmd)
         try:
-            self._execute('powershell C:\\sysprep.ps1')
-        except (socket.error, winrm_exceptions. WinRMTransportError):
+            self._backend.remote_client.run_remote_cmd(
+                'powershell C:\\sysprep.ps1')
+        except (socket.error, winrm_exceptions.WinRMTransportError):
             # This error is to be expected because the vm will restart
             # before sysprep.ps1 finishes execution.
             # Any other error should propagate.
