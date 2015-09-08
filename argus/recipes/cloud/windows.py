@@ -88,8 +88,6 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             # to use a scheduled task.
             self._deploy_using_scheduled_task(installer)
 
-        self._execute(cmd)
-
         self._grab_cbinit_installation_log()
 
     def _deploy_using_scheduled_task(self, installer):
