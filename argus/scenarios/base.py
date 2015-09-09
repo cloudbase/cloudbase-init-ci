@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import base64
 import os
 import types
 import unittest
@@ -106,11 +107,11 @@ class BaseScenario(unittest.TestCase):
             except OSError:
                 pass
 
+        userdata = base64.encodestring(cls.userdata)
         try:
             cls.backend = cls.backend_type(cls.conf,
                                            cls.__name__,
-                                           cls.userdata,
-                                           cls.metadata)
+                                           userdata, cls.metadata)
             cls.backend.setup_instance()
 
             cls.prepare_instance()
