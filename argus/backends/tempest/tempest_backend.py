@@ -253,7 +253,6 @@ class BaseTempestBackend(base_backend.BaseBackend):
     def setup_instance(self):
         self._prepare_run()
         self._setup()
-        self.save_instance_output()
 
     def reboot_instance(self):
         self._servers_client.reboot_server(server_id=self._server['id'],

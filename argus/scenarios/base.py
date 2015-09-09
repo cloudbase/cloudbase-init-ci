@@ -126,6 +126,7 @@ class BaseScenario(unittest.TestCase):
     def prepare_instance(cls):
         cls.recipe = cls.recipe_type(cls.conf, cls.backend, cls.service_type)
         cls.recipe.prepare()
+        cls.backend.save_instance_output()
 
     @classmethod
     def tearDownClass(cls):
