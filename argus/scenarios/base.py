@@ -25,13 +25,23 @@ from argus import util
 LOG = util.get_logger()
 
 
+def _build_new_function(func, name):
+    code = six.get_function_code(func)
+    func_globals = six.get_function_globals(func)
+    func_defaults = six.get_function_defaults(func)
+    func_closure = six.get_function_closure(func)
+    return types.FunctionType(code, func_globals,
+                              name, func_defaults,
+                              func_closure)
+
+
 class ScenarioMeta(type):
     """Metaclass for merging test methods from a given list of test cases."""
 
     def __new__(mcs, name, bases, attrs):
         cls = super(ScenarioMeta, mcs).__new__(mcs, name, bases, attrs)
         test_loader = unittest.TestLoader()
-        if not cls.is_final():
+        if not cls._is_final():
             LOG.warning("Class %s is not a final class", cls)
             return cls
 
@@ -58,18 +68,12 @@ class ScenarioMeta(type):
                 # Create a new function from the delegator with the
                 # correct name, since tools such as nose test runner,
                 # will use func.func_name, which will be delegator otherwise.
-                code = six.get_function_code(delegator)
-                func_globals = six.get_function_globals(delegator)
-                func_defaults = six.get_function_defaults(delegator)
-                func_closure = six.get_function_closure(delegator)
-                new_func = types.FunctionType(code, func_globals,
-                                              test_name, func_defaults,
-                                              func_closure)
+                new_func = _build_new_function(delegator, test_name)
                 setattr(cls, test_name, new_func)
 
         return cls
 
-    def is_final(cls):
+    def _is_final(cls):
         """Check if the current class is final, if it has all the attributes set."""
         return all(item for item in (cls.backend_type, cls.introspection_type,
                                      cls.recipe_type, cls.service_type,
