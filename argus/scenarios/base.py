@@ -107,7 +107,10 @@ class BaseScenario(unittest.TestCase):
             except OSError:
                 pass
 
-        userdata = base64.encodestring(cls.userdata)
+        if cls.userdata:
+            userdata = base64.encodestring(cls.userdata)
+        else:
+            userdata = cls.userdata
         try:
             cls.backend = cls.backend_type(cls.conf,
                                            cls.__name__,
