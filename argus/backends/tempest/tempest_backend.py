@@ -40,8 +40,9 @@ OUTPUT_STATUS_OK = [200]
 class BaseTempestBackend(base_backend.BaseBackend):
     """Base class for backends built on top of Tempest."""
 
-    def __init__(self, conf, name, userdata, metadata):
-        super(BaseTempestBackend, self).__init__(conf, name, userdata, metadata)
+    def __init__(self, conf, name, userdata, metadata, availability_zone):
+        super(BaseTempestBackend, self).__init__(conf, name, userdata,
+                                                 metadata, availability_zone)
         self._server = None
         self._keypair = None
         self._security_group = None
@@ -194,7 +195,8 @@ class BaseTempestBackend(base_backend.BaseBackend):
             disk_config='AUTO',
             user_data=self._userdata,
             meta=self._metadata,
-            networks=self._networks)
+            networks=self._networks,
+            availability_zone=self._availability_zone)
         self._floating_ip = self._assign_floating_ip()
         self._security_group = self._create_security_groups()
 

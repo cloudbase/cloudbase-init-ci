@@ -39,11 +39,13 @@ class BaseBackend(object):
         instance to the correpsonding cloud initialization
         service.
     """
-    def __init__(self, conf, name=None, userdata=None, metadata=None):
+    def __init__(self, conf, name=None, userdata=None, metadata=None,
+                 availability_zone=None):
         self._name = name
         self._userdata = userdata
         self._metadata = metadata
         self._conf = conf
+        self._availability_zone = availability_zone
 
     @abc.abstractmethod
     def setup_instance(self):

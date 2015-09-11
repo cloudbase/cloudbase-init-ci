@@ -92,6 +92,7 @@ class BaseScenario(unittest.TestCase):
     test_classes = None
     userdata = None
     metadata = None
+    availability_zone = None
 
     backend = None
     introspection = None
@@ -112,9 +113,9 @@ class BaseScenario(unittest.TestCase):
         else:
             userdata = cls.userdata
         try:
-            cls.backend = cls.backend_type(cls.conf,
-                                           cls.__name__,
-                                           userdata, cls.metadata)
+            cls.backend = cls.backend_type(cls.conf, cls.__name__,
+                                           userdata, cls.metadata,
+                                           cls.availability_zone)
             cls.backend.setup_instance()
 
             cls.prepare_instance()
