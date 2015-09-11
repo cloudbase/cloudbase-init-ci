@@ -20,8 +20,26 @@ import six
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseBackend(object):
+    """Class for managing instances
 
-    def __init__(self, conf, name, userdata, metadata):
+    The *backend* is used for building and managing an underlying
+    instance, being it an OpenStack instance, OpenNebula instance
+    or a containerized OS.
+
+    :param conf:
+        A configuration object, which holds argus related info.
+    :param name:
+        The name of the instance that will be created.
+    :param userdata:
+        If any, the userdata which will be available in the
+        instance to the corresponding cloud initialization
+        service.
+    :param metadata:
+        If any, the metadata which should be available in the
+        instance to the correpsonding cloud initialization
+        service.
+    """
+    def __init__(self, conf, name=None, userdata=None, metadata=None):
         self._name = name
         self._userdata = userdata
         self._metadata = metadata
@@ -29,8 +47,8 @@ class BaseBackend(object):
 
     @abc.abstractmethod
     def setup_instance(self):
-        """Called by setUpClass to setup an instance"""
+        """Setup an underlying instance."""
 
     @abc.abstractmethod
     def cleanup(self):
-        """Needs to cleanup the resources created in ``setup_instance``"""
+        """Destroy and cleanup the relevant resources created by setup_instance."""
