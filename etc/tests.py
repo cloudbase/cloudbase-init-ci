@@ -156,39 +156,32 @@ class ScenarioLocalScripts(BaseWindowsScenario):
                     test_smoke.TestLocalScripts)
     recipe_type = recipe.CloudbaseinitLocalScriptsRecipe
 
-# TODO(cpopa): Can't convert these yet.
-# VFAT ConfigDrive tests, with drive and cdrom
-# [scenario_smoke_configdrive_vfat_drive_windows : base_smoke_windows]
 
-# test_classes = argus.tests.cloud.windows.test_smoke:TestSmoke
-# service_type = configdrive
-# environment = environment_devstack_configdrive_vfat_drive
-#
-#
-# [scenario_smoke_configdrive_vfat_cdrom_windows : base_smoke_windows]
-#
-# test_classes = argus.tests.cloud.windows.test_smoke:TestSmoke
-# service_type = configdrive
-# environment = environment_devstack_configdrive_vfat_cdrom
-#
-#
-# ISO9660 ConfigDrive tests, with drive and cdrom
-#
-# [scenario_smoke_configdrive_iso9660_drive_windows : base_smoke_windows]
-#
-# test_classes = argus.tests.cloud.windows.test_smoke:TestSmoke
-# service_type = configdrive
-# environment = environment_devstack_configdrive_iso9660_drive
-#
-#
-# [scenario_smoke_configdrive_iso9660_cdrom_windows : base_smoke_windows]
-#
-# test_classes = argus.tests.cloud.windows.test_smoke:TestSmoke
-# service_type = configdrive
-# environment = environment_devstack_configdrive_iso9660_cdrom
+class ScenarioSmokeConfigdriveVfatDrive(BaseWindowsScenario):
+    test_classes = (test_smoke.TestSmoke, )
+    service_type = 'configdrive'
+    availability_zone = 'configdrive_vfat_drive'
 
-# class ScenarioNetworkConfig(BaseWindowsScenario):
 
-# backend_type = tempest_cloud_backend.NetworkWindowsScenario
-# test_classes = argus.tests.cloud.smoke:TestStaticNetwork
-# environment = environment_devstack_static_network
+class ScenarioSmokeConfigdriveVfatCdrom(BaseWindowsScenario):
+    test_classes = (test_smoke.TestSmoke, )
+    service_type = 'configdrive'
+    availability_zone = 'configdrive_vfat_cdrom'
+
+
+class ScenarioSmokeConfigdriveIso9660Drive(BaseWindowsScenario):
+    test_classes = (test_smoke.TestSmoke, )
+    service_type = 'configdrive'
+    availability_zone = 'configdrive_iso9660_drive'
+
+
+class ScenarioSmokeConfigdriveIso9660Cdrom(BaseWindowsScenario):
+    test_classes = (test_smoke.TestSmoke, )
+    service_type = 'configdrive'
+    availability_zone = 'configdrive_iso9660_cdrom'
+
+
+class ScenarioNetworkConfig(BaseWindowsScenario):
+    backend_type = tempest_cloud_backend.NetworkWindowsBackend
+    test_classes = (smoke.TestStaticNetwork, )
+    availability_zone = 'static_network'
