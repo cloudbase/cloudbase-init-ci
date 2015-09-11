@@ -47,6 +47,15 @@ class ScenarioMultipartSmoke(BaseWindowsScenario):
     userdata = util.get_resource('windows/multipart_userdata')
 
 
+class ScenarioMultipartSmokeWindowsPartTwo(BaseWindowsScenario):
+
+    test_classes = (smoke.TestSetHostname,
+                    smoke.TestSetTimezone,
+                    smoke.TestPowershellMultipartX86TxtExists,
+                    smoke.TestNoError)
+    userdata = util.get_resource('windows/multipart_userdata_part_two')
+
+
 class ScenarioUserAlreadyCreated(BaseWindowsScenario):
 
     test_classes = (test_smoke.TestSmoke, )
