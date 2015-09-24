@@ -40,7 +40,7 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
         this step is achieved by allowing/forcing tenant isolation.
         """
         # Extract the just created private network.
-        return self._credentials().network
+        return self._manager.primary_credentials().network
 
     def _get_networks(self):
         """Explicitly gather and return the private networks.
@@ -48,7 +48,7 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
         All these networks will be attached to the newly created
         instance without letting nova to handle this part.
         """
-        _networks = self._network_client.list_networks()["networks"]
+        _networks = self._manager.network_client.list_networks()["networks"]
         # Skip external/private networks.
         networks = [net["id"] for net in _networks
                     if not net["router:external"]]
@@ -65,9 +65,9 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
         This network is the one with disabled DHCP and
         ready for static configuration by cb-init.
         """
-        tenant_id = self._credentials().tenant_id
+        tenant_id = self._manager.primary_credentials().tenant_id
         # pylint: disable=protected-access
-        net_resources = self._isolated_creds._create_network_resources(
+        net_resources = self._manager.isolated_creds._create_network_resources(
             tenant_id)
 
         # Store the network for later cleanup.
@@ -77,12 +77,12 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
             ("network", "subnet", "router",
              "user_id", "tenant_id", "username", "tenant_name"),
             net_resources + (None,) * 4)
-        self._isolated_creds.isolated_creds[key] = fake_net_creds
+        self._manager.isolated_creds.isolated_creds[key] = fake_net_creds
 
         # Disable DHCP for this network to test static configuration and
         # also add default DNS name servers.
         subnet_id = fake_net_creds.subnet["id"]
-        net_client = self._network_client
+        net_client = self._manager.network_client
         net_client.update_subnet(
             subnet_id, enable_dhcp=False,
             dns_nameservers=self._conf.argus.dns_nameservers)
@@ -108,12 +108,11 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
             enable_dhcp=False,
             ip_version=6)
 
-    def _prepare_run(self):
+    def setup_instance(self):
         # Just like a normal preparer, but this time
         # with explicitly specified attached networks.
-        super(NetworkWindowsBackend, self)._prepare_run()
 
-        if not isinstance(self._isolated_creds,
+        if not isinstance(self._manager.isolated_creds,
                           isolated_creds.IsolatedCreds):
             raise exceptions.ArgusError(
                 "Network resources are not available."
@@ -122,9 +121,11 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
         self._create_private_network()
         self._networks = self._get_networks()
 
+        super(NetworkWindowsBackend, self).setup_instance()
+
     def get_network_interfaces(self):
         """Retrieve and parse network details from the compute node."""
-        net_client = self._network_client
+        net_client = self._manager.network_client
         guest_nics = []
         for network in self._networks or []:
             network_id = network["uuid"]
@@ -175,12 +176,16 @@ class RescueWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
 
     def rescue_server(self):
         admin_pass = self._conf.argus.default_ci_password
-        self._servers_client.rescue_server(self._server['id'],
-                                           adminPass=admin_pass)
+        self._manager.servers_client.rescue_server(
+            self.internal_instance_id(),
+            adminPass=admin_pass)
         waiters.wait_for_server_status(
-            self._servers_client, self._server['id'], 'RESCUE')
+            self._manager.servers_client,
+            self.internal_instance_id(), 'RESCUE')
 
     def unrescue_server(self):
-        self._servers_client.unrescue_server(self._server['id'])
+        self._manager.servers_client.unrescue_server(
+            self.internal_instance_id())
         waiters.wait_for_server_status(
-            self._servers_client, self._server['id'], 'ACTIVE')
+            self._manager.servers_client,
+            self.internal_instance_id(), 'ACTIVE')

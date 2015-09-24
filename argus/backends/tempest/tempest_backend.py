@@ -20,11 +20,10 @@ import os
 import six
 
 from argus.backends import base as base_backend
+from argus.backends.tempest import manager as api_manager
 from argus import util
 
 with util.restore_excepthook():
-    from tempest import clients
-    from tempest.common import credentials
     from tempest.common import waiters
 
 
@@ -58,76 +57,41 @@ class BaseTempestBackend(base_backend.CloudBackend):
         self.image_username = self._conf.openstack.image_username
         self.image_password = self._conf.openstack.image_password
         self.image_os_type = self._conf.openstack.image_os_type
-
-    def _prepare_run(self):
-        # pylint: disable=attribute-defined-outside-init
-        self._isolated_creds = credentials.get_isolated_credentials(
-            self.__class__.__name__, network_resources={})
-        self._manager = clients.Manager(credentials=self._credentials())
-
-        # Clients (in alphabetical order)
-        self._flavors_client = self._manager.flavors_client
-        self._floating_ips_client = self._manager.floating_ips_client
-
-        # Glance image client v1
-        self._image_client = self._manager.image_client
-
-        # Compute image client
-        self._images_client = self._manager.images_client
-        self._keypairs_client = self._manager.keypairs_client
-
-        # Nova security groups client
-        self._security_groups_client = self._manager.security_groups_client
-        self._security_group_rules_client = \
-            self._manager.security_group_rules_client
-
-        self._servers_client = self._manager.servers_client
-        self._volumes_client = self._manager.volumes_client
-        self._snapshots_client = self._manager.snapshots_client
-        self._interface_client = self._manager.interfaces_client
-
-        # Neutron network client
-        self._network_client = self._manager.network_client
-
-        # Heat client
-        self._orchestration_client = self._manager.orchestration_client
-
-    def _credentials(self):
-        return self._isolated_creds.get_primary_creds()
+        self._manager = api_manager.APIManager()
 
     def _configure_networking(self):
-        subnet_id = self._credentials().subnet["id"]
-        self._network_client.update_subnet(
+        subnet_id = self._manager.primary_credentials().subnet["id"]
+        self._manager.network_client.update_subnet(
             subnet_id,
             dns_nameservers=self._conf.argus.dns_nameservers)
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
-        server = self._servers_client.create_server(
+        server = self._manager.servers_client.create_server(
             util.rand_name(self._name) + "-instance",
             self.image_ref,
             self.flavor_ref,
             **kwargs)
         waiters.wait_for_server_status(
-            self._servers_client, server['id'], wait_until)
+            self._manager.servers_client, server['id'], wait_until)
         return server
 
     def _create_keypair(self):
-        keypair = self._keypairs_client.create_keypair(
+        keypair = self._manager.keypairs_client.create_keypair(
             name=self.__class__.__name__ + "-key")['keypair']
         with open(self._conf.argus.path_to_private_key, 'w') as stream:
             stream.write(keypair['private_key'])
         return keypair
 
     def _assign_floating_ip(self):
-        floating_ip = self._floating_ips_client.create_floating_ip()
+        floating_ip = self._manager.floating_ips_client.create_floating_ip()
         floating_ip = floating_ip['floating_ip']
 
-        self._floating_ips_client.associate_floating_ip_to_server(
+        self._manager.floating_ips_client.associate_floating_ip_to_server(
             floating_ip['ip'], self.internal_instance_id())
         return floating_ip
 
     def _add_security_group_exceptions(self, secgroup_id):
-        _client = self._security_group_rules_client
+        _client = self._manager.security_group_rules_client
         rulesets = [
             {
                 # http RDP
@@ -173,17 +137,47 @@ class BaseTempestBackend(base_backend.CloudBackend):
     def _create_security_groups(self):
         sg_name = util.rand_name(self.__class__.__name__)
         sg_desc = sg_name + " description"
-        secgroup = self._security_groups_client.create_security_group(
+        secgroup = self._manager.security_groups_client.create_security_group(
             name=sg_name, description=sg_desc)['security_group']
 
         # Add rules to the security group.
         for rule in self._add_security_group_exceptions(secgroup['id']):
             self._security_groups_rules.append(rule['id'])
-        self._servers_client.add_security_group(self.internal_instance_id(),
-                                                secgroup['name'])
+        self._manager.servers_client.add_security_group(
+            self.internal_instance_id(),
+            secgroup['name'])
         return secgroup
 
-    def _setup(self):
+    def cleanup(self):
+        LOG.info("Cleaning up...")
+
+        if self._security_groups_rules:
+            for rule in self._security_groups_rules:
+                self._manager.security_group_rules_client.delete_security_group_rule(rule)
+
+        if self._security_group:
+            self._manager.servers_client.remove_security_group(
+                self.internal_instance_id(),
+                self._security_group['name'])
+
+        if self._server:
+            self._manager.servers_client.delete_server(
+                self.internal_instance_id())
+            waiters.wait_for_server_termination(
+                self._manager.servers_client,
+                self.internal_instance_id())
+
+        if self._floating_ip:
+            self._manager.floating_ips_client.delete_floating_ip(
+                self._floating_ip['id'])
+
+        if self._keypair:
+            self._manager.keypairs_client.delete_keypair(self._keypair['name'])
+            os.remove(self._conf.argus.path_to_private_key)
+
+        self._manager.cleanup_credentials()
+
+    def setup_instance(self):
         # pylint: disable=attribute-defined-outside-init
         LOG.info("Creating server...")
 
@@ -200,56 +194,24 @@ class BaseTempestBackend(base_backend.CloudBackend):
         self._floating_ip = self._assign_floating_ip()
         self._security_group = self._create_security_groups()
 
-    def cleanup(self):
-        LOG.info("Cleaning up...")
-
-        if self._security_groups_rules:
-            for rule in self._security_groups_rules:
-                self._security_group_rules_client.delete_security_group_rule(rule)
-
-        if self._security_group:
-            self._servers_client.remove_security_group(
-                self.internal_instance_id(),
-                self._security_group['name'])
-
-        if self._server:
-            self._servers_client.delete_server(self.internal_instance_id())
-            waiters.wait_for_server_termination(
-                self._servers_client,
-                self.internal_instance_id())
-
-        if self._floating_ip:
-            self._floating_ips_client.delete_floating_ip(
-                self._floating_ip['id'])
-
-        if self._keypair:
-            self._keypairs_client.delete_keypair(self._keypair['name'])
-            os.remove(self._conf.argus.path_to_private_key)
-
-        self._isolated_creds.clear_isolated_creds()
-
-    def setup_instance(self):
-        self._prepare_run()
-        self._setup()
-
     def reboot_instance(self):
-        self._servers_client.reboot_server(
+        self._manager.servers_client.reboot_server(
             server_id=self.internal_instance_id(),
             reboot_type='soft')
         waiters.wait_for_server_status(
-            self._servers_client,
+            self._manager.servers_client,
             self.internal_instance_id(), 'ACTIVE')
 
     def instance_password(self):
         """Get the password posted by the instance."""
-        encoded_password = self._servers_client.get_password(
+        encoded_password = self._manager.servers_client.get_password(
             self.internal_instance_id())
         return util.decrypt_password(
             private_key=self._conf.argus.path_to_private_key,
             password=encoded_password['password'])
 
     def _instance_output(self, limit):
-        ret = self._servers_client.get_console_output(
+        ret = self._manager.servers_client.get_console_output(
             self.internal_instance_id(),
             limit)
         return ret.response, ret.data
@@ -274,7 +236,7 @@ class BaseTempestBackend(base_backend.CloudBackend):
 
     def instance_server(self):
         """Get the instance server object."""
-        return self._servers_client.show_server(self.internal_instance_id())
+        return self._manager.servers_client.show_server(self.internal_instance_id())
 
     def public_key(self):
         return self._keypair['public_key']
@@ -283,7 +245,7 @@ class BaseTempestBackend(base_backend.CloudBackend):
         return self._keypair['private_key']
 
     def get_image_by_ref(self):
-        return self._images_client.show_image(self._conf.openstack.image_ref)
+        return self._manager.images_client.show_image(self._conf.openstack.image_ref)
 
     @abc.abstractmethod
     def get_remote_client(self, username=None, password=None, **kwargs):
