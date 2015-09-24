@@ -37,7 +37,7 @@ OUTPUT_STATUS_OK = [200]
 
 
 @six.add_metaclass(abc.ABCMeta)
-class BaseTempestBackend(base_backend.BaseBackend):
+class BaseTempestBackend(base_backend.CloudBackend):
     """Base class for backends built on top of Tempest."""
 
     def __init__(self, conf, name, userdata, metadata, availability_zone):
@@ -123,7 +123,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
         floating_ip = floating_ip['floating_ip']
 
         self._floating_ips_client.associate_floating_ip_to_server(
-            floating_ip['ip'], self._server['id'])
+            floating_ip['ip'], self.internal_instance_id())
         return floating_ip
 
     def _add_security_group_exceptions(self, secgroup_id):
@@ -179,7 +179,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
         # Add rules to the security group.
         for rule in self._add_security_group_exceptions(secgroup['id']):
             self._security_groups_rules.append(rule['id'])
-        self._servers_client.add_security_group(self._server['id'],
+        self._servers_client.add_security_group(self.internal_instance_id(),
                                                 secgroup['name'])
         return secgroup
 
@@ -193,37 +193,12 @@ class BaseTempestBackend(base_backend.BaseBackend):
             wait_until='ACTIVE',
             key_name=self._keypair['name'],
             disk_config='AUTO',
-            user_data=self._userdata,
-            meta=self._metadata,
+            user_data=self.userdata,
+            meta=self.metadata,
             networks=self._networks,
             availability_zone=self._availability_zone)
         self._floating_ip = self._assign_floating_ip()
         self._security_group = self._create_security_groups()
-
-    @staticmethod
-    def _get_log_template(suffix):
-        template = "{}{}.log".format("{}", "-" + suffix if suffix else "")
-        return template
-
-    def save_instance_output(self, suffix=None):
-        """Retrieve and save all data written through the COM port.
-
-        If a `suffix` is provided, then the log name is preceded by it.
-        """
-        if not self._conf.argus.output_directory:
-            return
-
-        template = self._get_log_template(suffix)
-        path = os.path.join(self._conf.argus.output_directory,
-                            template.format(self._server["id"]))
-        content = self.instance_output()
-        if not content.strip():
-            LOG.warn("Empty console output; nothing to save.")
-            return
-
-        LOG.info("Saving instance console output to: %s", path)
-        with open(path, "wb") as stream:
-            stream.write(content)
 
     def cleanup(self):
         LOG.info("Cleaning up...")
@@ -234,13 +209,14 @@ class BaseTempestBackend(base_backend.BaseBackend):
 
         if self._security_group:
             self._servers_client.remove_security_group(
-                self._server['id'], self._security_group['name'])
+                self.internal_instance_id(),
+                self._security_group['name'])
 
         if self._server:
-            self._servers_client.delete_server(self._server['id'])
+            self._servers_client.delete_server(self.internal_instance_id())
             waiters.wait_for_server_termination(
                 self._servers_client,
-                self._server['id'])
+                self.internal_instance_id())
 
         if self._floating_ip:
             self._floating_ips_client.delete_floating_ip(
@@ -257,34 +233,29 @@ class BaseTempestBackend(base_backend.BaseBackend):
         self._setup()
 
     def reboot_instance(self):
-        self._servers_client.reboot_server(server_id=self._server['id'],
-                                           reboot_type='soft')
+        self._servers_client.reboot_server(
+            server_id=self.internal_instance_id(),
+            reboot_type='soft')
         waiters.wait_for_server_status(
-            self._servers_client, self._server['id'], 'ACTIVE')
-
-    def userdata(self):
-        """Get the userdata which will be injected."""
-        return self._userdata
-
-    def server(self):
-        """Get the server created by this scenario.
-
-        If the server wasn't created, this could be None.
-        """
-        return self._server
+            self._servers_client,
+            self.internal_instance_id(), 'ACTIVE')
 
     def instance_password(self):
         """Get the password posted by the instance."""
         encoded_password = self._servers_client.get_password(
-            self._server['id'])
+            self.internal_instance_id())
         return util.decrypt_password(
             private_key=self._conf.argus.path_to_private_key,
             password=encoded_password['password'])
 
     def _instance_output(self, limit):
-        ret = self._servers_client.get_console_output(self._server['id'],
-                                                      limit)
+        ret = self._servers_client.get_console_output(
+            self.internal_instance_id(),
+            limit)
         return ret.response, ret.data
+
+    def internal_instance_id(self):
+        return self._server["id"]
 
     def instance_output(self, limit=OUTPUT_SIZE):
         """Get the console output, sent from the instance."""
@@ -303,7 +274,7 @@ class BaseTempestBackend(base_backend.BaseBackend):
 
     def instance_server(self):
         """Get the instance server object."""
-        return self._servers_client.show_server(self._server['id'])
+        return self._servers_client.show_server(self.internal_instance_id())
 
     def public_key(self):
         return self._keypair['public_key']
@@ -313,9 +284,6 @@ class BaseTempestBackend(base_backend.BaseBackend):
 
     def get_image_by_ref(self):
         return self._images_client.show_image(self._conf.openstack.image_ref)
-
-    def get_metadata(self):
-        return self._metadata
 
     @abc.abstractmethod
     def get_remote_client(self, username=None, password=None, **kwargs):

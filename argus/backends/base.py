@@ -14,8 +14,14 @@
 #    under the License.
 
 import abc
+import os
 
 import six
+
+from argus import util
+
+
+LOG = util.get_logger()
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -42,10 +48,11 @@ class BaseBackend(object):
     def __init__(self, conf, name=None, userdata=None, metadata=None,
                  availability_zone=None):
         self._name = name
-        self._userdata = userdata
-        self._metadata = metadata
         self._conf = conf
         self._availability_zone = availability_zone
+
+        self.userdata = userdata
+        self.metadata = metadata
 
     @abc.abstractmethod
     def setup_instance(self):
@@ -54,3 +61,56 @@ class BaseBackend(object):
     @abc.abstractmethod
     def cleanup(self):
         """Destroy and cleanup the relevant resources created by setup_instance."""
+
+
+class CloudBackend(BaseBackend):
+    """Base backend for cloud related tasks"""
+
+    @staticmethod
+    def _get_log_template(suffix):
+        template = "{}{}.log".format("{}", "-" + suffix if suffix else "")
+        return template
+
+    def save_instance_output(self, suffix=None):
+        """Retrieve and save all data written through the COM port.
+
+        If a `suffix` is provided, then the log name is preceded by it.
+        """
+        if not self._conf.argus.output_directory:
+            return
+
+        template = self._get_log_template(suffix)
+        path = os.path.join(self._conf.argus.output_directory,
+                            template.format(self.internal_instance_id()))
+        content = self.instance_output()
+        if not content.strip():
+            LOG.warn("Empty console output; nothing to save.")
+            return
+
+        LOG.info("Saving instance console output to: %s", path)
+        with open(path, "wb") as stream:
+            stream.write(content)
+
+    @abc.abstractmethod
+    def instance_output(self, limit=None):
+        """Get the underlying's instance output, if any."""
+
+    @abc.abstractmethod
+    def internal_instance_id(self):
+        """Get the underlying's instance id, depending on the internals of the backend."""
+
+    @abc.abstractmethod
+    def reboot_instance(self):
+        """Reboot the underlying instance."""
+
+    @abc.abstractmethod
+    def instance_password(self):
+        """Get the underlying instance password, if any."""
+
+    @abc.abstractmethod
+    def private_key(self):
+        """Get the underlying private key."""
+
+    @abc.abstractmethod
+    def public_key(self):
+        """Get the underlying public key."""
