@@ -62,3 +62,32 @@ class APIManager(object):
 
     def primary_credentials(self):
         return self.isolated_creds.get_primary_creds()
+
+    def create_keypair(self, name):
+        """Create a new keypair with the given name
+
+        This will return a new :class:`Keypair` object,
+        which provides access to the public, private key pair,
+        as well as a method for destroying the keypair if needed.
+        """
+
+        keypair = self.keypairs_client.create_keypair(
+            name=name + "-key")['keypair']
+        return Keypair(public_key=keypair['public_key'],
+                       private_key=keypair['private_key'],
+                       name=keypair['name'],
+                       manager=self)
+
+
+class Keypair(object):
+    """A keypair container."""
+
+    def __init__(self, name, public_key, private_key, manager):
+        self.name = name
+        self.public_key = public_key
+        self.private_key = private_key
+        self._manager = manager
+
+    def destroy(self):
+        """Destroy the current keypair."""
+        self._manager.keypairs_client.delete_keypair(self.name)

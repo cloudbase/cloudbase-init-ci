@@ -15,7 +15,9 @@
 
 
 import abc
+import contextlib
 import os
+import tempfile
 
 import six
 
@@ -33,6 +35,17 @@ LOG = util.get_logger()
 OUTPUT_SIZE = 128
 OUTPUT_EPSILON = int(OUTPUT_SIZE / 10)
 OUTPUT_STATUS_OK = [200]
+
+
+@contextlib.contextmanager
+def _create_tempfile(content):
+    fd, path = tempfile.mkstemp()
+    os.write(fd, content.encode())
+    os.close(fd)
+    try:
+        yield path
+    finally:
+        os.remove(path)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -74,13 +87,6 @@ class BaseTempestBackend(base_backend.CloudBackend):
         waiters.wait_for_server_status(
             self._manager.servers_client, server['id'], wait_until)
         return server
-
-    def _create_keypair(self):
-        keypair = self._manager.keypairs_client.create_keypair(
-            name=self.__class__.__name__ + "-key")['keypair']
-        with open(self._conf.argus.path_to_private_key, 'w') as stream:
-            stream.write(keypair['private_key'])
-        return keypair
 
     def _assign_floating_ip(self):
         floating_ip = self._manager.floating_ips_client.create_floating_ip()
@@ -172,8 +178,7 @@ class BaseTempestBackend(base_backend.CloudBackend):
                 self._floating_ip['id'])
 
         if self._keypair:
-            self._manager.keypairs_client.delete_keypair(self._keypair['name'])
-            os.remove(self._conf.argus.path_to_private_key)
+            self._keypair.destroy()
 
         self._manager.cleanup_credentials()
 
@@ -182,10 +187,11 @@ class BaseTempestBackend(base_backend.CloudBackend):
         LOG.info("Creating server...")
 
         self._configure_networking()
-        self._keypair = self._create_keypair()
+        self._keypair = self._manager.create_keypair(
+            name=self.__class__.__name__)
         self._server = self._create_server(
             wait_until='ACTIVE',
-            key_name=self._keypair['name'],
+            key_name=self._keypair.name,
             disk_config='AUTO',
             user_data=self.userdata,
             meta=self.metadata,
@@ -206,9 +212,10 @@ class BaseTempestBackend(base_backend.CloudBackend):
         """Get the password posted by the instance."""
         encoded_password = self._manager.servers_client.get_password(
             self.internal_instance_id())
-        return util.decrypt_password(
-            private_key=self._conf.argus.path_to_private_key,
-            password=encoded_password['password'])
+        with _create_tempfile(self._keypair.private_key) as tmp:
+            return util.decrypt_password(
+                private_key=tmp,
+                password=encoded_password['password'])
 
     def _instance_output(self, limit):
         ret = self._manager.servers_client.get_console_output(
@@ -239,10 +246,10 @@ class BaseTempestBackend(base_backend.CloudBackend):
         return self._manager.servers_client.show_server(self.internal_instance_id())
 
     def public_key(self):
-        return self._keypair['public_key']
+        return self._keypair.public_key
 
     def private_key(self):
-        return self._keypair['private_key']
+        return self._keypair.private_key
 
     def get_image_by_ref(self):
         return self._manager.images_client.show_image(self._conf.openstack.image_ref)
