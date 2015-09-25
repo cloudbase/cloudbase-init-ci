@@ -13,11 +13,33 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import contextlib
+import os
+import tempfile
+
 from argus import util
 
 with util.restore_excepthook():
     from tempest import clients
     from tempest.common import credentials
+    from tempest.common import waiters
+
+
+OUTPUT_STATUS_OK = 200
+OUTPUT_SIZE = 128
+OUTPUT_EPSILON = int(OUTPUT_SIZE / 10)
+LOG = util.get_logger()
+
+
+@contextlib.contextmanager
+def _create_tempfile(content):
+    fd, path = tempfile.mkstemp()
+    os.write(fd, content.encode())
+    os.close(fd)
+    try:
+        yield path
+    finally:
+        os.remove(path)
 
 
 class APIManager(object):
@@ -77,6 +99,43 @@ class APIManager(object):
                        private_key=keypair['private_key'],
                        name=keypair['name'],
                        manager=self)
+
+    def reboot_instance(self, instance_id):
+        """Reboot the instance with the given id."""
+        self.servers_client.reboot_server(
+            server_id=instance_id, reboot_type='soft')
+        waiters.wait_for_server_status(
+            self.servers_client,
+            instance_id, 'ACTIVE')
+
+    def instance_password(self, instance_id, keypair):
+        """Get the password posted by the given instance."""
+        encoded_password = self.servers_client.get_password(
+            instance_id)
+        with _create_tempfile(keypair.private_key) as tmp:
+            return util.decrypt_password(
+                private_key=tmp,
+                password=encoded_password['password'])
+
+    def _instance_output(self, instance_id, limit):
+        ret = self.servers_client.get_console_output(
+            instance_id, limit)
+        return ret.response, ret.data
+
+    def instance_output(self, instance_id, limit):
+        """Get the console output, sent from the instance."""
+        content = None
+        while True:
+            resp, content = self._instance_output(instance_id, limit)
+            if resp.status != OUTPUT_STATUS_OK:
+                LOG.error("Couldn't get console output <%d>.", resp.status)
+                return
+
+            if len(content.splitlines()) >= (limit - OUTPUT_EPSILON):
+                limit *= 2
+            else:
+                break
+        return content
 
 
 class Keypair(object):

@@ -15,9 +15,6 @@
 
 
 import abc
-import contextlib
-import os
-import tempfile
 
 import six
 
@@ -33,19 +30,6 @@ LOG = util.get_logger()
 
 # Starting size as number of lines and tolerance.
 OUTPUT_SIZE = 128
-OUTPUT_EPSILON = int(OUTPUT_SIZE / 10)
-OUTPUT_STATUS_OK = [200]
-
-
-@contextlib.contextmanager
-def _create_tempfile(content):
-    fd, path = tempfile.mkstemp()
-    os.write(fd, content.encode())
-    os.close(fd)
-    try:
-        yield path
-    finally:
-        os.remove(path)
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -201,45 +185,23 @@ class BaseTempestBackend(base_backend.CloudBackend):
         self._security_group = self._create_security_groups()
 
     def reboot_instance(self):
-        self._manager.servers_client.reboot_server(
-            server_id=self.internal_instance_id(),
-            reboot_type='soft')
-        waiters.wait_for_server_status(
-            self._manager.servers_client,
-            self.internal_instance_id(), 'ACTIVE')
+        # Delegate to the manager to reboot the instance
+        return self._manager.reboot_instance(self.internal_instance_id())
 
     def instance_password(self):
-        """Get the password posted by the instance."""
-        encoded_password = self._manager.servers_client.get_password(
-            self.internal_instance_id())
-        with _create_tempfile(self._keypair.private_key) as tmp:
-            return util.decrypt_password(
-                private_key=tmp,
-                password=encoded_password['password'])
-
-    def _instance_output(self, limit):
-        ret = self._manager.servers_client.get_console_output(
+        # Delegate to the manager to find out the instance password
+        return self._manager.instance_password(
             self.internal_instance_id(),
-            limit)
-        return ret.response, ret.data
+            self._keypair)
 
     def internal_instance_id(self):
         return self._server["id"]
 
     def instance_output(self, limit=OUTPUT_SIZE):
         """Get the console output, sent from the instance."""
-        content = None
-        while True:
-            resp, content = self._instance_output(limit)
-            if resp.status not in OUTPUT_STATUS_OK:
-                LOG.error("Couldn't get console output <%d>.", resp.status)
-                return
-
-            if len(content.splitlines()) >= (limit - OUTPUT_EPSILON):
-                limit *= 2
-            else:
-                break
-        return content
+        return self._manager.instance_output(
+            self.internal_instance_id(),
+            limit)
 
     def instance_server(self):
         """Get the instance server object."""
