@@ -41,7 +41,7 @@ class HeatBackend(base.CloudBackend):
 
     @staticmethod
     def _build_template(instance_name, key,
-                        image_name, flavor_name,
+                        image_name, flavor_name, user_data,
                         floating_network_id, private_net_id):
         return {
             u'heat_template_version': u'2013-05-23',
@@ -60,6 +60,8 @@ class HeatBackend(base.CloudBackend):
                         u'key_name': key,
                         u'image': image_name,
                         u'flavor': flavor_name,
+                        u'user_data_format': 'RAW',
+                        u'user_data': user_data,
                         u'networks': [
                             {u'port': {u'get_resource': u'server_port'}}
                         ]
@@ -114,9 +116,10 @@ class HeatBackend(base.CloudBackend):
         floating_network_id = credentials.router['external_gateway_info']['network_id']
         private_net_id = credentials.network['id']
 
-        template = self._build_template(self._name, self._keypair.name,
-                                        image_name, flavor_name,
-                                        floating_network_id, private_net_id)
+        template = self._build_template(
+            self._name, self._keypair.name,
+            image_name, flavor_name, self.userdata,
+            floating_network_id, private_net_id)
         fields = {
             'stack_name': self._name,
             'disable_rollback': True,
