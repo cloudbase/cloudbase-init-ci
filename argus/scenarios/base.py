@@ -101,6 +101,10 @@ class BaseScenario(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
+        # pylint: disable=not-callable
+        # Pylint is not aware that the attrs are reassigned in other modules,
+        # so we're just disabling the errors for now.
+
         # Create output_directory when given
         if cls.conf.argus.output_directory:
             try:
@@ -129,6 +133,9 @@ class BaseScenario(unittest.TestCase):
 
     @classmethod
     def prepare_instance(cls):
+        # pylint: disable=not-callable
+        # Pylint is not aware that the attrs are reassigned in other modules,
+        # so we're just disabling the errors for now.
         cls.recipe = cls.recipe_type(cls.conf, cls.backend, cls.service_type)
         cls.recipe.prepare()
         cls.backend.save_instance_output()
