@@ -114,3 +114,21 @@ class CloudBackend(BaseBackend):
     @abc.abstractmethod
     def public_key(self):
         """Get the underlying public key."""
+
+    @abc.abstractmethod
+    def get_remote_client(self, username=None, password=None, **kwargs):
+        """Get a remote client to the underlying instance.
+
+        This is different than :attr:`remote_client`, because that
+        will always return a client with predefined credentials,
+        while this method allows for a fine-grained control
+        over this aspect.
+        `password` can be omitted if authentication by
+        SSH key is used.
+        The **kwargs parameter can be used for additional options
+        (currently none).
+        """
+
+    @abc.abstractproperty
+    def remote_client(self):
+        """An astract property which should return the default client."""

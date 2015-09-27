@@ -43,7 +43,7 @@ class ScenarioSmoke(BaseWindowsScenario):
 class ScenarioSmokeHeat(BaseWindowsScenario):
 
     test_classes = (test_smoke.TestSmoke, )
-    backend_type = heat_backend.HeatBackend
+    backend_type = heat_backend.WindowsHeatBackend
 
 
 class ScenarioMultipartSmoke(BaseWindowsScenario):

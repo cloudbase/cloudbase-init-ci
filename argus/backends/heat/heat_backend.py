@@ -13,10 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import abc
+
 from heatclient import exc
+import six
 
 from argus.backends import base
 from argus.backends.heat import client
+from argus.backends import windows
 from argus.backends.tempest import manager as api_manager
 from argus import exceptions
 from argus import util
@@ -25,12 +29,14 @@ from argus import util
 OS_NOVA_RESOURCE = 'OS::Nova::Server'
 
 
-class HeatBackend(base.CloudBackend):
+# pylint: disable=abstract-method; FP: https://bitbucket.org/logilab/pylint/issues/565
+@six.add_metaclass(abc.ABCMeta)
+class BaseHeatBackend(base.CloudBackend):
     """A backend which uses Heat as the driving core."""
 
     def __init__(self, conf, name=None, userdata=None, metadata=None,
                  availability_zone=None):
-        super(HeatBackend, self).__init__(
+        super(BaseHeatBackend, self).__init__(
             conf, name=name, userdata=userdata, metadata=metadata,
             availability_zone=availability_zone)
 
@@ -101,7 +107,7 @@ class HeatBackend(base.CloudBackend):
         }
 
     def setup_instance(self):
-        super(HeatBackend, self).setup_instance()
+        super(BaseHeatBackend, self).setup_instance()
 
         # Get the image and the flavor name
         image_name = self._manager.image_client.get_image_meta(
@@ -184,3 +190,7 @@ class HeatBackend(base.CloudBackend):
     def public_key(self):
         """Get the underlying public key."""
         return self._keypair.public_key
+
+
+class WindowsHeatBackend(windows.WindowsBackendMixin, BaseHeatBackend):
+    """Heat backend tailored to work with Windows platforms."""

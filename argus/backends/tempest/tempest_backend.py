@@ -19,6 +19,7 @@ import abc
 import six
 
 from argus.backends import base as base_backend
+from argus.backends import windows
 from argus.backends.tempest import manager as api_manager
 from argus import util
 
@@ -32,6 +33,7 @@ LOG = util.get_logger()
 OUTPUT_SIZE = 128
 
 
+# pylint: disable=abstract-method; FP: https://bitbucket.org/logilab/pylint/issues/565
 @six.add_metaclass(abc.ABCMeta)
 class BaseTempestBackend(base_backend.CloudBackend):
     """Base class for backends built on top of Tempest."""
@@ -213,26 +215,9 @@ class BaseTempestBackend(base_backend.CloudBackend):
     def get_image_by_ref(self):
         return self._manager.images_client.show_image(self._conf.openstack.image_ref)
 
-    @abc.abstractmethod
-    def get_remote_client(self, username=None, password=None, **kwargs):
-        """Get a remote client to the underlying instance.
 
-        This is different than :attr:`remote_client`, because that
-        will always return a client with predefined credentials,
-        while this method allows for a fine-grained control
-        over this aspect.
-        `password` can be omitted if authentication by
-        SSH key is used.
-        The **kwargs parameter can be used for additional options
-        (currently none).
-        """
-
-    @abc.abstractproperty
-    def remote_client(self):
-        """An astract property which should return the default client."""
-
-
-class BaseWindowsTempestBackend(BaseTempestBackend):
+class BaseWindowsTempestBackend(windows.WindowsBackendMixin,
+                                BaseTempestBackend):
     """Base Tempest backend for testing Windows."""
 
     def _get_log_template(self, suffix):
@@ -243,15 +228,3 @@ class BaseWindowsTempestBackend(BaseTempestBackend):
                                          self._conf.argus.arch,
                                          template)
         return template
-
-    def get_remote_client(self, username=None, password=None,
-                          protocol='http', **kwargs):
-        if username is None:
-            username = self._conf.openstack.image_username
-        if password is None:
-            password = self._conf.openstack.image_password
-        return util.WinRemoteClient(self._floating_ip['ip'],
-                                    username, password,
-                                    transport_protocol=protocol)
-
-    remote_client = util.cached_property(get_remote_client, 'remote_client')
