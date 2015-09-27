@@ -145,6 +145,8 @@ class BaseHeatBackend(base.CloudBackend):
         try:
             self._heat_client.stacks.delete(stack_id=self._name)
         finally:
+            self._manager.floating_ips_client.delete_floating_ip(
+                self._floating_ip_resource['id'])
             self._manager.cleanup_credentials()
 
     def _find_resource(self, resource_name):
@@ -172,10 +174,15 @@ class BaseHeatBackend(base.CloudBackend):
         """Get the underlying's instance id, depending on the internals of the backend."""
         return self._internal_id
 
-    def floating_ip(self):
+    @util.cached_property
+    def _floating_ip_resource(self):
         resource = self._find_resource(OS_NEUTRON_FLOATING_IP)
         floating_ip = self._manager.floating_ips_client.show_floating_ip(resource)
-        return floating_ip['floating_ip']['ip']
+        return floating_ip['floating_ip']
+
+    def floating_ip(self):
+        """Get the underlying floating ip."""
+        return self._floating_ip_resource['ip']
 
     def instance_output(self, limit=api_manager.OUTPUT_SIZE):
         """Get the console output, sent from the instance."""
