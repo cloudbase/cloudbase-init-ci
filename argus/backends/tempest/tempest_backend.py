@@ -51,9 +51,6 @@ class BaseTempestBackend(base_backend.CloudBackend):
         # set some members from the configuration file needed by recipes
         self.image_ref = self._conf.openstack.image_ref
         self.flavor_ref = self._conf.openstack.flavor_ref
-        self.image_username = self._conf.openstack.image_username
-        self.image_password = self._conf.openstack.image_password
-        self.image_os_type = self._conf.openstack.image_os_type
         self._manager = api_manager.APIManager()
 
     def _configure_networking(self):
@@ -250,9 +247,9 @@ class BaseWindowsTempestBackend(BaseTempestBackend):
     def get_remote_client(self, username=None, password=None,
                           protocol='http', **kwargs):
         if username is None:
-            username = self.image_username
+            username = self._conf.openstack.image_username
         if password is None:
-            password = self.image_password
+            password = self._conf.openstack.image_password
         return util.WinRemoteClient(self._floating_ip['ip'],
                                     username, password,
                                     transport_protocol=protocol)
