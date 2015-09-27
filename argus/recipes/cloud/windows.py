@@ -41,10 +41,10 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
                     'where -Property Name -contains {0}).Name"'
-                    .format(self._backend.image_username))
+                    .format(self._conf.openstack.image_username))
         self._execute_until_condition(
             wait_cmd,
-            lambda stdout: stdout.strip() == self._backend.image_username,
+            lambda stdout: stdout.strip() == self._conf.openstack.image_username,
             count=COUNT, delay=DELAY)
 
     def execution_prologue(self):
@@ -222,7 +222,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                .format(self._conf.argus.resources))
         self._execute(cmd)
 
-        escaped = introspection._escape_path(cbinit)
+        escaped = introspection.escape_path(cbinit)
         self._execute('powershell "C:\\\\patch_shell.ps1 \"{}\""'
                       .format(escaped))
 
@@ -375,7 +375,7 @@ class CloudbaseinitCloudstackRecipe(CloudbaseinitMockServiceRecipe):
                .format(self._conf.argus.resources))
         self._execute(cmd)
 
-        escaped = introspection._escape_path(cbinit)
+        escaped = introspection.escape_path(cbinit)
         self._execute('powershell "C:\\\\patch_cloudstack.ps1 \"{}\""'
                       .format(escaped))
 

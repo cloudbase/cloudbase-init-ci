@@ -69,7 +69,7 @@ class TestPasswordMetadataSmoke(BaseTestPassword):
     """
 
     def test_password_set_from_metadata(self):
-        metadata = self._backend.get_metadata()
+        metadata = self._backend.metadata
         if metadata and metadata.get('admin_pass'):
             password = metadata['admin_pass']
             self.is_password_set(password)
@@ -186,7 +186,7 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
 
     def test_update_password(self):
         # Get the password from the metadata.
-        password = self._backend.get_metadata()['admin_pass']
+        password = self._backend.metadata['admin_pass']
 
         with self._backend.instantiate_mock_services():
             # Wait until the web service starts serving requests.

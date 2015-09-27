@@ -53,7 +53,7 @@ class ConfigurationParser(object):
     def argus(self):
         # Get the argus section
         argus = collections.namedtuple('argus',
-                                       'resources pause path_to_private_key '
+                                       'resources pause '
                                        'file_log log_format dns_nameservers '
                                        'output_directory build arch '
                                        'patch_install git_command')
@@ -62,7 +62,6 @@ class ConfigurationParser(object):
             'https://raw.githubusercontent.com/PCManticore/'
             'argus-ci/master/argus/resources')
         pause = self._parser.getboolean('argus', 'pause')
-        path_to_private_key = self._parser.get('argus', 'path_to_private_key')
         file_log = _get_default(self._parser, 'argus', 'file_log')
         log_format = _get_default(self._parser, 'argus', 'log_format')
         dns_nameservers = _get_default(
@@ -77,10 +76,9 @@ class ConfigurationParser(object):
         patch_install = _get_default(self._parser, 'argus', 'patch_install')
         git_command = _get_default(self._parser, 'argus', 'git_command')
 
-        return argus(resources, pause, path_to_private_key,
-                     file_log, log_format, dns_nameservers,
-                     output_directory, build, arch, patch_install,
-                     git_command)
+        return argus(resources, pause, file_log, log_format,
+                     dns_nameservers, output_directory, build, arch,
+                     patch_install, git_command)
 
     @property
     def cloudbaseinit(self):

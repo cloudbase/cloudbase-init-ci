@@ -99,7 +99,7 @@ class MetadataServiceAppMixin(object):
     """Common metadata resources."""
 
     def instance_id(self):
-        return self._backend.server()['id']
+        return self._backend.internal_instance_id()
 
     def local_hostname(self):
         return self._backend.instance_server()['name'][:15].lower()
@@ -278,7 +278,7 @@ class HTTPKeysMetadataServiceApp(BaseServiceApp):
             } for data in util.get_public_keys()]
         }
         key = "admin_pass"
-        metadata[key] = self._backend.get_metadata()[key]
+        metadata[key] = self._backend.metadata[key]
         return metadata
 
     @cherrypy.expose

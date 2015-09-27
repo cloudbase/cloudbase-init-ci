@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from argus.backends.heat import heat_backend
 from argus.backends.tempest import cloud as tempest_cloud_backend
 from argus.backends.tempest import tempest_backend
 from argus.introspection.cloud import windows as introspection
@@ -37,6 +38,12 @@ class BaseWindowsScenario(base.BaseScenario):
 class ScenarioSmoke(BaseWindowsScenario):
 
     test_classes = (test_smoke.TestSmoke, )
+
+
+class ScenarioSmokeHeat(BaseWindowsScenario):
+
+    test_classes = (test_smoke.TestSmoke, )
+    backend_type = heat_backend.WindowsHeatBackend
 
 
 class ScenarioMultipartSmoke(BaseWindowsScenario):

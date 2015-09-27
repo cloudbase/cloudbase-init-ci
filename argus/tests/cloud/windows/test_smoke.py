@@ -76,8 +76,8 @@ class TestSmoke(smoke.TestsBaseSmoke):
         # Test that HTTPS transport protocol for WinRM is configured.
         # By default, the test images are built only for HTTP.
         remote_client = self._backend.get_remote_client(
-            self._backend.image_username,
-            self._backend.image_password,
+            self._conf.openstack.image_username,
+            self._conf.openstack.image_password,
             protocol='https')
         stdout = remote_client.run_command_verbose('echo 1')
         self.assertEqual('1', stdout.strip())
@@ -161,8 +161,8 @@ class TestNextLogonPassword(base.BaseTestCase):
         wait_cmd = ('powershell (Get-Service "| where -Property Name '
                     '-match cloudbase-init").Status')
         remote_client = self._backend.get_remote_client(
-            self._backend.image_username,
-            self._backend.image_password)
+            self._conf.openstack.image_username,
+            self._conf.openstack.image_password)
         remote_client.run_command_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'Stopped',
