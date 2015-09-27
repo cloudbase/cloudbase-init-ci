@@ -105,7 +105,7 @@ class HeatBackend(base.CloudBackend):
 
         # Get the image and the flavor name
         image_name = self._manager.image_client.get_image_meta(
-            self._conf.openstack.image_ref)
+            self._conf.openstack.image_ref)['name']
         flavor_name = self._manager.flavors_client.show_flavor(
             self._conf.openstack.flavor_ref)['flavor']['name']
         self._keypair = self._manager.create_keypair(
