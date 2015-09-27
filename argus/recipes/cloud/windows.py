@@ -222,7 +222,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                .format(self._conf.argus.resources))
         self._execute(cmd)
 
-        escaped = introspection._escape_path(cbinit)
+        escaped = introspection.escape_path(cbinit)
         self._execute('powershell "C:\\\\patch_shell.ps1 \"{}\""'
                       .format(escaped))
 
@@ -375,7 +375,7 @@ class CloudbaseinitCloudstackRecipe(CloudbaseinitMockServiceRecipe):
                .format(self._conf.argus.resources))
         self._execute(cmd)
 
-        escaped = introspection._escape_path(cbinit)
+        escaped = introspection.escape_path(cbinit)
         self._execute('powershell "C:\\\\patch_cloudstack.ps1 \"{}\""'
                       .format(escaped))
 

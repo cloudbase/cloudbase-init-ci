@@ -66,7 +66,8 @@ def _get_ntp_peers(output):
     return list(filter(None, map(str.strip, peers)))
 
 
-def _escape_path(path):
+def escape_path(path):
+    """Escape the spaces in the given path in order to work with Powershell properly."""
     for char in ESC:
         path = path.replace(char, "`{}".format(char))
     return path
@@ -137,7 +138,7 @@ def get_cbinit_dir(execute_function):
 
     for location in locations:
         location = location.strip()
-        _location = _escape_path(location)
+        _location = escape_path(location)
         status = execute_function(
             'powershell Test-Path "{}\\Cloudbase` Solutions"'.format(
                 _location)).strip().lower()
