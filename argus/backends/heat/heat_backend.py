@@ -14,6 +14,7 @@
 #    under the License.
 
 import abc
+import time
 
 from heatclient import exc
 import six
@@ -28,6 +29,8 @@ from argus import util
 
 OS_NOVA_RESOURCE = 'OS::Nova::Server'
 OS_NEUTRON_FLOATING_IP = "OS::Neutron::FloatingIP"
+RESOURCE_COMPLETED_STATUS = "CREATE_COMPLETE"
+HEAT_RESOURCE_LIMIT = 10
 
 
 # pylint: disable=abstract-method; FP: https://bitbucket.org/logilab/pylint/issues/565
@@ -149,20 +152,29 @@ class BaseHeatBackend(base.CloudBackend):
                 self._floating_ip_resource['id'])
             self._manager.cleanup_credentials()
 
-    def _find_resource(self, resource_name):
+    def _find_resource(self, resource_name, limit=HEAT_RESOURCE_LIMIT):
         fields = {
             'stack_id': self._name,
             'nested_depth': 1,
         }
-        try:
-            resources = self._heat_client.resources.list(**fields)
-        except exc.HTTPNotFound:
-            raise exceptions.ArgusError('Stack not found: %s' % self._name)
-        else:
-            for resource in resources:
-                if resource.resource_type == resource_name:
-                    # Found the resource we were needing
-                    return resource.physical_resource_id
+        while limit > 0:
+            try:
+                resources = self._heat_client.resources.list(**fields)
+            except exc.HTTPNotFound:
+                raise exceptions.ArgusError('Stack not found: %s' % self._name)
+            else:
+                for resource in resources:
+                    if resource.resource_type == resource_name:
+                        # Found the resource we were needing
+                        if resource.resource_status == RESOURCE_COMPLETED_STATUS:
+                            return resource.physical_resource_id
+                        else:
+                            limit -= 1
+                            time.sleep(0.05)
+                            break
+                else:
+                    break
+
         raise exceptions.ArgusError("No resource %s found with name %s"
                                     % (resource_name, self._name))
 
