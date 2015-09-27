@@ -116,6 +116,10 @@ class CloudBackend(BaseBackend):
         """Get the underlying public key."""
 
     @abc.abstractmethod
+    def floating_ip(self):
+        """Get the floating ip that was attached to the underlying instance."""
+
+    @abc.abstractmethod
     def get_remote_client(self, username=None, password=None, **kwargs):
         """Get a remote client to the underlying instance.
 

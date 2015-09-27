@@ -27,6 +27,7 @@ from argus import util
 
 
 OS_NOVA_RESOURCE = 'OS::Nova::Server'
+OS_NEUTRON_FLOATING_IP = "OS::Neutron::FloatingIP"
 
 
 # pylint: disable=abstract-method; FP: https://bitbucket.org/logilab/pylint/issues/565
@@ -146,8 +147,7 @@ class BaseHeatBackend(base.CloudBackend):
         finally:
             self._manager.cleanup_credentials()
 
-    @util.cached_property
-    def _internal_id(self):
+    def _find_resource(self, resource):
         fields = {
             'stack_id': self._name,
             'nested_depth': 1,
@@ -158,14 +158,24 @@ class BaseHeatBackend(base.CloudBackend):
             raise exceptions.ArgusError('Stack not found: %s' % self._name)
         else:
             for resource in resources:
-                if resource.resource_type == OS_NOVA_RESOURCE:
-                    # Found the server we were needing
+                if resource.resource_type == resource:
+                    # Found the resource we were needing
                     return resource.physical_resource_id
-        raise exceptions.ArgusError("No server found with name %s" % self._name)
+        raise exceptions.ArgusError("No resource %s found with name %s"
+                                    % (resource, self._name))
+
+    @util.cached_property
+    def _internal_id(self):
+        return self._find_resource(OS_NOVA_RESOURCE)
 
     def internal_instance_id(self):
         """Get the underlying's instance id, depending on the internals of the backend."""
         return self._internal_id
+
+    def floating_ip(self):
+        resource = self._find_resource(OS_NEUTRON_FLOATING_IP)
+        floating_ip = self._manager.floating_ips_client.show_floating_ip(resource)
+        return floating_ip['floating_ip']['ip']
 
     def instance_output(self, limit=api_manager.OUTPUT_SIZE):
         """Get the console output, sent from the instance."""

@@ -26,7 +26,7 @@ class WindowsBackendMixin(object):
             username = self._conf.openstack.image_username
         if password is None:
             password = self._conf.openstack.image_password
-        return util.WinRemoteClient(self._floating_ip['ip'],
+        return util.WinRemoteClient(self.floating_ip(),
                                     username, password,
                                     transport_protocol=protocol)
 
