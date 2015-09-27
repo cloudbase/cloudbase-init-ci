@@ -239,6 +239,10 @@ class BaseHeatBackend(base.CloudBackend):
         """Get the underlying public key."""
         return self._keypair.public_key
 
+    def instance_server(self):
+        """Get the instance server object."""
+        return self._manager.instance_server(self.internal_instance_id())
+
 
 class WindowsHeatBackend(windows.WindowsBackendMixin, BaseHeatBackend):
     """Heat backend tailored to work with Windows platforms."""

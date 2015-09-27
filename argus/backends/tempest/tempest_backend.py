@@ -204,7 +204,7 @@ class BaseTempestBackend(base_backend.CloudBackend):
 
     def instance_server(self):
         """Get the instance server object."""
-        return self._manager.servers_client.show_server(self.internal_instance_id())
+        return self._manager.instance_server(self.internal_instance_id())
 
     def public_key(self):
         return self._keypair.public_key

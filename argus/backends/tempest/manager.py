@@ -137,6 +137,10 @@ class APIManager(object):
                 break
         return content
 
+    def instance_server(self, instance_id):
+        """Get more details about the given instance id."""
+        return self.servers_client.show_server(instance_id)
+
 
 class Keypair(object):
     """A keypair container."""
