@@ -112,6 +112,12 @@ class BaseHeatBackend(base.CloudBackend):
             }
         }
 
+    def _configure_networking(self, credentials):
+        subnet_id = credentials.subnet["id"]
+        self._manager.network_client.update_subnet(
+            subnet_id,
+            dns_nameservers=self._conf.argus.dns_nameservers)
+
     def setup_instance(self):
         super(BaseHeatBackend, self).setup_instance()
 
@@ -125,6 +131,7 @@ class BaseHeatBackend(base.CloudBackend):
 
         # Get network info.
         credentials = self._manager.primary_credentials()
+        self._configure_networking(credentials)
         floating_network_id = credentials.router['external_gateway_info']['network_id']
         private_net_id = credentials.network['id']
 
