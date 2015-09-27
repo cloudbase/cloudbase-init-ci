@@ -147,7 +147,7 @@ class BaseHeatBackend(base.CloudBackend):
         finally:
             self._manager.cleanup_credentials()
 
-    def _find_resource(self, resource):
+    def _find_resource(self, resource_name):
         fields = {
             'stack_id': self._name,
             'nested_depth': 1,
@@ -158,11 +158,11 @@ class BaseHeatBackend(base.CloudBackend):
             raise exceptions.ArgusError('Stack not found: %s' % self._name)
         else:
             for resource in resources:
-                if resource.resource_type == resource:
+                if resource.resource_type == resource_name:
                     # Found the resource we were needing
                     return resource.physical_resource_id
         raise exceptions.ArgusError("No resource %s found with name %s"
-                                    % (resource, self._name))
+                                    % (resource_name, self._name))
 
     @util.cached_property
     def _internal_id(self):
