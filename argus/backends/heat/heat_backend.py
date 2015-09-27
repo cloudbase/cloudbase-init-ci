@@ -31,6 +31,7 @@ OS_NOVA_RESOURCE = 'OS::Nova::Server'
 OS_NEUTRON_FLOATING_IP = "OS::Neutron::FloatingIP"
 RESOURCE_COMPLETED_STATUS = "CREATE_COMPLETE"
 HEAT_RESOURCE_LIMIT = 10
+HEAT_RESOURCE_TIMEOUT = 0.5
 
 
 # pylint: disable=abstract-method; FP: https://bitbucket.org/logilab/pylint/issues/565
@@ -170,7 +171,7 @@ class BaseHeatBackend(base.CloudBackend):
                             return resource.physical_resource_id
                         else:
                             limit -= 1
-                            time.sleep(0.05)
+                            time.sleep(HEAT_RESOURCE_TIMEOUT)
                             break
                 else:
                     break
