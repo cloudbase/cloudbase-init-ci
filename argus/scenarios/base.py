@@ -42,7 +42,7 @@ class ScenarioMeta(type):
     def __new__(mcs, name, bases, attrs):
         cls = super(ScenarioMeta, mcs).__new__(mcs, name, bases, attrs)
         test_loader = unittest.TestLoader()
-        if not cls._is_final():
+        if not cls.is_final():
             LOG.warning("Class %s is not a final class", cls)
             return cls
 
@@ -74,7 +74,7 @@ class ScenarioMeta(type):
 
         return cls
 
-    def _is_final(cls):
+    def is_final(cls):
         """Check if the current class is final, if it has all the attributes set."""
         return all(item for item in (cls.backend_type, cls.introspection_type,
                                      cls.recipe_type, cls.service_type,
