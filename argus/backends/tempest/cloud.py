@@ -175,10 +175,11 @@ class RescueWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
     """Instance rescue Windows-based backend."""
 
     def rescue_server(self):
-        admin_pass = self._conf.argus.default_ci_password
+        admin_pass = self._conf.openstack.image_password
         self._manager.servers_client.rescue_server(
             self.internal_instance_id(),
             adminPass=admin_pass)
+
         waiters.wait_for_server_status(
             self._manager.servers_client,
             self.internal_instance_id(), 'RESCUE')
