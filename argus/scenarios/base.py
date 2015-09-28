@@ -104,6 +104,7 @@ class BaseScenario(unittest.TestCase):
         # Pylint is not aware that the attrs are reassigned in other modules,
         # so we're just disabling the errors for now.
 
+        LOG.info("Running scenario %s", cls.__name__)
         # Create output_directory when given
         if cls.conf.argus.output_directory:
             try:
