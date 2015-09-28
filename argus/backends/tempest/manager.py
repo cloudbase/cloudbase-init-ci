@@ -61,6 +61,7 @@ class APIManager(object):
         # Compute image client
         self.images_client = self._manager.images_client
         self.keypairs_client = self._manager.keypairs_client
+        self.availability_zone_client = self._manager.availability_zone_client
 
         # Nova security groups client
         self.security_groups_client = self._manager.security_groups_client

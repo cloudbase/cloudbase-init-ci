@@ -13,7 +13,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import unittest
+
 from argus.backends.heat import heat_backend
+from argus.backends.tempest import manager
 from argus.backends.tempest import cloud as tempest_cloud_backend
 from argus.backends.tempest import tempest_backend
 from argus.introspection.cloud import windows as introspection
@@ -23,6 +26,18 @@ from argus.scenarios import windows as windows_scenarios
 from argus.tests.cloud import smoke
 from argus.tests.cloud.windows import test_smoke
 from argus import util
+
+
+def _availability_zones():
+    api_manager = manager.APIManager()
+    try:
+        zones = api_manager.availability_zone_client.list_availability_zones()
+        info = zones['availabilityZoneInfo']
+        return {zone['zoneName'] for zone in info}
+    finally:
+        api_manager.cleanup_credentials()
+
+AVAILABILITY_ZONES = _availability_zones()
 
 
 class BaseWindowsScenario(base.BaseScenario):
@@ -165,30 +180,40 @@ class ScenarioLocalScripts(BaseWindowsScenario):
     recipe_type = recipe.CloudbaseinitLocalScriptsRecipe
 
 
+@unittest.skipIf('configdrive_vfat_drive' not in AVAILABILITY_ZONES,
+                 'Needs special availability zone')
 class ScenarioSmokeConfigdriveVfatDrive(BaseWindowsScenario):
     test_classes = (test_smoke.TestSmoke, )
     service_type = 'configdrive'
     availability_zone = 'configdrive_vfat_drive'
 
 
+@unittest.skipIf('configdrive_vfat_cdrom' not in AVAILABILITY_ZONES,
+                 'Needs special availability zone')
 class ScenarioSmokeConfigdriveVfatCdrom(BaseWindowsScenario):
     test_classes = (test_smoke.TestSmoke, )
     service_type = 'configdrive'
     availability_zone = 'configdrive_vfat_cdrom'
 
 
+@unittest.skipIf('configdrive_iso9660_drive' not in AVAILABILITY_ZONES,
+                 'Needs special availability zone')
 class ScenarioSmokeConfigdriveIso9660Drive(BaseWindowsScenario):
     test_classes = (test_smoke.TestSmoke, )
     service_type = 'configdrive'
     availability_zone = 'configdrive_iso9660_drive'
 
 
+@unittest.skipIf('configdrive_iso9660_cdrom' not in AVAILABILITY_ZONES,
+                 'Needs special availability zone')
 class ScenarioSmokeConfigdriveIso9660Cdrom(BaseWindowsScenario):
     test_classes = (test_smoke.TestSmoke, )
     service_type = 'configdrive'
     availability_zone = 'configdrive_iso9660_cdrom'
 
 
+@unittest.skipIf('static_network' not in AVAILABILITY_ZONES,
+                 'Needs special availability zone')
 class ScenarioNetworkConfig(BaseWindowsScenario):
     backend_type = tempest_cloud_backend.NetworkWindowsBackend
     test_classes = (smoke.TestStaticNetwork, )
