@@ -42,8 +42,9 @@ class ScenarioSmoke(BaseWindowsScenario):
 
 class ScenarioSmokeHeat(BaseWindowsScenario):
 
-    test_classes = (test_smoke.TestSmoke, )
+    test_classes = (test_smoke.TestSmoke, test_smoke.TestHeatUserdata)
     backend_type = heat_backend.WindowsHeatBackend
+    userdata = util.get_resource('windows/test_heat.ps1')
 
 
 class ScenarioMultipartSmoke(BaseWindowsScenario):

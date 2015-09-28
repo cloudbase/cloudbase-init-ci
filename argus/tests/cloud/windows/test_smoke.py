@@ -190,3 +190,10 @@ class TestLocalScripts(base.BaseTestCase):
         names = self._introspection.list_location("C:\\")
         self.assertIn("reboot", names)
         self.assertIn("reboot2", names)
+
+
+class TestHeatUserdata(base.BaseTestCase):
+
+    def test_heat_file_created(self):
+        names = self._introspection.list_location('C:\\')
+        self.assertIn('powershell_heat.txt', names)
