@@ -58,8 +58,9 @@ class ScenarioMeta(type):
 
                 def delegator(self, class_name=test_class,
                               test_name=test_name):
-                    getattr(class_name(cls.conf, self.backend, self.introspection,
-                                       test_name), test_name)()
+                    getattr(class_name(cls.conf, self.backend, self.recipe,
+                                       self.introspection, test_name),
+                            test_name)()
 
                 if hasattr(cls, test_name):
                     test_name = 'test_%s_%s' % (test_class.__name__,
@@ -74,7 +75,9 @@ class ScenarioMeta(type):
         return cls
 
     def is_final(cls):
-        """Check if the current class is final, if it has all the attributes set."""
+        """
+        Check if the current class is final, if it has all the attributes set.
+        """
         return all(item for item in (cls.backend_type, cls.introspection_type,
                                      cls.recipe_type, cls.service_type,
                                      cls.test_classes))

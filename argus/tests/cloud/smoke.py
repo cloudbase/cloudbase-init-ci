@@ -105,7 +105,8 @@ class TestPasswordPostedRescueSmoke(TestPasswordPostedSmoke):
         self.assertEqual('1', stdout.strip())
 
         self._backend.rescue_server()
-        self._backend.prepare_instance()
+        self._recipe.prepare_instance()
+        self._backend.save_instance_output(suffix='rescue-1')
         stdout = self._run_remote_command("echo 2", password=password)
         self.assertEqual('2', stdout.strip())
 
