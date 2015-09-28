@@ -15,6 +15,7 @@
 
 
 import abc
+import base64
 
 import six
 
@@ -39,6 +40,8 @@ class BaseTempestBackend(base_backend.CloudBackend):
     """Base class for backends built on top of Tempest."""
 
     def __init__(self, conf, name, userdata, metadata, availability_zone):
+        if userdata:
+            userdata = base64.encodestring(userdata)
         super(BaseTempestBackend, self).__init__(conf, name, userdata,
                                                  metadata, availability_zone)
         self._server = None
