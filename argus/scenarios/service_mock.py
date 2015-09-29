@@ -166,7 +166,7 @@ class CloudstackMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
 
     # pylint: disable=unused-argument
     def user_data(self, operation=None):
-        userdata = self._backend.userdata()
+        userdata = self._backend.userdata
         return userdata or ""
 
     # pylint: disable=no-self-use
@@ -244,7 +244,7 @@ class MaasMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
     @cherrypy.expose
     def user_data(self):
         self._verify_headers()
-        return self._backend.userdata() or ""
+        return self._backend.userdata or ""
 
     @cherrypy.expose
     def meta_data(self, operation=None):
