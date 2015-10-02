@@ -189,24 +189,23 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
         # Get the password from the metadata.
         password = self._backend.metadata['admin_pass']
 
-        with self._backend.instantiate_mock_services():
-            # Wait until the web service starts serving requests.
-            self.assertTrue(self._wait_for_service_status(status=400))
+        # Wait until the web service starts serving requests.
+        self.assertTrue(self._wait_for_service_status(status=400))
 
-            # Set a new password in Password Server and test if the
-            # plugin updates the password.
-            new_password = self.password
-            self._test_password(password=new_password, expected=new_password)
-            self._backend.save_instance_output(suffix="password-1")
+        # Set a new password in Password Server and test if the
+        # plugin updates the password.
+        new_password = self.password
+        self._test_password(password=new_password, expected=new_password)
+        self._backend.save_instance_output(suffix="password-1")
 
-            # Remove the password from Password Server in order to check
-            # if the plugin keeps the last password.
-            self._test_password(password=None, expected=new_password)
-            self._backend.save_instance_output(suffix="password-2")
+        # Remove the password from Password Server in order to check
+        # if the plugin keeps the last password.
+        self._test_password(password=None, expected=new_password)
+        self._backend.save_instance_output(suffix="password-2")
 
-            # Change the password again and check if the plugin updates it.
-            self._test_password(password=password, expected=password)
-            self._backend.save_instance_output(suffix="password-3")
+        # Change the password again and check if the plugin updates it.
+        self._test_password(password=password, expected=password)
+        self._backend.save_instance_output(suffix="password-3")
 
 
 class TestCreatedUser(base.BaseTestCase):

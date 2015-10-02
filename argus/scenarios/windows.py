@@ -14,7 +14,6 @@
 #    under the License.
 
 import collections
-import contextlib
 
 from argus.scenarios import base
 from argus.scenarios import service_mock
@@ -41,21 +40,18 @@ class BaseServiceMockMixin(object):
             services = [
                  named(application, script_name, host, port)
             ]
-
-    These services will be started and will be stopped after
-    :meth:`prepare_instance` finishes.
     """
 
     @classmethod
-    @contextlib.contextmanager
-    def instantiate_mock_services(cls):
-        with service_mock.instantiate_services(cls.services, cls.backend):
-            yield
+    def prepare_instance(cls):
+        cls._service_manager = service_mock.ServiceManager(
+            cls.services, cls.backend)
+        super(BaseServiceMockMixin, cls).prepare_instance()
 
     @classmethod
-    def prepare_instance(cls):
-        with cls.instantiate_mock_services():
-            super(BaseServiceMockMixin, cls).prepare_instance()
+    def tearDownClass(cls):
+        cls._service_manager.terminate()
+        super(BaseServiceMockMixin, cls).tearDownClass()
 
 
 class EC2WindowsScenario(BaseServiceMockMixin, base.BaseScenario):

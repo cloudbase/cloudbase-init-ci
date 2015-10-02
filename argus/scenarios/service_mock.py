@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
 import json
 import textwrap
 import time
@@ -55,17 +54,16 @@ def _instantiate_services(services, backend):
         yield process
 
 
-@contextlib.contextmanager
-def instantiate_services(services, backend):
-    """Context manager used for starting mocked metadata services."""
+class ServiceManager(object):
+    """Creates the required mocked service processes."""
 
-    # Start the service(s) in different process(es).
-    processes = list(_instantiate_services(services, backend))
-    try:
-        yield
-    finally:
+    def __init__(self, services, backend):
+        self._services = services
+        self._processes = list(_instantiate_services(services, backend))
+
+    def terminate(self):
         # Send the shutdown "signal".
-        for service in services:
+        for service in self._services:
             for _ in range(STOP_LINK_RETRY_COUNT):
                 # Do a best effort to stop the service.
                 try:
@@ -74,7 +72,7 @@ def instantiate_services(services, backend):
                 except (urllib.error.URLError, http_client.BadStatusLine):
                     time.sleep(1)
 
-        for process in processes:
+        for process in self._processes:
             process.terminate()
             process.join()
 
