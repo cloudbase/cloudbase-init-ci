@@ -189,15 +189,6 @@ def get_cbinit_key(execute_function):
 class InstanceIntrospection(base.BaseInstanceIntrospection):
     """Utilities for introspecting a Windows instance."""
 
-    def get_plugins_count(self):
-        exec_func = self.remote_client.run_command_verbose
-        key = "{0}\\{1}\\Plugins".format(
-            get_cbinit_key(exec_func),
-            self.instance)
-        cmd = 'powershell (Get-Item %s).ValueCount' % key
-        stdout = exec_func(cmd)
-        return int(stdout)
-
     def get_disk_size(self):
         cmd = ('powershell (Get-WmiObject "win32_logicaldisk | '
                'where -Property DeviceID -Match C:").Size')

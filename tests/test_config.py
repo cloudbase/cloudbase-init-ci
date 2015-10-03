@@ -45,7 +45,6 @@ class TestConfig(unittest.TestCase):
         dns_nameservers = a,b
 
         [cloudbaseinit]
-        expected_plugins_count = 4
         created_user = 5
         group = 4
 
@@ -87,7 +86,6 @@ class TestConfig(unittest.TestCase):
         dns_nameservers = a,b
 
         [cloudbaseinit]
-        expected_plugins_count = 4
         group = 4
         created_user = 5
 
@@ -165,7 +163,6 @@ class TestConfig(unittest.TestCase):
         dns_nameservers = a,b
 
         [cloudbaseinit]
-        expected_plugins_count = 4
         group = 4
         created_user = 5
 
@@ -215,7 +212,6 @@ class TestConfig(unittest.TestCase):
         self.assertEqual('d', parsed.argus.log_format)
         self.assertEqual(['a', 'b'], parsed.argus.dns_nameservers)
 
-        self.assertEqual(4, parsed.cloudbaseinit.expected_plugins_count)
         self.assertEqual('4', parsed.cloudbaseinit.group)
         self.assertEqual('5', parsed.cloudbaseinit.created_user)
 
