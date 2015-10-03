@@ -28,10 +28,6 @@ class BaseInstanceIntrospection(object):
         self.image = image
 
     @abc.abstractmethod
-    def get_plugins_count(self):
-        """Return the plugins count from the instance."""
-
-    @abc.abstractmethod
     def get_disk_size(self):
         """Return the disk size from the instance."""
 

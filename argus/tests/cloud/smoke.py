@@ -269,12 +269,6 @@ class TestsBaseSmoke(TestCreatedUser,
                      base.TestBaseArgus):
     """Various smoke tests for testing cloudbaseinit."""
 
-    def test_plugins_count(self):
-        # Test that we have the expected numbers of plugins.
-        plugins_count = self.introspection.get_plugins_count()
-        self.assertEqual(CONF.cloudbaseinit.expected_plugins_count,
-                         plugins_count)
-
     def test_disk_expanded(self):
         # Test the disk expanded properly.
         image = self.manager.get_image_by_ref()

@@ -226,19 +226,12 @@ class ConfigurationParser(object):
     def cloudbaseinit(self):
         cloudbaseinit = collections.namedtuple(
             'cloudbaseinit',
-            'expected_plugins_count created_user group')
-
-        try:
-            expected_plugins_count = self._parser.getint(
-                'cloudbaseinit',
-                'expected_plugins_count')
-        except (six.moves.configparser.NoOptionError, ValueError):
-            expected_plugins_count = 13
+            'created_user group')
 
         group = self._parser.get('cloudbaseinit', 'group')
         created_user = self._parser.get('cloudbaseinit', 'created_user')
 
-        return cloudbaseinit(expected_plugins_count, created_user, group)
+        return cloudbaseinit(created_user, group)
 
     @property
     def images(self):
