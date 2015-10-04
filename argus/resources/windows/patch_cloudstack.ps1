@@ -21,7 +21,6 @@ def main():
 
 if __name__ == '__main__':
     main()
-
 '@
 
 mv $cloudbaseinitdir\shell.py $cloudbaseinitdir\_shell.py -ErrorAction ignore
