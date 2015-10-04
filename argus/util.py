@@ -294,10 +294,6 @@ def get_logger(name="argus",
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
 
-        stdout_handler = logging.StreamHandler(sys.stdout)
-        stdout_handler.setFormatter(formatter)
-        logger.addHandler(stdout_handler)
-
     logger.setLevel(logging.DEBUG)
     return logger
 
