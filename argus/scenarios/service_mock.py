@@ -14,10 +14,10 @@
 #    under the License.
 
 import json
+import multiprocessing
 import textwrap
 import time
-
-import multiprocessing
+import warnings
 
 import cherrypy
 # pylint: disable=import-error
@@ -42,7 +42,9 @@ def _create_service_server(service, backend):
         "server.socket_port": port,
         "log.screen": False,
     })
-    cherrypy.quickstart(app(backend), script_name)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        cherrypy.quickstart(app(backend), script_name)
 
 
 def _instantiate_services(services, backend):
