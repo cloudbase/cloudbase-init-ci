@@ -123,6 +123,12 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
 
         super(NetworkWindowsBackend, self).setup_instance()
 
+    @staticmethod
+    def _find_ip_address(port, subnet_id):
+        for fixed_ip in port["fixed_ips"]:
+            if fixed_ip["subnet_id"] == subnet_id:
+                return fixed_ip["ip_address"]
+
     def get_network_interfaces(self):
         """Retrieve and parse network details from the compute node."""
         networks_client = self._manager.networks_client
@@ -157,11 +163,7 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
                     # corresponding subnet ID.
                     if "compute" not in port["device_owner"]:
                         continue
-                    ip_address = None
-                    for fixed_ip in port["fixed_ips"]:
-                        if fixed_ip["subnet_id"] == subnet_id:
-                            ip_address = fixed_ip["ip_address"]
-                            break
+                    ip_address = self._find_ip_address(port, subnet_id)
                     if not ip_address:
                         continue
                     nic["mac"] = port["mac_address"].upper()
