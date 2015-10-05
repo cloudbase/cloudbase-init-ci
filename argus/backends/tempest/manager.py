@@ -75,6 +75,7 @@ class APIManager(object):
 
         # Neutron network client
         self.network_client = self._manager.network_client
+        self.networks_client = self._manager.networks_client
 
         # Heat client
         self.orchestration_client = self._manager.orchestration_client
