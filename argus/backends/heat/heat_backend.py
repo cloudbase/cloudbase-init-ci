@@ -243,6 +243,10 @@ class BaseHeatBackend(base.CloudBackend):
         """Get the instance server object."""
         return self._manager.instance_server(self.internal_instance_id())
 
+    def get_image_by_ref(self):
+        """Get the image object by its reference id."""
+        return self._manager.images_client.show_image(self._conf.openstack.image_ref)
+
 
 class WindowsHeatBackend(windows.WindowsBackendMixin, BaseHeatBackend):
     """Heat backend tailored to work with Windows platforms."""
