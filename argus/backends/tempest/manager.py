@@ -129,9 +129,8 @@ class APIManager(object):
                 password=encoded_password['password'])
 
     def _instance_output(self, instance_id, limit):
-        ret = self.servers_client.get_console_output(
-            instance_id, limit)
-        return ret.response, ret.data
+        return self.servers_client.get_console_output(
+            instance_id, limit)['output']
 
     def instance_output(self, instance_id, limit):
         """Get the console output, sent from the instance.
@@ -144,11 +143,7 @@ class APIManager(object):
         """
         content = None
         while True:
-            resp, content = self._instance_output(instance_id, limit)
-            if resp.status != OUTPUT_STATUS_OK:
-                LOG.error("Couldn't get console output <%d>.", resp.status)
-                return
-
+            content = self._instance_output(instance_id, limit)
             if len(content.splitlines()) >= (limit - OUTPUT_EPSILON):
                 limit *= 2
             else:
