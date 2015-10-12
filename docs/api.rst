@@ -17,11 +17,13 @@ argus's API
    api/argus.recipes.cloud.windows.rst
 
    api/argus.scenarios.base.rst
-   api/argus.scenarios.service_mock.rst
-   api/argus.scenarios.windows.rst
+   api/argus.scenarios.cloud.base.rst
+   api/argus.scenarios.cloud.service_mock.rst
+   api/argus.scenarios.cloud.windows.rst
 
    api/argus.util.rst
    api/argus.remote_client.rst
 
+   api/argus.introspection.base.rst
    api/argus.introspection.cloud.base.rst
    api/argus.introspection.cloud.windows.rst
