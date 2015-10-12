@@ -155,7 +155,7 @@ class BaseScenario(unittest.TestCase):
 
     @classmethod
     def prepare_instance(cls):
-        """Prepare the underlying instance."""        
+        """Prepare the underlying instance."""
         # pylint: disable=not-callable
         # Pylint is not aware that the attrs are reassigned in other modules,
         # so we're just disabling the errors for now.
