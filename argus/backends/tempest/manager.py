@@ -82,7 +82,7 @@ class APIManager(object):
 
     def cleanup_credentials(self):
         """Cleanup any credentials created during the initialization."""
-        self.isolated_creds.clear_isolated_creds()
+        self.isolated_creds.clear_creds()
 
     def primary_credentials(self):
         """Get the underlying :class:`tempest.common.isolated_creds.IsolatedCreds`."""
