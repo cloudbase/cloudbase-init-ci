@@ -37,8 +37,25 @@ OUTPUT_SIZE = 128
 # pylint: disable=abstract-method; FP: https://bitbucket.org/logilab/pylint/issues/565
 @six.add_metaclass(abc.ABCMeta)
 class BaseTempestBackend(base_backend.CloudBackend):
-    """Base class for backends built on top of Tempest."""
+    """Base class for backends built on top of Tempest.
 
+    :param conf:
+        The config object used for controlling argus's behaviour.
+    :param name:
+        The name will be used for creating instances with this
+        backend.
+    :param userdata:
+        The userdata which will be available in the instance
+        to the corresponding cloud initialization service.
+    :param metadata:
+        The metadata which will be available in the instance
+        to the corresponding cloud initialization service.
+        It will be the content of the *meta* key in OpenStack's
+        metadata for instance.
+    :param availability_zone:
+        The availability zone in which the underlying instance
+        will be available.
+    """
     def __init__(self, conf, name, userdata, metadata, availability_zone):
         if userdata:
             userdata = base64.encodestring(userdata)
@@ -141,6 +158,13 @@ class BaseTempestBackend(base_backend.CloudBackend):
         return secgroup
 
     def cleanup(self):
+        """Cleanup the underlying instance.
+
+        In order for the backend to be useful again,
+        call :meth:`setup_instance` method for preparing another
+        underlying instance.
+        """
+
         LOG.info("Cleaning up...")
 
         if self._security_groups_rules:

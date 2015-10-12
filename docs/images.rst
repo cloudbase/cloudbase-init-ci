@@ -64,26 +64,31 @@ which I was unable to make it work for our scenarios.
     You might take a look at this compatibility table, taken from
     https://pve.proxmox.com/wiki/Windows_VirtIO_Drivers
 
-+--------------------------------------------------------------------------------------+
-| OS                   | Numeric Version | dir for Storage / Balloon | dir for network |
-+--------------------------------------------------------------------------------------+
-| W2008 R2 / Windows 7 | 6.1             | Win7 (32/64)              | Win7 (32/64)    |
-| W2008 / Vista        | 6.0             | Wlh (32/64)               | Vista (32/64)   |
-| W2003                | 5.2             | Wnet (32/64)              | XP (32/64)      |
-+--------------------------------------------------------------------------------------+
 
-    In some situations though, just installing these particular versions of virtio
-    will still lead to BSODs when trying to boot the image through openstack and
-    these combinations were found to be useful during our attempts to create new argus
-    images:
+   +----------------------+-----------------+---------------------------+-----------------+
+   | OS                   | Numeric Version | dir for Storage / Balloon | dir for network |
+   +======================+=================+===========================+=================+
+   | W2008 R2 / Windows 7 | 6.1             | Win7 (32/64)              | Win7 (32/64)    |
+   +----------------------+-----------------+---------------------------+-----------------+
+   | W2008 / Vista        | 6.0             | Wlh (32/64)               | Vista (32/64)   |
+   +----------------------+-----------------+---------------------------+-----------------+
+   | W2003                | 5.2             | Wnet (32/64)              | XP (32/64)      |
+   +----------------------+-----------------+---------------------------+-----------------+
 
-+-----------------------------------------------------------------------------------------+
-| OS                   | virtio version for Storage / Ballon | virtio version for network |
-+-----------------------------------------------------------------------------------------+
-| W2008                |           0.54                      |   0.102 or latest          |           
-+-----------------------------------------------------------------------------------------+
-| W8.1                 |           0.102 or latest           |   0.94                     |           
-+-----------------------------------------------------------------------------------------+
+
+In some situations though, just installing these particular versions of virtio
+will still lead to BSODs when trying to boot the image through openstack and
+these combinations were found to be useful during our attempts to create new argus
+images:
+
+
+  +----------------------+-------------------------------------+----------------------------+
+  | OS                   | virtio version for Storage / Ballon | virtio version for network |
+  +======================+=====================================+============================+
+  | W2008                |           0.54                      |   0.102 or latest          |           
+  +----------------------+-------------------------------------+----------------------------+
+  | W8.1                 |           0.102 or latest           |   0.94                     |           
+  +----------------------+-------------------------------------+----------------------------+
 
 
 15. Run ``.\Logon.ps1``. This script will configure WinRM and will finalize the image,

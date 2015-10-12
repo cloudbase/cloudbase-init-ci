@@ -43,7 +43,7 @@ def _create_tempfile(content):
 
 
 class APIManager(object):
-    """Manager which uses tempest modules for interacting with the API."""
+    """Manager which uses tempest modules for interacting with the OpenStack API."""
 
     def __init__(self):
         self.isolated_creds = credentials.get_isolated_credentials(
@@ -85,6 +85,7 @@ class APIManager(object):
         self.isolated_creds.clear_isolated_creds()
 
     def primary_credentials(self):
+        """Get the underlying :class:`tempest.common.isolated_creds.IsolatedCreds`."""
         return self.isolated_creds.get_primary_creds()
 
     def create_keypair(self, name):
@@ -111,7 +112,15 @@ class APIManager(object):
             instance_id, 'ACTIVE')
 
     def instance_password(self, instance_id, keypair):
-        """Get the password posted by the given instance."""
+        """Get the password posted by the given instance.
+
+        :param instance_id:
+            The id of the instance for which the password will
+            be returned.
+        :param keypair:
+            A keypair whose private key can be used to decrypt
+            the password.
+        """
         encoded_password = self.servers_client.get_password(
             instance_id)
         with _create_tempfile(keypair.private_key) as tmp:
@@ -125,7 +134,14 @@ class APIManager(object):
         return ret.response, ret.data
 
     def instance_output(self, instance_id, limit):
-        """Get the console output, sent from the instance."""
+        """Get the console output, sent from the instance.
+
+        :param instance_id:
+            The id of the instance for which the output will
+            be retrieved.
+        :param limit:
+            Number of lines to fetch from the end of console log.
+        """
         content = None
         while True:
             resp, content = self._instance_output(instance_id, limit)

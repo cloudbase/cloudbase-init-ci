@@ -42,7 +42,7 @@ class BaseBackend(object):
         service.
     :param metadata:
         If any, the metadata which should be available in the
-        instance to the correpsonding cloud initialization
+        instance to the corresponding cloud initialization
         service.
     """
     def __init__(self, conf, name=None, userdata=None, metadata=None,
@@ -60,11 +60,11 @@ class BaseBackend(object):
 
     @abc.abstractmethod
     def cleanup(self):
-        """Destroy and cleanup the relevant resources created by setup_instance."""
+        """Destroy and cleanup the relevant resources created by :meth:`setup_instance`."""
 
 
 class CloudBackend(BaseBackend):
-    """Base backend for cloud related tasks"""
+    """Base backend for cloud related tasks."""
 
     @staticmethod
     def _get_log_template(suffix):
@@ -93,7 +93,11 @@ class CloudBackend(BaseBackend):
 
     @abc.abstractmethod
     def instance_output(self, limit=None):
-        """Get the underlying's instance output, if any."""
+        """Get the underlying's instance output, if any.
+
+        :param limit:
+            Number of lines to fetch from the end of console log.
+        """
 
     @abc.abstractmethod
     def internal_instance_id(self):

@@ -22,6 +22,8 @@ class WindowsBackendMixin(object):
     # pylint: disable=unused-argument
     def get_remote_client(self, username=None, password=None,
                           protocol='http', **kwargs):
+        """Method which uses :class:`argus.util.WinRemoteClient` as underlying client."""
+
         if username is None:
             username = self._conf.openstack.image_username
         if password is None:

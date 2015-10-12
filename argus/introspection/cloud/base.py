@@ -20,7 +20,14 @@ import six
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseInstanceIntrospection(object):
-    """Generic utility class for introspecting an instance."""
+    """Generic utility class for introspecting an instance.
+
+    :param conf:
+        The configuration object used by argus.
+    :param remote_client:
+        A client which can be used by argus.
+        This needs to be an instance of :class:`argus.remote_client.BaseClient`.
+    """
 
     def __init__(self, conf, remote_client):
         self.remote_client = remote_client
