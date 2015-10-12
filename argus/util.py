@@ -255,6 +255,8 @@ class cached_property(object):  # pylint: disable=invalid-name
         self.name = name or func.__name__
 
     def __get__(self, instance, klass=None):
+        if instance is None:
+            return self
         instance.__dict__[self.name] = result = self.func(instance)
         return result
 
