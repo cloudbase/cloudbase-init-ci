@@ -21,8 +21,10 @@ argus's API
    api/argus.scenarios.cloud.service_mock.rst
    api/argus.scenarios.cloud.windows.rst
 
+   api/argus.client.base.rst
+   api/argus.client.windows.rst
+
    api/argus.util.rst
-   api/argus.remote_client.rst
 
    api/argus.introspection.base.rst
    api/argus.introspection.cloud.base.rst
