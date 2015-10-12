@@ -63,18 +63,8 @@ class BaseBackend(object):
         """Destroy and cleanup the relevant resources created by :meth:`setup_instance`."""
 
     @abc.abstractmethod
-    def get_remote_client(self, username=None, password=None, **kwargs):
-        """Get a remote client to the underlying instance.
-
-        This is different than :attr:`remote_client`, because that
-        will always return a client with predefined credentials,
-        while this method allows for a fine-grained control
-        over this aspect.
-        `password` can be omitted if authentication by
-        SSH key is used.
-        The **kwargs parameter can be used for additional options
-        (currently none).
-        """
+    def get_remote_client(self, **kwargs):
+        """Get a remote client to the underlying instance."""
 
     @abc.abstractproperty
     def remote_client(self):
@@ -84,6 +74,17 @@ class BaseBackend(object):
 
 class CloudBackend(BaseBackend):
     """Base backend for cloud related tasks."""
+
+    @abc.abstractmethod
+    def get_remote_client(self, username=None, password=None, **kwargs):
+        """Get a remote client
+
+        This is different than :attr:`remote_client`, because that
+        will always return a client with predefined credentials,
+        while this method allows for a fine-grained control over this aspect.
+        `password` can be omitted if authentication by SSH key is used.
+        The **kwargs parameter can be used for additional options (currently none).
+        """
 
     @staticmethod
     def _get_log_template(suffix):
