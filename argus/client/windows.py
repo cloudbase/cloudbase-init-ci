@@ -17,15 +17,17 @@
 
 import base64
 import functools
+import time
 
 import six
 from winrm import protocol
 
+from argus.client import base
 from argus import exceptions
+from argus import util
 
-__all__ = (
-    'WinRemoteClient',
-)
+
+LOG = util.get_logger()
 
 
 def _base64_read_file(filepath, size=8192):
@@ -39,7 +41,7 @@ def _base64_read_file(filepath, size=8192):
             yield encoded
 
 
-class WinRemoteClient(object):
+class WinRemoteClient(base.BaseClient):
     """Get a remote client to a Windows instance.
 
     :param hostname: The ip where the client should be connected.
@@ -56,12 +58,13 @@ class WinRemoteClient(object):
     def __init__(self, hostname, username, password,
                  transport_protocol='http',
                  cert_pem=None, cert_key=None):
-        self.hostname = "{protocol}://{hostname}:{port}/wsman".format(
+        super(WinRemoteClient, self).__init__(hostname)
+        self._hostname = "{protocol}://{hostname}:{port}/wsman".format(
             protocol=transport_protocol,
             hostname=hostname,
             port=5985 if transport_protocol == 'http' else 5986)
-        self.username = username
-        self.password = password
+        self._username = username
+        self._password = password
         self._cert_pem = cert_pem
         self._cert_key = cert_key
 
@@ -86,7 +89,7 @@ class WinRemoteClient(object):
             protocol_client.cleanup_command(shell_id, command_id)
 
     def _run_commands(self, commands):
-        protocol_client = self.get_protocol()
+        protocol_client = self._get_protocol()
         shell_id = protocol_client.open_shell()
         try:
             results = [self._run_command(protocol_client, shell_id, command)
@@ -95,12 +98,12 @@ class WinRemoteClient(object):
             protocol_client.close_shell(shell_id)
         return results
 
-    def get_protocol(self):
+    def _get_protocol(self):
         protocol.Protocol.DEFAULT_TIMEOUT = "PT3600S"
-        return protocol.Protocol(endpoint=self.hostname,
+        return protocol.Protocol(endpoint=self._hostname,
                                  transport='plaintext',
-                                 username=self.username,
-                                 password=self.password,
+                                 username=self._username,
+                                 password=self._password,
                                  cert_pem=self._cert_pem,
                                  cert_key_pem=self._cert_key)
 
@@ -139,3 +142,107 @@ class WinRemoteClient(object):
         """Get the content of the given file."""
         cmd = 'powershell Get-Content "{}"'.format(filepath)
         return self.run_remote_cmd(cmd)[0]
+
+    def run_command(self, cmd):
+        """Run the given command and return execution details.
+
+        :rtype: tuple
+        :returns: stdout, stderr, exit_code
+        """
+
+        LOG.info("Running command %s...", cmd)
+        return self.run_remote_cmd(cmd)
+
+    def run_command_verbose(self, cmd):
+        """Run the given command and log anything it returns.
+
+        Do this with retrying support.
+
+        :rtype: string
+        :returns: stdout
+        """
+        stdout, stderr, exit_code = self.run_command_with_retry(cmd)
+        LOG.info("The command returned the output: %s", stdout)
+        LOG.info("The stderr of the command was: %s", stderr)
+        LOG.info("The exit code of the command was: %s", exit_code)
+        return stdout
+
+    def run_command_with_retry(self, cmd, count=util.RETRY_COUNT,
+                               delay=util.RETRY_DELAY):
+        """Run the given `cmd` until succeeds.
+
+        :param cmd:
+            A string, representing a command which needs to
+            be executed on the underlying remote client.
+        :param count:
+            The number of retries which this function has.
+            If the value is ``None``, then the function will retry *forever*.
+        :param delay:
+            The number of seconds to sleep when retrying a command.
+
+        :rtype: tuple
+        :returns: stdout, stderr, exit_code
+        """
+
+        # Countdown normalization.
+        if not count or count < 0:
+            count = 0
+
+        while True:
+            try:
+                return self.run_command(cmd)
+            except Exception as exc:  # pylint: disable=broad-except
+                LOG.debug("Command failed with %r.", exc)
+                # A negative `count` means no count at all.
+                if count >= 0:
+                    count -= 1
+                if count == 0:
+                    raise exceptions.ArgusTimeoutError(
+                        "Command {!r} failed too many times."
+                        .format(cmd))
+                LOG.debug("Retrying...")
+                time.sleep(delay)
+
+    def run_command_until_condition(self, cmd, cond,
+                                    retry_count=util.RETRY_COUNT,
+                                    delay=util.RETRY_DELAY):
+        """Run the given `cmd` until a condition `cond` occurs.
+
+        :param cond:
+            A callable which receives the standard output returned by
+            executing the command. It should return a boolean value,
+            which tells to this function to stop execution.
+        :raises:
+            `ArgusCLIError` if there is output found in the standard error.
+
+        This method uses and behaves like `run_command_with_retry` but
+        with an additional condition parameter.
+        """
+
+        # countdown normalization
+        if not retry_count or retry_count < 0:
+            retry_count = 0
+
+        while True:
+            try:
+                stdout, stderr, _ = self.run_command(cmd)
+            except Exception as exc:  # pylint: disable=broad-except
+                LOG.debug("Command failed with %r.", exc)
+            else:
+                if stderr:
+                    raise exceptions.ArgusCLIError(
+                        "Executing command {!r} failed with {!r}."
+                        .format(cmd, stderr))
+                elif cond(stdout):
+                    return
+                else:
+                    LOG.debug("Condition not met, retrying...")
+
+            if retry_count > 0:
+                retry_count -= 1
+                LOG.debug("Retrying...")
+                time.sleep(delay)
+            else:
+                raise exceptions.ArgusTimeoutError(
+                    "Command {!r} failed too many times."
+                    .format(cmd))

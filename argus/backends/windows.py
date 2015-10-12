@@ -13,6 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from argus.client import windows
 from argus import util
 
 
@@ -28,8 +29,8 @@ class WindowsBackendMixin(object):
             username = self._conf.openstack.image_username
         if password is None:
             password = self._conf.openstack.image_password
-        return util.WinRemoteClient(self.floating_ip(),
-                                    username, password,
-                                    transport_protocol=protocol)
+        return windows.WinRemoteClient(self.floating_ip(),
+                                       username, password,
+                                       transport_protocol=protocol)
 
     remote_client = util.cached_property(get_remote_client, 'remote_client')

@@ -24,20 +24,16 @@ import socket
 import struct
 import subprocess
 import sys
-import time
 
 import six
 
 from argus import config
-from argus import exceptions
-from argus import remote_client
 
 
 RETRY_COUNT = 15
 RETRY_DELAY = 10
 
 __all__ = (
-    'WinRemoteClient',
     'decrypt_password',
     'get_config',
     'get_logger',
@@ -64,112 +60,6 @@ NETWORK_KEYS = [
     "dns6",
     "dhcp"
 ]
-
-
-class WinRemoteClient(remote_client.WinRemoteClient):
-
-    def run_command(self, cmd):
-        """Run the given command and return execution details.
-
-        :rtype: tuple
-        :returns: stdout, stderr, exit_code
-        """
-
-        LOG.info("Running command %s...", cmd)
-        return self.run_remote_cmd(cmd)
-
-    def run_command_verbose(self, cmd):
-        """Run the given command and log anything it returns.
-
-        Do this with retrying support.
-
-        :rtype: string
-        :returns: stdout
-        """
-        stdout, stderr, exit_code = self.run_command_with_retry(cmd)
-        LOG.info("The command returned the output: %s", stdout)
-        LOG.info("The stderr of the command was: %s", stderr)
-        LOG.info("The exit code of the command was: %s", exit_code)
-        return stdout
-
-    def run_command_with_retry(self, cmd, count=RETRY_COUNT,
-                               delay=RETRY_DELAY):
-        """Run the given `cmd` until succeeds.
-
-        :param cmd:
-            A string, representing a command which needs to
-            be executed on the underlying remote client.
-        :param count:
-            The number of retries which this function has.
-            If the value is ``None``, then the function will retry *forever*.
-        :param delay:
-            The number of seconds to sleep when retrying a command.
-
-        :rtype: tuple
-        :returns: stdout, stderr, exit_code
-        """
-
-        # Countdown normalization.
-        if not count or count < 0:
-            count = 0
-
-        while True:
-            try:
-                return self.run_command(cmd)
-            except Exception as exc:  # pylint: disable=broad-except
-                LOG.debug("Command failed with %r.", exc)
-                # A negative `count` means no count at all.
-                if count >= 0:
-                    count -= 1
-                if count == 0:
-                    raise exceptions.ArgusTimeoutError(
-                        "Command {!r} failed too many times."
-                        .format(cmd))
-                LOG.debug("Retrying...")
-                time.sleep(delay)
-
-    def run_command_until_condition(self, cmd, cond, retry_count=RETRY_COUNT,
-                                    delay=RETRY_DELAY):
-        """Run the given `cmd` until a condition `cond` occurs.
-
-        :param cond:
-            A callable which receives the standard output returned by
-            executing the command. It should return a boolean value,
-            which tells to this function to stop execution.
-        :raises:
-            `ArgusCLIError` if there is output found in the standard error.
-
-        This method uses and behaves like `run_command_with_retry` but
-        with an additional condition parameter.
-        """
-
-        # countdown normalization
-        if not retry_count or retry_count < 0:
-            retry_count = 0
-
-        while True:
-            try:
-                stdout, stderr, _ = self.run_command(cmd)
-            except Exception as exc:  # pylint: disable=broad-except
-                LOG.debug("Command failed with %r.", exc)
-            else:
-                if stderr:
-                    raise exceptions.ArgusCLIError(
-                        "Executing command {!r} failed with {!r}."
-                        .format(cmd, stderr))
-                elif cond(stdout):
-                    return
-                else:
-                    LOG.debug("Condition not met, retrying...")
-
-            if retry_count > 0:
-                retry_count -= 1
-                LOG.debug("Retrying...")
-                time.sleep(delay)
-            else:
-                raise exceptions.ArgusTimeoutError(
-                    "Command {!r} failed too many times."
-                    .format(cmd))
 
 
 def get_local_ip():
