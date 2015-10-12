@@ -44,13 +44,15 @@ class BaseServiceMockMixin(object):
 
     @classmethod
     def prepare_instance(cls):
+        cls._service_manager = None
         cls._service_manager = service_mock.ServiceManager(
             cls.services, cls.backend)
         super(BaseServiceMockMixin, cls).prepare_instance()
 
     @classmethod
     def tearDownClass(cls):
-        cls._service_manager.terminate()
+        if cls._service_manager:
+            cls._service_manager.terminate()
         super(BaseServiceMockMixin, cls).tearDownClass()
 
 
