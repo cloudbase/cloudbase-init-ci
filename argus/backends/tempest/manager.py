@@ -157,7 +157,7 @@ class APIManager(object):
 
     def instance_server(self, instance_id):
         """Get more details about the given instance id."""
-        return self.servers_client.show_server(instance_id)
+        return self.servers_client.show_server(instance_id)['server']
 
 
 class Keypair(object):
