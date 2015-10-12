@@ -11,9 +11,9 @@ for code that needs to run under various different operating systems.
 The tests themselves are running on a host, while the code that
 is tested runs into virtual machine instances. The underlying technology
 for spinning up new machines can be anything, as long as a wrapper
-is written for it. We're using for now OpenStack-based backends.
+is written for it. We're using for now `OpenStack`_ based backends.
 
-The project is actually used to test cloudbase-init, a portable
+The project is actually used to test `cloudbase-init`_, a portable
 multi-cloud initialization service, targeted to Windows platforms.
 
 
@@ -33,3 +33,6 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+
+.. _cloudbase-init: https://github.com/stackforge/cloudbase-init
+.. _OpenStack: http://www.openstack.org/
