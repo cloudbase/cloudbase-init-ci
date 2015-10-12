@@ -18,7 +18,7 @@ from argus import exceptions
 from argus import util
 
 with util.restore_excepthook():
-    from tempest.common import isolated_creds
+    from tempest.common import dynamic_creds
     from tempest.common import waiters
 
 
@@ -77,7 +77,7 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
             ("network", "subnet", "router",
              "user_id", "tenant_id", "username", "tenant_name"),
             net_resources + (None,) * 4)
-        self._manager.isolated_creds.isolated_creds[key] = fake_net_creds
+        self._manager.isolated_creds._creds[key] = fake_net_creds
 
         # Disable DHCP for this network to test static configuration and
         # also add default DNS name servers.
@@ -113,7 +113,7 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
         # with explicitly specified attached networks.
 
         if not isinstance(self._manager.isolated_creds,
-                          isolated_creds.IsolatedCreds):
+                          dynamic_creds.DynamicCredentialProvider):
             raise exceptions.ArgusError(
                 "Network resources are not available."
             )
