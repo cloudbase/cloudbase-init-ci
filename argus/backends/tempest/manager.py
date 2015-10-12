@@ -46,7 +46,7 @@ class APIManager(object):
     """Manager which uses tempest modules for interacting with the OpenStack API."""
 
     def __init__(self):
-        self.isolated_creds = credentials.get_isolated_credentials(
+        self.isolated_creds = credentials.get_credentials_provider(
             self.__class__.__name__, network_resources={})
         primary_credentials = self.primary_credentials()
         self._manager = clients.Manager(credentials=primary_credentials)
