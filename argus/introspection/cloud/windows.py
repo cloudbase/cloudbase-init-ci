@@ -188,7 +188,7 @@ def get_cbinit_key(execute_function):
     return key_x64
 
 
-class InstanceIntrospection(base.BaseInstanceIntrospection):
+class InstanceIntrospection(base.CloudInstanceIntrospection):
     """Utilities for introspecting a Windows instance."""
 
     def get_disk_size(self):
