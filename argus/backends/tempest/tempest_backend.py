@@ -88,8 +88,8 @@ class BaseTempestBackend(base_backend.CloudBackend):
             flavorRef=self.flavor_ref,
             **kwargs)
         waiters.wait_for_server_status(
-            self._manager.servers_client, server['id'], wait_until)
-        return server
+            self._manager.servers_client, server['server']['id'], wait_until)
+        return server['server']
 
     def _assign_floating_ip(self):
         floating_ip = self._manager.floating_ips_client.create_floating_ip()
