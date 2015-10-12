@@ -44,10 +44,9 @@ class BaseRecipe(object):
     some easy steps.
     """
 
-    def __init__(self, conf, backend, service_type):
+    def __init__(self, conf, backend):
         self._conf = conf
         self._backend = backend
-        self._service_type = service_type
 
     def _execute(self, cmd, count=RETRY_COUNT, delay=RETRY_DELAY):
         """Execute until success and return only the standard output."""
@@ -66,5 +65,10 @@ class BaseRecipe(object):
             cmd, cond, retry_count=count, delay=delay)
 
     @abc.abstractmethod
-    def prepare(self):
-        """Call this method to provision an instance."""
+    def prepare(self, **kwargs):
+        """Call this method to provision an instance.
+
+        :param kwargs:
+            If the recipe requires, pass additional information in the
+            **kwargs** parameter.
+        """

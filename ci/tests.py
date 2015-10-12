@@ -22,7 +22,7 @@ from argus.backends.tempest import tempest_backend
 from argus.introspection.cloud import windows as introspection
 from argus.recipes.cloud import windows as recipe
 from argus.scenarios import base
-from argus.scenarios import windows as windows_scenarios
+from argus.scenarios.cloud import windows as windows_scenarios
 from argus.tests.cloud import smoke
 from argus.tests.cloud.windows import test_smoke
 from argus import util

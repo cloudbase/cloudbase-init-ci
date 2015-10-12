@@ -58,7 +58,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         """Get the installation script for cloudbaseinit."""
 
     @abc.abstractmethod
-    def install_cbinit(self):
+    def install_cbinit(self, service_type):
         """Install the cloudbaseinit code."""
 
     @abc.abstractmethod
@@ -84,7 +84,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     def replace_code(self):
         """Do whatever is necessary to replace the code for cloudbaseinit."""
 
-    def prepare(self):
+    def prepare(self, service_type=None, **kwargs):
         """Prepare the underlying instance.
 
         The following operations will be executed:
@@ -98,7 +98,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         self.wait_for_boot_completion()
         self.execution_prologue()
         self.get_installation_script()
-        self.install_cbinit()
+        self.install_cbinit(service_type)
         self.replace_install()
         self.replace_code()
         self.pre_sysprep()

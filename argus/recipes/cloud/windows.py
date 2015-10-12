@@ -64,7 +64,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                .format(self._conf.argus.resources))
         self._execute(cmd)
 
-    def install_cbinit(self):
+    def install_cbinit(self, service_type):
         """Run the installation script for CloudbaseInit."""
         installer = "CloudbaseInitSetup_{build}_{arch}.msi".format(
             build=self._conf.argus.build,
@@ -74,10 +74,10 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         # find a way to pass it
         LOG.info("Run the downloaded installation script "
                  "using the installer %r with service %r.",
-                 installer, self._service_type)
+                 installer, service_type)
 
         cmd = ('powershell "C:\\\\installcbinit.ps1 -serviceType {} '
-               '-installer {}"'.format(self._service_type, installer))
+               '-installer {}"'.format(service_type, installer))
         try:
             self._execute(cmd, count=5, delay=5)
         except exceptions.ArgusError:
@@ -86,11 +86,11 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             # can't be installed through WinRM on some OSes
             # for whatever reason. In this case, we're falling back
             # to use a scheduled task.
-            self._deploy_using_scheduled_task(installer)
+            self._deploy_using_scheduled_task(installer, service_type)
 
         self._grab_cbinit_installation_log()
 
-    def _deploy_using_scheduled_task(self, installer):
+    def _deploy_using_scheduled_task(self, installer, service_type):
         cmd = ("powershell Invoke-webrequest -uri "
                "{}/windows/schedule_installer.bat -outfile "
                "C:\\schedule_installer.bat"
@@ -99,7 +99,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         # Now run it.
         cmd = ("C:\\\\schedule_installer.bat {0} {1}"
-               .format(self._service_type, installer))
+               .format(service_type, installer))
         self._execute(cmd)
 
     def _grab_cbinit_installation_log(self):

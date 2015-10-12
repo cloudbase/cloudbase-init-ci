@@ -79,8 +79,7 @@ class ScenarioMeta(type):
         Check if the current class is final, if it has all the attributes set.
         """
         return all(item for item in (cls.backend_type, cls.introspection_type,
-                                     cls.recipe_type, cls.service_type,
-                                     cls.test_classes))
+                                     cls.recipe_type, cls.test_classes))
 
 
 @six.add_metaclass(ScenarioMeta)
@@ -90,7 +89,6 @@ class BaseScenario(unittest.TestCase):
     backend_type = None
     introspection_type = None
     recipe_type = None
-    service_type = 'http'
     test_classes = None
     userdata = None
     metadata = None
@@ -135,9 +133,13 @@ class BaseScenario(unittest.TestCase):
         # pylint: disable=not-callable
         # Pylint is not aware that the attrs are reassigned in other modules,
         # so we're just disabling the errors for now.
-        cls.recipe = cls.recipe_type(cls.conf, cls.backend, cls.service_type)
-        cls.recipe.prepare()
+        cls.recipe = cls.recipe_type(cls.conf, cls.backend)
+        cls.prepare_recipe()
         cls.backend.save_instance_output()
+
+    @classmethod
+    def prepare_recipe(cls):
+        return cls.recipe.prepare()
 
     @classmethod
     def tearDownClass(cls):

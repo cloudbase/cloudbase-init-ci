@@ -15,8 +15,8 @@
 
 import collections
 
-from argus.scenarios import base
-from argus.scenarios import service_mock
+from argus.scenarios.cloud import base
+from argus.scenarios.cloud import service_mock
 
 
 class named(collections.namedtuple("service", "application script_name "
@@ -54,7 +54,7 @@ class BaseServiceMockMixin(object):
         super(BaseServiceMockMixin, cls).tearDownClass()
 
 
-class EC2WindowsScenario(BaseServiceMockMixin, base.BaseScenario):
+class EC2WindowsScenario(BaseServiceMockMixin, base.CloudScenario):
     """Scenario for testing the EC2 metadata service."""
 
     services = [
@@ -66,7 +66,7 @@ class EC2WindowsScenario(BaseServiceMockMixin, base.BaseScenario):
 
 
 class CloudstackWindowsScenario(BaseServiceMockMixin,
-                                base.BaseScenario):
+                                base.CloudScenario):
     """Scenario for testing the Cloudstack metadata service."""
 
     services = [
@@ -81,7 +81,7 @@ class CloudstackWindowsScenario(BaseServiceMockMixin,
     ]
 
 
-class MaasWindowsScenario(BaseServiceMockMixin, base.BaseScenario):
+class MaasWindowsScenario(BaseServiceMockMixin, base.CloudScenario):
     """Scenario for testing the Maas metadata service."""
 
     services = [
@@ -92,7 +92,7 @@ class MaasWindowsScenario(BaseServiceMockMixin, base.BaseScenario):
     ]
 
 
-class HTTPKeysWindowsScenario(BaseServiceMockMixin, base.BaseScenario):
+class HTTPKeysWindowsScenario(BaseServiceMockMixin, base.CloudScenario):
 
     """Scenario for testing custom OpenStack http metadata service."""
 
