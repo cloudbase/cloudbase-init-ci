@@ -178,6 +178,7 @@ class RescueWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
     """Instance rescue Windows-based backend."""
 
     def rescue_server(self):
+        """Rescue the underlying instance."""
         admin_pass = self._conf.openstack.image_password
         self._manager.servers_client.rescue_server(
             self.internal_instance_id(),
@@ -188,6 +189,7 @@ class RescueWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
             self.internal_instance_id(), 'RESCUE')
 
     def unrescue_server(self):
+        """Unrescue the underlying instance."""
         self._manager.servers_client.unrescue_server(
             self.internal_instance_id())
         waiters.wait_for_server_status(

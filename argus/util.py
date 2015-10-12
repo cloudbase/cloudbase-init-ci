@@ -191,6 +191,11 @@ def get_logger(name="argus",
 
 
 def rand_name(name=''):
+    """Generate a random name
+
+    If *name* is given, then it will be prepended to
+    the generated string, separated by a minus sign.
+    """
     randbits = str(random.randint(1, 0x7fffffff))
     if name:
         return name + '-' + randbits
@@ -222,10 +227,18 @@ def get_namedtuple(name, members, values):
 
 
 def get_public_keys():
+    """Get the *public_keys* resource.
+
+    Used by the cloudbaseinit's tests.
+    """
     return get_resource("public_keys").splitlines()
 
 
 def get_certificate():
+    """Get the *certificate* resource.
+
+    Used by the cloudbaseinit's tests.
+    """
     return get_resource("certificate")
 
 

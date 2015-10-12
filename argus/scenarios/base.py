@@ -87,20 +87,45 @@ class BaseScenario(unittest.TestCase):
     """Scenario which sets up an instance and prepares it using a recipe"""
 
     backend_type = None
-    introspection_type = None
-    recipe_type = None
-    test_classes = None
-    userdata = None
-    metadata = None
-    availability_zone = None
+    """The backend class which will be used."""
 
+    introspection_type = None
+    """The introspection class which will be used."""
+
+    recipe_type = None
+    """The recipe class which will be used."""
+
+    test_classes = None
+    """A tuple of test classes which will be merged into the scenario."""
+
+    userdata = None
+    """The userdata that will be available in the instance
+
+    This can be anything as long as the underlying backend supports it.
+    """
+
+    metadata = None
+    """The metadata that will be available in the instance.
+
+    This can be anything as long as the underlying backend supports it.
+    """
+
+    availability_zone = None
     backend = None
     introspection = None
     recipe = None
     conf = None
 
+
     @classmethod
     def setUpClass(cls):
+        """Prepare the scenario for running
+
+        This means that the backend will be instantiated and an
+        instance will be created and prepared. After the preparation
+        is finished, the tests can run and can introspect the instance
+        to check what they are supposed to be checking.
+        """
         # pylint: disable=not-callable
         # Pylint is not aware that the attrs are reassigned in other modules,
         # so we're just disabling the errors for now.
@@ -130,6 +155,7 @@ class BaseScenario(unittest.TestCase):
 
     @classmethod
     def prepare_instance(cls):
+        """Prepare the underlying instance."""        
         # pylint: disable=not-callable
         # Pylint is not aware that the attrs are reassigned in other modules,
         # so we're just disabling the errors for now.
@@ -139,9 +165,19 @@ class BaseScenario(unittest.TestCase):
 
     @classmethod
     def prepare_recipe(cls):
+        """Call the *prepare* method of the underlying recipe
+
+        This method can be overwritten in the case the recipe's
+        *prepare* method needs special arguments passed down.
+        """
         return cls.recipe.prepare()
 
     @classmethod
     def tearDownClass(cls):
+        """Cleanup this scenario
+
+        This usually means that any resource that was created in
+        :meth:`setUpClass` needs to be destroyed here.
+        """
         if cls.backend:
             cls.backend.cleanup()
