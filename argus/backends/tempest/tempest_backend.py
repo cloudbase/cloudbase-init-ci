@@ -240,7 +240,8 @@ class BaseTempestBackend(base_backend.CloudBackend):
         return self._keypair.private_key
 
     def get_image_by_ref(self):
-        return self._manager.images_client.show_image(self._conf.openstack.image_ref)
+        image = self._manager.images_client.show_image(self._conf.openstack.image_ref)
+        return image['image']
 
     def floating_ip(self):
         return self._floating_ip['ip']
