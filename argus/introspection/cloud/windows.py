@@ -23,10 +23,9 @@ import shutil
 import tempfile
 
 from argus.introspection.cloud import base
+from argus import exceptions
 from argus import util
 
-
-CONF = util.get_config()
 
 # escaped characters for powershell paths
 ESC = "( )"
@@ -67,7 +66,8 @@ def _get_ntp_peers(output):
     return list(filter(None, map(str.strip, peers)))
 
 
-def _escape_path(path):
+def escape_path(path):
+    """Escape the spaces in the given path in order to work with Powershell properly."""
     for char in ESC:
         path = path.replace(char, "`{}".format(char))
     return path
@@ -138,7 +138,7 @@ def get_cbinit_dir(execute_function):
 
     for location in locations:
         location = location.strip()
-        _location = _escape_path(location)
+        _location = escape_path(location)
         status = execute_function(
             'powershell Test-Path "{}\\Cloudbase` Solutions"'.format(
                 _location)).strip().lower()
@@ -149,6 +149,8 @@ def get_cbinit_dir(execute_function):
                 "Cloudbase Solutions",
                 "Cloudbase-Init"
             )
+
+    raise exceptions.ArgusError('cloudbase-init installation dir not found')
 
 
 def set_config_option(option, value, execute_function):
@@ -186,7 +188,7 @@ def get_cbinit_key(execute_function):
     return key_x64
 
 
-class InstanceIntrospection(base.BaseInstanceIntrospection):
+class InstanceIntrospection(base.CloudInstanceIntrospection):
     """Utilities for introspecting a Windows instance."""
 
     def get_disk_size(self):
@@ -212,7 +214,7 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         stdout = self.remote_client.run_command_verbose(cmd)
         homedir, _, _ = stdout.rpartition(ntpath.sep)
         return ntpath.join(
-            homedir, CONF.cloudbaseinit.created_user,
+            homedir, self._conf.cloudbaseinit.created_user,
             ".ssh", "authorized_keys")
 
     def get_instance_file_content(self, filepath):
@@ -336,7 +338,7 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         """
         cmd = ("powershell Invoke-WebRequest -uri "
                "{}/windows/network_details.ps1 -outfile "
-               "C:\\network_details.ps1".format(CONF.argus.resources))
+               "C:\\network_details.ps1".format(self._conf.argus.resources))
         self.remote_client.run_command_with_retry(cmd)
 
         # Run and parse the output, where each adapter details

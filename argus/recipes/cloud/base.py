@@ -42,11 +42,6 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     * waits for the finalization of the installation.
     """
 
-    def __init__(self, *args, **kwargs):
-        super(BaseCloudbaseinitRecipe, self).__init__(*args, **kwargs)
-        self.build = None
-        self.arch = None
-
     @abc.abstractmethod
     def wait_for_boot_completion(self):
         """Wait for the instance to finish up booting."""
@@ -63,7 +58,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         """Get the installation script for cloudbaseinit."""
 
     @abc.abstractmethod
-    def install_cbinit(self):
+    def install_cbinit(self, service_type):
         """Install the cloudbaseinit code."""
 
     @abc.abstractmethod
@@ -89,7 +84,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     def replace_code(self):
         """Do whatever is necessary to replace the code for cloudbaseinit."""
 
-    def prepare(self):
+    def prepare(self, service_type=None, **kwargs):
         """Prepare the underlying instance.
 
         The following operations will be executed:
@@ -99,20 +94,17 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         * install CloudbaseInit by running the previously downloaded file.
         * wait until the instance is up and running.
         """
-        LOG.info("Preparing instance %s...", self._instance_id)
+        LOG.info("Preparing instance...")
         self.wait_for_boot_completion()
         self.execution_prologue()
         self.get_installation_script()
-        self.install_cbinit()
+        self.install_cbinit(service_type)
         self.replace_install()
         self.replace_code()
-        # pause the process until user is satisfied with his changes
-        opts = util.parse_cli()
-
         self.pre_sysprep()
-        if opts.pause:
+        if self._conf.argus.pause:
             six.moves.input("Press Enter to continue...")
 
         self.sysprep()
         self.wait_cbinit_finalization()
-        LOG.info("Finished preparing instance %s.", self._instance_id)
+        LOG.info("Finished preparing instance")

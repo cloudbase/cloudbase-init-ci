@@ -17,15 +17,12 @@ import abc
 
 import six
 
+from argus.introspection import base
+
 
 @six.add_metaclass(abc.ABCMeta)
-class BaseInstanceIntrospection(object):
-    """Generic utility class for introspecting an instance."""
-
-    def __init__(self, remote_client, instance, image):
-        self.remote_client = remote_client
-        self.instance = instance
-        self.image = image
+class CloudInstanceIntrospection(base.BaseInstanceIntrospection):
+    """Introspection class for testing cloudbase-init."""
 
     @abc.abstractmethod
     def get_disk_size(self):

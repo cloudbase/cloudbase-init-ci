@@ -18,4 +18,5 @@
 .idea
 build/*
 doc/source/api/*
-doc/build/*
+docs/_build/
+docs/_build/*

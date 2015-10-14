@@ -1,4 +1,5 @@
-# Copyright 2014 Cloudbase Solutions Srl
+# Copyright 2015 Cloudbase Solutions Srl
+# All Rights Reserved.
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -12,15 +13,22 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import sys
+import abc
 
-from argus import runner
-
-
-def main():
-    failures = runner.run_scenarios()
-    sys.exit(1 if failures else 0)
+import six
 
 
-if __name__ == "__main__":
-    main()
+@six.add_metaclass(abc.ABCMeta)
+class BaseInstanceIntrospection(object):
+    """Generic utility class for introspecting an instance.
+
+    :param conf:
+        The configuration object used by argus.
+    :param remote_client:
+        A client which can be used by argus.
+        This needs to be an instance of :class:`argus.remote_client.BaseClient`.
+    """
+
+    def __init__(self, conf, remote_client):
+        self.remote_client = remote_client
+        self._conf = conf

@@ -13,44 +13,34 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import argparse
 import base64
 import collections
 import contextlib
-import importlib
-import itertools
 import logging
+import os
 import pkgutil
 import random
 import socket
 import struct
 import subprocess
 import sys
-import time
 
 import six
 
 from argus import config
-from argus import exceptions
-from argus import remote_client
 
 
 RETRY_COUNT = 15
 RETRY_DELAY = 10
 
 __all__ = (
-    'ConfigurationPatcher',
-    'WinRemoteClient',
     'decrypt_password',
     'get_config',
     'get_logger',
     'get_resource',
     'cached_property',
-    'load_qualified_object',
-    'parse_cli',
     'run_once',
     'rand_name',
-    'with_retry',
     'get_public_keys',
     'get_certificate',
 )
@@ -70,112 +60,6 @@ NETWORK_KEYS = [
     "dns6",
     "dhcp"
 ]
-
-
-class WinRemoteClient(remote_client.WinRemoteClient):
-
-    def run_command(self, cmd):
-        """Run the given command and return execution details.
-
-        :rtype: tuple
-        :returns: stdout, stderr, exit_code
-        """
-
-        LOG.info("Running command %s...", cmd)
-        return self.run_remote_cmd(cmd)
-
-    def run_command_verbose(self, cmd):
-        """Run the given command and log anything it returns.
-
-        Do this with retrying support.
-
-        :rtype: string
-        :returns: stdout
-        """
-        stdout, stderr, exit_code = self.run_command_with_retry(cmd)
-        LOG.info("The command returned the output: %s", stdout)
-        LOG.info("The stderr of the command was: %s", stderr)
-        LOG.info("The exit code of the command was: %s", exit_code)
-        return stdout
-
-    def run_command_with_retry(self, cmd, count=RETRY_COUNT,
-                               delay=RETRY_DELAY):
-        """Run the given `cmd` until succeeds.
-
-        :param cmd:
-            A string, representing a command which needs to
-            be executed on the underlying remote client.
-        :param count:
-            The number of retries which this function has.
-            If the value is ``None``, then the function will retry *forever*.
-        :param delay:
-            The number of seconds to sleep when retrying a command.
-
-        :rtype: tuple
-        :returns: stdout, stderr, exit_code
-        """
-
-        # Countdown normalization.
-        if not count or count < 0:
-            count = 0
-
-        while True:
-            try:
-                return self.run_command(cmd)
-            except Exception as exc:  # pylint: disable=broad-except
-                LOG.debug("Command failed with %r.", exc)
-                # A negative `count` means no count at all.
-                if count >= 0:
-                    count -= 1
-                if count == 0:
-                    raise exceptions.ArgusTimeoutError(
-                        "Command {!r} failed too many times."
-                        .format(cmd))
-                LOG.debug("Retrying...")
-                time.sleep(delay)
-
-    def run_command_until_condition(self, cmd, cond, retry_count=RETRY_COUNT,
-                                    delay=RETRY_DELAY):
-        """Run the given `cmd` until a condition `cond` occurs.
-
-        :param cond:
-            A callable which receives the standard output returned by
-            executing the command. It should return a boolean value,
-            which tells to this function to stop execution.
-        :raises:
-            `ArgusCLIError` if there is output found in the standard error.
-
-        This method uses and behaves like `run_command_with_retry` but
-        with an additional condition parameter.
-        """
-
-        # countdown normalization
-        if not retry_count or retry_count < 0:
-            retry_count = 0
-
-        while True:
-            try:
-                stdout, stderr, _ = self.run_command(cmd)
-            except Exception as exc:  # pylint: disable-broad-except
-                LOG.debug("Command failed with %r.", exc)
-            else:
-                if stderr:
-                    raise exceptions.ArgusCLIError(
-                        "Executing command {!r} failed with {!r}."
-                        .format(cmd, stderr))
-                elif cond(stdout):
-                    return
-                else:
-                    LOG.debug("Condition not met, retrying...")
-
-            if retry_count > 0:
-                retry_count -= 1
-                LOG.debug("Retrying...")
-                time.sleep(delay)
-            else:
-                raise exceptions.ArgusTimeoutError(
-                    "Command {!r} failed too many times."
-                    .format(cmd))
 
 
 def get_local_ip():
@@ -248,28 +132,6 @@ def run_once(func, state={}, errors={}):
     return wrapper
 
 
-class with_retry(object):  # pylint: disable=invalid-name
-    """A decorator that will retry function calls until success."""
-
-    def __init__(self, tries=5, delay=1):
-        self.tries = tries
-        self.delay = delay
-
-    def __call__(self, func):
-        @six.wraps(func)
-        def wrapper(*args, **kwargs):
-            while True:
-                try:
-                    return func(*args, **kwargs)
-                except Exception as exc:
-                    self.tries -= 1
-                    if self.tries <= 0:
-                        raise
-                    LOG.error("%s while calling %s", exc, func)
-                    time.sleep(self.delay)
-        return wrapper
-
-
 def get_resource(resource):
     """Get the given resource from the list of known resources."""
     return pkgutil.get_data('argus.resources', resource)
@@ -283,75 +145,24 @@ class cached_property(object):  # pylint: disable=invalid-name
         self.name = name or func.__name__
 
     def __get__(self, instance, klass=None):
+        if instance is None:
+            return self
         instance.__dict__[self.name] = result = self.func(instance)
         return result
 
 
 @run_once
-def parse_cli():
-    """Parse the command line and return an object with the given options."""
-    parser = argparse.ArgumentParser(
-        description="Various unittest-like multi-purpose tests runner.")
-    subparsers = parser.add_subparsers(title="aspects")
-
-    common = argparse.ArgumentParser(add_help=False)
-    common.add_argument('--failfast', action='store_true',
-                        default=False,
-                        help='Fail the tests on the first failure.')
-    common.add_argument('--conf', type=str, required=True,
-                        help="Give a path to the argus conf. "
-                             "It should be an .ini file format "
-                             "with a section called [argus].")
-    common.add_argument("-p", "--pause", action="store_true",
-                        help="Pause argus before doing any test.")
-    common.add_argument("--test-os-types",
-                        type=str, nargs="*",
-                        help="Test only those scenarios with these OS types. "
-                             "By default, all scenarios are executed. "
-                             "For instance, to run only the Windows and "
-                             "FreeBSD scenarios, use "
-                             "`--test-os-types Windows,FreeBSD`")
-    common.add_argument("--test-scenario-type",
-                        type=str,
-                        help="Test only the scenarios with this type. "
-                             "The type can be `smoke` or `deep`. By default, "
-                             "all scenarios types are executed.")
-    common.add_argument("-o", "--instance-output",
-                        metavar="DIRECTORY",
-                        help="Save the instance console output "
-                             "content in this path. If this is given, "
-                             "it can be reused for other files as well.")
-
-    cloud = subparsers.add_parser("cloud", parents=[common],
-                                  help="Run cloud(base)-init specific tests.")
-    cloud.add_argument("-b", "--builds", action="append",
-                       choices=list(BUILDS),
-                       help="Choose what installer builds to test.")
-    cloud.add_argument("-a", "--arches", action="append",
-                       choices=list(ARCHES),
-                       help="Choose what installer architectures to test.")
-    cloud.add_argument("-i", "--installer-template", metavar="TEMPLATE",
-                       default="CloudbaseInitSetup_{build}_{arch}.msi",
-                       help="Specify a custom installer template. "
-                            "Default: CloudbaseInitSetup_{build}_{arch}.msi")
-    cloud.add_argument("--patch-install", metavar="URL",
-                       help='Pass a link that points *directly* to a '
-                            'zip file containing the installed version. '
-                            'The content will just replace the files.')
-    cloud.add_argument("--git-command", type=str, default=None,
-                       help="Pass a git command which should be interpreted "
-                            "by a recipe.")
-    cloud.set_defaults(scenarios_builder="cloud")
-
-    opts = parser.parse_args()
-    return opts
-
-
-@run_once
 def get_config():
-    """Get the argus config object."""
-    opts = parse_cli()
-    return config.ConfigurationParser(opts.conf).conf
+    """Get the argus config object.
+
+    Looks for a file called argus.conf in the working directory.
+    If the file is not found it looks for it in /etc/argus/
+    """
+    if os.path.isfile('argus.conf'):
+        config_file = 'argus.conf'
+    else:
+        config_file = '/etc/argus/argus.conf'
+    return config.ConfigurationParser(config_file).conf
 
 
 def get_logger(name="argus",
@@ -375,31 +186,16 @@ def get_logger(name="argus",
             file_handler.setFormatter(formatter)
             logger.addHandler(file_handler)
 
-        stdout_handler = logging.StreamHandler(sys.stdout)
-        stdout_handler.setFormatter(formatter)
-        logger.addHandler(stdout_handler)
-
     logger.setLevel(logging.DEBUG)
     return logger
 
 
-def load_qualified_object(obj):
-    """Load a qualified object name.
-
-    The name must be in the format module:qualname syntax.
-    """
-    mod_name, has_attrs, attrs = obj.partition(":")
-    obj = module = importlib.import_module(mod_name)
-
-    if has_attrs:
-        parts = attrs.split(".")
-        obj = module
-        for part in parts:
-            obj = getattr(obj, part)
-    return obj
-
-
 def rand_name(name=''):
+    """Generate a random name
+
+    If *name* is given, then it will be prepended to
+    the generated string, separated by a minus sign.
+    """
     randbits = str(random.randint(1, 0x7fffffff))
     if name:
         return name + '-' + randbits
@@ -431,66 +227,19 @@ def get_namedtuple(name, members, values):
 
 
 def get_public_keys():
+    """Get the *public_keys* resource.
+
+    Used by the cloudbaseinit's tests.
+    """
     return get_resource("public_keys").splitlines()
 
 
 def get_certificate():
-    return get_resource("certificate")
+    """Get the *certificate* resource.
 
-
-class ConfigurationPatcher(object):
-    """Simple configuration patcher for .ini style configs.
-
-    This class can be used to modify values of a configuration
-    file with other predefined options. It also has support
-    for reverting the changes.
-
-    >>> patcher = ConfigurationPatcher('a.ini', DEFAULT={'a': '1'})
-    >>> patcher.patch() # the file was modified
-    >>> patcher.unpatch() # the file is as the original
-
-    It also supports context management protocol:
-
-    >>> with patcher: # the file is modified
-        ...
-    # the file was unpatched
-    >>>
+    Used by the cloudbaseinit's tests.
     """
-
-    def __init__(self, config_file, **opts):
-        self._config_file = config_file
-        self._opts = opts
-        self._original_content = None
-
-    def patch(self):
-        with open(self._config_file) as stream:
-            self._original_content = stream.read()
-
-        parser = six.moves.configparser.ConfigParser()
-        parser.read(self._config_file)
-        for section in itertools.chain(parser.sections(), ['DEFAULT']):
-            if section in self._opts:
-                # Needs to be patched
-                opts = self._opts[section]
-                for opt, value in opts.items():
-                    LOG.info("Patching file %s on section %r, with "
-                             "entry %s=%s",
-                             self._config_file, section, opt, value)
-
-                    parser.set(section, opt, str(value))
-        with open(self._config_file, 'w') as stream:
-            parser.write(stream)
-
-    def unpatch(self):
-        with open(self._config_file, 'w') as stream:
-            stream.write(self._original_content)
-
-    def __enter__(self):
-        self.patch()
-        return self
-
-    def __exit__(self, exc_type, exc_value, exc_tb):
-        self.unpatch()
+    return get_resource("certificate")
 
 
 LOG = get_logger()

@@ -16,30 +16,12 @@
 import unittest
 
 
-class TestBaseArgus(unittest.TestCase):
-    """Test class which offers support for parametrization of the manager."""
+class BaseTestCase(unittest.TestCase):
+    """Test case parametrized with a backend and an introspection object."""
 
-    def __init__(self, methodName='runTest',
-                 manager=None, image=None,
-                 service_type=None, introspection=None):
-        super(TestBaseArgus, self).__init__(methodName)
-        self.manager = manager
-        self.image = image
-        self.service_type = service_type
-        self.introspection = introspection(self.remote_client,
-                                           self.server['id'],
-                                           image=self.image)
-
-    # Export a couple of APIs from the underlying manager.
-
-    @property
-    def server(self):
-        return self.manager.server()
-
-    @property
-    def remote_client(self):
-        return self.manager.remote_client
-
-    @property
-    def run_command_verbose(self):
-        return self.manager.remote_client.run_command_verbose
+    def __init__(self, conf, backend, recipe, introspection, *args, **kwargs):
+        super(BaseTestCase, self).__init__(*args, **kwargs)
+        self._backend = backend
+        self._recipe = recipe
+        self._introspection = introspection
+        self._conf = conf
