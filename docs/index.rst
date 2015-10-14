@@ -20,7 +20,7 @@ multi-cloud initialization service, targeted to Windows platforms.
 Contents:
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    walkthrough.rst
    api.rst
