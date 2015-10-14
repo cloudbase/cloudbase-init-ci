@@ -1,6 +1,7 @@
 param
 (
-    [string]$serviceType = 'http'
+    [string]$serviceType = 'http',
+    [string]$installer = 'CloudbaseInitSetup_Beta_x64.msi'
 )
 
 Import-Module C:\common.psm1
@@ -15,11 +16,7 @@ function Set-LocalScripts([string]$ProgramFilesDir) {
     $scripts = $home_drive + '\Scripts'
     $value = "`nlocal_scripts_path=$scripts"
     ((Get-Content $path) + $value) | Set-Content $path
-
-    # Create the scripts.
-    mkdir $scripts
-    echo "echo 1 > %HOMEDRIVE%\Scripts\shell.output" | Set-Content $scripts\shell.cmd
-    echo "Test-Path $scripts > $scripts\powershell.output" | Set-Content $scripts\powersh.ps1
+    mkdir $scripts -ErrorAction Ignore
 }
 
 
@@ -55,7 +52,7 @@ function Set-CloudbaseInitServiceStartupPolicy {
     #using SetupComplete.cmd script.
     #https://technet.microsoft.com/en-us/library/cc766314%28v=ws.10%29.aspx
     
-    mkdir "${ENV:SystemRoot}\Setup\Scripts"
+    mkdir "${ENV:SystemRoot}\Setup\Scripts" -ErrorAction ignore
     cmd /c 'sc config cloudbase-init start= demand'
     Set-Content -Value "sc config cloudbase-init start= auto && net start cloudbase-init" `
                 -Path "${ENV:SystemRoot}\Setup\Scripts\SetupComplete.cmd"
@@ -66,19 +63,8 @@ try {
 
     $Host.UI.RawUI.WindowTitle = "Downloading Cloudbase-Init..."
 
-    $osArch = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
-
-    if($osArch -eq "64-bit")
-    {
-        $CloudbaseInitMsi = "CloudbaseInitSetup_Beta_x64.msi"
-    }
-    else
-    {
-        $CloudbaseInitMsi = "CloudbaseInitSetup_Beta_x86.msi"
-    }
-
-    $CloudbaseInitMsiPath = "$ENV:Temp\$CloudbaseInitMsi"
-    $CloudbaseInitMsiUrl = "http://www.cloudbase.it/downloads/$CloudbaseInitMsi"
+    $CloudbaseInitMsiPath = "$ENV:Temp\$installer"
+    $CloudbaseInitMsiUrl = "http://www.cloudbase.it/downloads/$installer"
     $CloudbaseInitMsiLog = "C:\\installation.log"
 
     (new-object System.Net.WebClient).DownloadFile($CloudbaseInitMsiUrl, $CloudbaseInitMsiPath)
@@ -109,6 +95,5 @@ try {
     Set-CloudbaseInitServiceStartupPolicy
 } catch {
     $host.ui.WriteErrorLine($_.Exception.ToString())
-    $x = $host.UI.RawUI.ReadKey("NoEcho,IncludeKeyDown")
     throw
 }

@@ -15,7 +15,6 @@
 
 """Various utilities for the cloud base types of tests."""
 
-import functools
 import os
 import unittest
 
@@ -60,14 +59,9 @@ def skip_unless_dnsmasq_configured(func):
 
 
 def requires_service(service_type='http'):
-    """Expect that the underlying test uses the given service metadata."""
+    """Sets function attribute required_service_type to service_type"""
 
-    def factory(func):
-        @functools.wraps(func)
-        def wrapper(self):
-            if self.service_type != service_type:
-                raise unittest.SkipTest(
-                    "Not the expected service type.")
-            return func(self)
-        return wrapper
-    return factory
+    def decorator(func):
+        func.required_service_type = service_type
+        return func
+    return decorator

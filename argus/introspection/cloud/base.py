@@ -17,19 +17,12 @@ import abc
 
 import six
 
+from argus.introspection import base
+
 
 @six.add_metaclass(abc.ABCMeta)
-class BaseInstanceIntrospection(object):
-    """Generic utility class for introspecting an instance."""
-
-    def __init__(self, remote_client, instance, image):
-        self.remote_client = remote_client
-        self.instance = instance
-        self.image = image
-
-    @abc.abstractmethod
-    def get_plugins_count(self):
-        """Return the plugins count from the instance."""
+class CloudInstanceIntrospection(base.BaseInstanceIntrospection):
+    """Introspection class for testing cloudbase-init."""
 
     @abc.abstractmethod
     def get_disk_size(self):
@@ -66,13 +59,6 @@ class BaseInstanceIntrospection(object):
     @abc.abstractmethod
     def get_cloudbaseinit_traceback(self):
         """Return the traceback, if any, from the cloudbaseinit's logs."""
-
-    @abc.abstractmethod
-    def instance_shell_script_executed(self):
-        """Check if the shell script executed in the instance.
-
-        The script was added when we prepared the instance.
-        """
 
     @abc.abstractmethod
     def get_group_members(self, group):

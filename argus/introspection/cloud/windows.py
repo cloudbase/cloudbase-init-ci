@@ -23,10 +23,9 @@ import shutil
 import tempfile
 
 from argus.introspection.cloud import base
+from argus import exceptions
 from argus import util
 
-
-CONF = util.get_config()
 
 # escaped characters for powershell paths
 ESC = "( )"
@@ -67,7 +66,8 @@ def _get_ntp_peers(output):
     return list(filter(None, map(str.strip, peers)))
 
 
-def _escape_path(path):
+def escape_path(path):
+    """Escape the spaces in the given path in order to work with Powershell properly."""
     for char in ESC:
         path = path.replace(char, "`{}".format(char))
     return path
@@ -138,7 +138,7 @@ def get_cbinit_dir(execute_function):
 
     for location in locations:
         location = location.strip()
-        _location = _escape_path(location)
+        _location = escape_path(location)
         status = execute_function(
             'powershell Test-Path "{}\\Cloudbase` Solutions"'.format(
                 _location)).strip().lower()
@@ -149,6 +149,8 @@ def get_cbinit_dir(execute_function):
                 "Cloudbase Solutions",
                 "Cloudbase-Init"
             )
+
+    raise exceptions.ArgusError('cloudbase-init installation dir not found')
 
 
 def set_config_option(option, value, execute_function):
@@ -186,17 +188,8 @@ def get_cbinit_key(execute_function):
     return key_x64
 
 
-class InstanceIntrospection(base.BaseInstanceIntrospection):
+class InstanceIntrospection(base.CloudInstanceIntrospection):
     """Utilities for introspecting a Windows instance."""
-
-    def get_plugins_count(self):
-        exec_func = self.remote_client.run_command_verbose
-        key = "{0}\\{1}\\Plugins".format(
-            get_cbinit_key(exec_func),
-            self.instance)
-        cmd = 'powershell (Get-Item %s).ValueCount' % key
-        stdout = exec_func(cmd)
-        return int(stdout)
 
     def get_disk_size(self):
         cmd = ('powershell (Get-WmiObject "win32_logicaldisk | '
@@ -211,11 +204,6 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         stdout = self.remote_client.run_command_verbose(cmd)
         return bool(stdout)
 
-    def get_instance_hostname(self):
-        cmd = 'powershell (Get-WmiObject "Win32_ComputerSystem").Name'
-        stdout = self.remote_client.run_command_verbose(cmd)
-        return stdout.lower().strip()
-
     def get_instance_ntp_peers(self):
         command = 'w32tm /query /peers'
         stdout = self.remote_client.run_command_verbose(command)
@@ -226,7 +214,7 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         stdout = self.remote_client.run_command_verbose(cmd)
         homedir, _, _ = stdout.rpartition(ntpath.sep)
         return ntpath.join(
-            homedir, CONF.cloudbaseinit.created_user,
+            homedir, self._conf.cloudbaseinit.created_user,
             ".ssh", "authorized_keys")
 
     def get_instance_file_content(self, filepath):
@@ -238,11 +226,27 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         stdout = self.remote_client.run_command_verbose(cmd)
         return int(stdout)
 
+    @staticmethod
+    def _parse_netsh_output(output):
+        output = output.strip()
+        blocks = re.split(r"SubInterface\s+(.*?)-{46}\s+", output,
+                          flags=re.DOTALL)
+        blocks = blocks[1:]  # empty space
+
+        interfaces = blocks[0::2]
+        content = blocks[1::2]
+        for interface, block in zip(interfaces, content):
+            interface = interface.strip()
+            mtu = re.search(r"MTU\s*:\s*(\d+)\s+", block)
+            if not mtu:
+                continue
+            if 'loopback' not in interface.lower():
+                yield mtu.group(1)
+
     def get_instance_mtu(self):
-        cmd = ('powershell "(Get-NetIpConfiguration -Detailed).'
-               'NetIPv4Interface.NlMTU"')
+        cmd = 'netsh interface ipv4 show subinterfaces level=verbose'
         stdout = self.remote_client.run_command_verbose(cmd)
-        return stdout.strip('\r\n')
+        return next(self._parse_netsh_output(stdout), None)
 
     def get_cloudbaseinit_traceback(self):
         code = util.get_resource('windows/get_traceback.ps1')
@@ -257,9 +261,6 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         stdout = self.remote_client.run_command_verbose(
             'powershell "Test-Path {}"'.format(filepath))
         return stdout.strip() == 'True'
-
-    def instance_shell_script_executed(self):
-        return self._file_exist("C:\\Scripts\\shell.output")
 
     def instance_exe_script_executed(self):
         return self._file_exist("C:\\Scripts\\exe.output")
@@ -295,6 +296,17 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
                              "given service.")
         return (match.group(1).strip(), match.group(2).strip())
 
+    def get_instance_os_version(self):
+        """Get the version of the underlying OS
+
+         Return a tuple of two elements, the major and the minor
+         version.
+        """
+        cmd = "powershell (Get-CimInstance Win32_OperatingSystem).Version"
+        stdout = self.remote_client.run_command_verbose(cmd)
+        elems = stdout.split(".")
+        return list(map(int, elems))[:2]
+
     def get_cloudconfig_executed_plugins(self):
         expected = {
             'b64', 'b64_1',
@@ -303,7 +315,7 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         }
         files = {}
         for basefile in expected:
-            path = os.path.join("C:\\", basefile)
+            path = ntpath.join("C:\\", basefile)
             content = self.get_instance_file_content(path)
             files[basefile] = content.strip()
         return files
@@ -314,6 +326,11 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
             "powershell {}".format(command))
         return stdout
 
+    def get_instance_hostname(self):
+        command = "hostname"
+        stdout = self.remote_client.run_command_verbose(command)
+        return stdout.lower().strip()
+
     def get_network_interfaces(self):
         """Get a list with dictionaries of network details.
 
@@ -321,7 +338,7 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
         """
         cmd = ("powershell Invoke-WebRequest -uri "
                "{}/windows/network_details.ps1 -outfile "
-               "C:\\network_details.ps1".format(CONF.argus.resources))
+               "C:\\network_details.ps1".format(self._conf.argus.resources))
         self.remote_client.run_command_with_retry(cmd)
 
         # Run and parse the output, where each adapter details
@@ -353,3 +370,12 @@ class InstanceIntrospection(base.BaseInstanceIntrospection):
             }
             nics.append(nic)
         return nics
+
+    def get_user_flags(self, user):
+        code = util.get_resource('windows/get_user_flags.ps1')
+        remote_script = "C:\\{}.ps1".format(util.rand_name())
+        with _create_tempfile(content=code) as tmp:
+            self.remote_client.copy_file(tmp, remote_script)
+            stdout = self.remote_client.run_command_verbose(
+                "powershell {0} {1}".format(remote_script, user))
+            return stdout.strip()

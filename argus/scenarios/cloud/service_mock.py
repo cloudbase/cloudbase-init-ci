@@ -13,12 +13,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
 import json
+import multiprocessing
 import textwrap
 import time
-
-import multiprocessing
+import warnings
 
 import cherrypy
 # pylint: disable=import-error
@@ -32,7 +31,7 @@ CLOUDSTACK_EXPECTED_HEADER = "Domu-Request"
 STOP_LINK_RETRY_COUNT = 5
 
 
-def _create_service_server(service, scenario):
+def _create_service_server(service, backend):
     app = service.application
     script_name = service.script_name
     host = service.host
@@ -43,29 +42,30 @@ def _create_service_server(service, scenario):
         "server.socket_port": port,
         "log.screen": False,
     })
-    cherrypy.quickstart(app(scenario), script_name)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        cherrypy.quickstart(app(backend), script_name)
 
 
-def _instantiate_services(services, scenario):
+def _instantiate_services(services, backend):
     for service in services:
         process = multiprocessing.Process(
             target=_create_service_server,
-            args=(service, scenario))
+            args=(service, backend))
         process.start()
         yield process
 
 
-@contextlib.contextmanager
-def instantiate_services(services, scenario):
-    """Context manager used for starting mocked metadata services."""
+class ServiceManager(object):
+    """Creates the required mocked service processes."""
 
-    # Start the service(s) in different process(es).
-    processes = list(_instantiate_services(services, scenario))
-    try:
-        yield
-    finally:
+    def __init__(self, services, backend):
+        self._services = services
+        self._processes = list(_instantiate_services(services, backend))
+
+    def terminate(self):
         # Send the shutdown "signal".
-        for service in services:
+        for service in self._services:
             for _ in range(STOP_LINK_RETRY_COUNT):
                 # Do a best effort to stop the service.
                 try:
@@ -74,7 +74,7 @@ def instantiate_services(services, scenario):
                 except (urllib.error.URLError, http_client.BadStatusLine):
                     time.sleep(1)
 
-        for process in processes:
+        for process in self._processes:
             process.terminate()
             process.join()
 
@@ -82,8 +82,8 @@ def instantiate_services(services, scenario):
 @cherrypy.tools.response_headers(headers=[("Content-Type", "text/plain")])
 class BaseServiceApp(object):
 
-    def __init__(self, scenario):
-        self.scenario = scenario
+    def __init__(self, backend):
+        self._backend = backend
 
     def _dispatch_method(self, operand):
         operand = operand.replace("-", "_")
@@ -99,15 +99,15 @@ class MetadataServiceAppMixin(object):
     """Common metadata resources."""
 
     def instance_id(self):
-        return self.scenario.server()['id']
+        return self._backend.internal_instance_id()
 
     def local_hostname(self):
-        return self.scenario.instance_server()['name'][:15].lower()
+        return self._backend.instance_server()['name'][:15].lower()
 
     def public_keys(self):
         # The public key(s) should be let prefixed with EOL
         # (as the metadata providers will do).
-        return self.scenario.public_key()
+        return self._backend.public_key()
 
 
 class EC2MetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
@@ -166,7 +166,7 @@ class CloudstackMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
 
     # pylint: disable=unused-argument
     def user_data(self, operation=None):
-        userdata = self.scenario.userdata()
+        userdata = self._backend.userdata
         return userdata or ""
 
     # pylint: disable=no-self-use
@@ -186,8 +186,8 @@ class CloudstackMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
 class CloudstackPasswordManagerApp(BaseServiceApp):
     """Metadata app for CloudStack password manager."""
 
-    def __init__(self, scenario):
-        super(CloudstackPasswordManagerApp, self).__init__(scenario)
+    def __init__(self, backend):
+        super(CloudstackPasswordManagerApp, self).__init__(backend)
         self._password = "Passw0rd"
 
     @cherrypy.expose
@@ -244,7 +244,7 @@ class MaasMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
     @cherrypy.expose
     def user_data(self):
         self._verify_headers()
-        return self.scenario.userdata() or ""
+        return self._backend.userdata or ""
 
     @cherrypy.expose
     def meta_data(self, operation=None):
@@ -255,24 +255,7 @@ class MaasMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
 
     @staticmethod
     def x509():
-        return textwrap.dedent("""
-            -----BEGIN CERTIFICATE-----
-            MIICljCCAf+gAwIBAgIJAImt5Ng0YhLoMA0GCSqGSIb3DQEBCwUAMGQxCzAJBgNV
-            BAYTAkFVMRMwEQYDVQQIDApTb21lLVN0YXRlMQ0wCwYDVQQKDARSb290MQ0wCwYD
-            VQQLDARSb290MQ0wCwYDVQQDDARSb290MRMwEQYJKoZIhvcNAQkBFgRSb290MB4X
-            DTE1MDMwMjEzMzg1MloXDTE2MDMwMTEzMzg1MlowZDELMAkGA1UEBhMCQVUxEzAR
-            BgNVBAgMClNvbWUtU3RhdGUxDTALBgNVBAoMBFJvb3QxDTALBgNVBAsMBFJvb3Qx
-            DTALBgNVBAMMBFJvb3QxEzARBgkqhkiG9w0BCQEWBFJvb3QwgZ8wDQYJKoZIhvcN
-            AQEBBQADgY0AMIGJAoGBAKWWS3Rgedsllj1hC3zH+MzvaNUH+X/WuTqxfvRe0Jl0
-            kbaepmkBbAntvx4gUEZmZ91HWUgHP8i3cqWqsuVsbYJUyVU5bVk4/gwcHjAHby9m
-            3GBqovI/DXBYJ2Itofk2k0crobxyvfddyWbDjK0HSdP617+WG3FZNUanz6YQNTTH
-            AgMBAAGjUDBOMB0GA1UdDgQWBBThrWz1diwGEqf4QuHwo1vsJDWt3DAfBgNVHSME
-            GDAWgBThrWz1diwGEqf4QuHwo1vsJDWt3DAMBgNVHRMEBTADAQH/MA0GCSqGSIb3
-            DQEBCwUAA4GBADmF6N6kNiyZnmQYKrGkut1Wu7fogQjsZrAfXrBQUJFCxbVTiRNv
-            fBheVnNIu6doj+237LTCccxERWNboVVZul6ZNkCc6M8srsovYBkZqo3TWAgvfmYV
-            TO9FwPXIRcR/XrcMDn7slaHtbILM3P4pIbaXUhvel+qLOAMp6k2iDl2Q
-            -----END CERTIFICATE-----
-            """.strip())
+        return util.get_certificate()
 
 
 class HTTPKeysMetadataServiceApp(BaseServiceApp):
@@ -295,7 +278,7 @@ class HTTPKeysMetadataServiceApp(BaseServiceApp):
             } for data in util.get_public_keys()]
         }
         key = "admin_pass"
-        metadata[key] = self.scenario.get_metadata()[key]
+        metadata[key] = self._backend.metadata[key]
         return metadata
 
     @cherrypy.expose
