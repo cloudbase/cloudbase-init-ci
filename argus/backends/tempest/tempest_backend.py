@@ -77,7 +77,7 @@ class BaseTempestBackend(base_backend.CloudBackend):
 
     def _configure_networking(self):
         subnet_id = self._manager.primary_credentials().subnet["id"]
-        self._manager.network_client.update_subnet(
+        self._manager.subnets_client.update_subnet(
             subnet_id,
             dns_nameservers=self._conf.argus.dns_nameservers)
 

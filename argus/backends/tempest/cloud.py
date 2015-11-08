@@ -82,24 +82,24 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
         # Disable DHCP for this network to test static configuration and
         # also add default DNS name servers.
         subnet_id = fake_net_creds.subnet["id"]
-        net_client = self._manager.network_client
-        net_client.update_subnet(
+        subnets_client = self._manager.subnets_client
+        subnets_client.update_subnet(
             subnet_id, enable_dhcp=False,
             dns_nameservers=self._conf.argus.dns_nameservers)
 
         # Change the allocation pool to configure any IP,
         # other the one used already with dynamic settings.
-        allocation_pools = net_client.show_subnet(subnet_id)["subnet"][
+        allocation_pools = subnets_client.show_subnet(subnet_id)["subnet"][
             "allocation_pools"]
         allocation_pools[0]["start"] = util.next_ip(
             allocation_pools[0]["start"], step=2)
-        net_client.update_subnet(subnet_id, allocation_pools=allocation_pools)
+        subnets_client.update_subnet(subnet_id, allocation_pools=allocation_pools)
 
         # Create and attach an IPv6 subnet for this network. Also, register
         # it for later cleanup.
         subnet6_name = util.rand_name(self.__class__.__name__) + "-subnet6"
         network_id = fake_net_creds.network["id"]
-        net_client.create_subnet(
+        subnets_client.create_subnet(
             network_id=network_id,
             cidr=SUBNET6_CIDR,
             name=subnet6_name,
@@ -133,13 +133,14 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
         """Retrieve and parse network details from the compute node."""
         networks_client = self._manager.networks_client
         network_client = self._manager.network_client
+        subnets_client = self._manager.subnets_client
         guest_nics = []
         for network in self._networks or []:
             network_id = network["uuid"]
             net_details = networks_client.show_network(network_id)["network"]
             nic = dict.fromkeys(util.NETWORK_KEYS)
             for subnet_id in net_details["subnets"]:
-                details = network_client.show_subnet(subnet_id)["subnet"]
+                details = subnets_client.show_subnet(subnet_id)["subnet"]
 
                 # The network interface should follow the format found under
                 # `windows.InstanceIntrospection.get_network_interfaces`
