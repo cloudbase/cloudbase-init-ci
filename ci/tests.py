@@ -21,7 +21,7 @@ from argus.backends.tempest import cloud as tempest_cloud_backend
 from argus.backends.tempest import tempest_backend
 from argus.introspection.cloud import windows as introspection
 from argus.recipes.cloud import windows as recipe
-from argus.scenarios import base
+from argus.scenarios.cloud import base as scenarios
 from argus.scenarios.cloud import windows as windows_scenarios
 from argus.tests.cloud import smoke
 from argus.tests.cloud.windows import test_smoke
@@ -40,14 +40,11 @@ def _availability_zones():
 AVAILABILITY_ZONES = _availability_zones()
 
 
-class BaseWindowsScenario(base.BaseScenario):
+class BaseWindowsScenario(scenarios.CloudScenario):
 
     backend_type = tempest_backend.BaseWindowsTempestBackend
     introspection_type = introspection.InstanceIntrospection
     recipe_type = recipe.CloudbaseinitRecipe
-    service_type = 'http'
-    userdata = None
-    metadata = {}
 
 
 class ScenarioSmoke(BaseWindowsScenario):

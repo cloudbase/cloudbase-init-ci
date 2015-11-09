@@ -36,7 +36,7 @@ class BaseServiceMockMixin(object):
     In order to have support for mocked metadata services, set a list
     of :meth:`named` entries in the class, as such::
 
-        class Test(BaseServiceMockMixin, BaseScenario):
+        class Test(BaseServiceMockMixin, CloudScenario):
             services = [
                  named(application, script_name, host, port)
             ]
