@@ -1,3 +1,6 @@
+# TODO(cpoieana): fix configuration sample according to the new Argus
+
+
 [argus]
 # A private key file, for SSH access to remote host
 # (and used for nova boot)
