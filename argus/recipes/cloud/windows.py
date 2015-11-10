@@ -19,6 +19,7 @@ import ntpath
 import os
 import socket
 
+import six
 from winrm import exceptions as winrm_exceptions
 
 from argus import exceptions
@@ -243,7 +244,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             # Any other error should propagate.
             pass
 
-    def wait_cbinit_finalization(self):
+    def _wait_cbinit_finalization(self, searched_paths=None):
         """Wait for the finalization of CloudbaseInit.
 
         The function waits until cloudbaseinit finished.
@@ -251,9 +252,9 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         LOG.info("Waiting for the finalization of CloudbaseInit execution...")
 
         # Check if the service actually started.
-        unattended_cmd = 'powershell Test-Path C:\\cloudbaseinit_unattended'
-        normal_cmd = 'powershell Test-Path C:\\cloudbaseinit_normal'
-        for check_cmd in (unattended_cmd, normal_cmd):
+        test_cmd = 'powershell Test-Path {}'
+        check_cmds = [test_cmd.format(path) for path in searched_paths or []]
+        for check_cmd in check_cmds:
             self._execute_until_condition(
                 check_cmd,
                 lambda out: out.strip() == 'True',
@@ -266,6 +267,12 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             wait_cmd,
             lambda out: out.strip() == 'Stopped',
             count=COUNT, delay=DELAY)
+
+    def wait_cbinit_finalization(self):
+        paths = [
+            "C:\\cloudbaseinit_unattended",
+            "C:\\cloudbaseinit_normal"]
+        self._wait_cbinit_finalization(searched_paths=paths)
 
 
 class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):
@@ -456,3 +463,23 @@ class CloudbaseinitLocalScriptsRecipe(CloudbaseinitRecipe):
                "'C:\\Scripts\\reboot.cmd'")
         cmd = cmd.format(self._conf.argus.resources, cbdir)
         self._execute(cmd)
+
+
+class CloudbaseinitImageRecipe(CloudbaseinitRecipe):
+    """Calibrate already sys-prepared cloudbase-init images."""
+
+    def wait_cbinit_finalization(self):
+        cbdir = introspection.get_cbinit_dir(self._execute)
+        paths = [ntpath.join(cbdir, name)
+                 for name in ["cloudbase-init-unattend.log",
+                              "cloudbase-init.log"]]
+        self._wait_cbinit_finalization(searched_paths=paths)
+
+    def prepare(self, service_type=None, **kwargs):
+        LOG.info("Preparing already syspreped instance...")
+        self.wait_for_boot_completion()
+        if self._conf.argus.pause:
+            six.moves.input("Press Enter to continue...")
+
+        self.wait_cbinit_finalization()
+        LOG.info("Finished preparing instance.")

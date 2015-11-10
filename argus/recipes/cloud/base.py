@@ -107,4 +107,4 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
 
         self.sysprep()
         self.wait_cbinit_finalization()
-        LOG.info("Finished preparing instance")
+        LOG.info("Finished preparing instance.")

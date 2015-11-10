@@ -218,3 +218,8 @@ class ScenarioNetworkConfig(BaseWindowsScenario):
     backend_type = tempest_cloud_backend.NetworkWindowsBackend
     test_classes = (smoke.TestStaticNetwork, )
     availability_zone = 'static_network'
+
+
+class ScenarioImageGenericSmoke(ScenarioGenericSmoke):
+
+    recipe_type = recipe.CloudbaseinitImageRecipe
