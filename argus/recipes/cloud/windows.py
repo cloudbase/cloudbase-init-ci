@@ -457,11 +457,10 @@ class CloudbaseinitLocalScriptsRecipe(CloudbaseinitRecipe):
         super(CloudbaseinitLocalScriptsRecipe, self).pre_sysprep()
         LOG.info("Download reboot-required local script.")
 
-        cbdir = introspection.get_cbinit_dir(self._execute)
         cmd = ("powershell Invoke-WebRequest -uri "
                "{}/windows/reboot.cmd -outfile "
                "'C:\\Scripts\\reboot.cmd'")
-        cmd = cmd.format(self._conf.argus.resources, cbdir)
+        cmd = cmd.format(self._conf.argus.resources)
         self._execute(cmd)
 
 
