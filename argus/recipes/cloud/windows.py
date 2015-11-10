@@ -476,7 +476,6 @@ class CloudbaseinitImageRecipe(CloudbaseinitRecipe):
 
     def prepare(self, service_type=None, **kwargs):
         LOG.info("Preparing already syspreped instance...")
-        self.wait_for_boot_completion()
         if self._conf.argus.pause:
             six.moves.input("Press Enter to continue...")
 
