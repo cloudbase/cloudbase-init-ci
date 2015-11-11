@@ -253,7 +253,8 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         # Check if the service actually started.
         test_cmd = 'powershell Test-Path {}'
-        check_cmds = [test_cmd.format(path) for path in searched_paths or []]
+        check_cmds = [test_cmd.format(introspection.escape_path(path))
+                      for path in searched_paths or []]
         for check_cmd in check_cmds:
             self._execute_until_condition(
                 check_cmd,
@@ -469,13 +470,15 @@ class CloudbaseinitImageRecipe(CloudbaseinitRecipe):
 
     def wait_cbinit_finalization(self):
         cbdir = introspection.get_cbinit_dir(self._execute)
-        paths = [ntpath.join(cbdir, name)
+        paths = [ntpath.join(cbdir, "log", name)
                  for name in ["cloudbase-init-unattend.log",
                               "cloudbase-init.log"]]
         self._wait_cbinit_finalization(searched_paths=paths)
 
     def prepare(self, service_type=None, **kwargs):
         LOG.info("Preparing already syspreped instance...")
+        self.execution_prologue()
+
         if self._conf.argus.pause:
             six.moves.input("Press Enter to continue...")
 
