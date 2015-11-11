@@ -217,6 +217,7 @@ class ScenarioNetworkConfig(BaseWindowsScenario):
     availability_zone = 'static_network'
 
 
-class ScenarioImageGenericSmoke(ScenarioGenericSmoke):
+class ScenarioImageSmoke(ScenarioSmoke):
 
     recipe_type = recipe.CloudbaseinitImageRecipe
+    userdata = util.get_resource("windows/winrm.ps1")
