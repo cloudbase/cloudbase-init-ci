@@ -38,6 +38,7 @@ def _availability_zones():
         api_manager.cleanup_credentials()
 
 AVAILABILITY_ZONES = _availability_zones()
+CONFIG = util.get_config()
 
 
 class BaseWindowsScenario(scenarios.CloudScenario):
@@ -217,6 +218,7 @@ class ScenarioNetworkConfig(BaseWindowsScenario):
     availability_zone = 'static_network'
 
 
+@unittest.skipIf(CONFIG.openstack.require_sysprep)
 class ScenarioImageSmoke(ScenarioSmoke):
 
     recipe_type = recipe.CloudbaseinitImageRecipe

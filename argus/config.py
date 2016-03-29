@@ -96,15 +96,16 @@ class ConfigurationParser(object):
         openstack = collections.namedtuple(
             'openstack',
             'image_ref flavor_ref image_username image_password '
-            'image_os_type')
+            'image_os_type require_sysprep')
         image_ref = self._parser.get('openstack', 'image_ref')
         flavor_ref = self._parser.get('openstack', 'flavor_ref')
         image_username = self._parser.get('openstack', 'image_username')
         image_password = self._parser.get('openstack', 'image_password')
         image_os_type = self._parser.get('openstack', 'image_os_type')
+        require_sysprep = self._parser.get('openstack', 'require_sysprep')
 
         return openstack(image_ref, flavor_ref, image_username,
-                         image_password, image_os_type)
+                         image_password, image_os_type, require_sysprep)
 
     @property
     def conf(self):

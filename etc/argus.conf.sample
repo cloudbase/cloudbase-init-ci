@@ -30,6 +30,8 @@ image_username = CiAdmin
 # The password for the default username.
 image_password = Passw0rd
 
+# If the provided image require the sysprep before start running tests
+require_sysprep = True
 
 [cloudbaseinit]
 
@@ -53,8 +55,7 @@ created_user = Admin
 group = Administrators
 
 # The id of the image you want to use for testing.
-image_ref = <none>
-
+image_ref = <none>`
 # The flavor which should be used for the testing.
 # Note that there's no check to see that a flavor is enough
 # for an image.
