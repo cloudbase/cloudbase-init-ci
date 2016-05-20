@@ -19,7 +19,7 @@ import time
 import unittest
 
 # pylint: disable=import-error
-from six.moves import urllib
+from sixmoves import urllib
 
 from argus.tests import base
 from argus.tests.cloud import util as test_util
@@ -271,6 +271,9 @@ class TestsBaseSmoke(TestCreatedUser,
     def test_disk_expanded(self):
         # Test the disk expanded properly.
         image = self._backend.get_image_by_ref()
+        if isinstance(image, dict) and 'image' in image:
+            image = image['image']
+
         datastore_size = image['OS-EXT-IMG-SIZE:size']
         disk_size = self._introspection.get_disk_size()
         self.assertGreater(disk_size, datastore_size)

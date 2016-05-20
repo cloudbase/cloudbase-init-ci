@@ -21,7 +21,7 @@ from argus.backends.tempest import cloud as tempest_cloud_backend
 from argus.backends.tempest import tempest_backend
 from argus.introspection.cloud import windows as introspection
 from argus.recipes.cloud import windows as recipe
-from argus.scenarios import base
+from argus.scenarios.cloud import base as scenarios
 from argus.scenarios.cloud import windows as windows_scenarios
 from argus.tests.cloud import smoke
 from argus.tests.cloud.windows import test_smoke
@@ -38,16 +38,14 @@ def _availability_zones():
         api_manager.cleanup_credentials()
 
 AVAILABILITY_ZONES = _availability_zones()
+CONFIG = util.get_config()
 
 
-class BaseWindowsScenario(base.BaseScenario):
+class BaseWindowsScenario(scenarios.CloudScenario):
 
     backend_type = tempest_backend.BaseWindowsTempestBackend
     introspection_type = introspection.InstanceIntrospection
     recipe_type = recipe.CloudbaseinitRecipe
-    service_type = 'http'
-    userdata = None
-    metadata = {}
 
 
 class ScenarioSmoke(BaseWindowsScenario):
@@ -218,3 +216,10 @@ class ScenarioNetworkConfig(BaseWindowsScenario):
     backend_type = tempest_cloud_backend.NetworkWindowsBackend
     test_classes = (smoke.TestStaticNetwork, )
     availability_zone = 'static_network'
+
+
+@unittest.skipIf(CONFIG.openstack.require_sysprep)
+class ScenarioImageSmoke(ScenarioSmoke):
+
+    recipe_type = recipe.CloudbaseinitImageRecipe
+    userdata = util.get_resource("windows/winrm.ps1")

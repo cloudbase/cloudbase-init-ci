@@ -77,11 +77,14 @@ class BaseTempestBackend(base_backend.CloudBackend):
 
     def _configure_networking(self):
         subnet_id = self._manager.primary_credentials().subnet["id"]
-        self._manager.network_client.update_subnet(
+        self._manager.subnets_client.update_subnet(
             subnet_id,
             dns_nameservers=self._conf.argus.dns_nameservers)
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
+        for key, value in list(kwargs.items()):
+            if not value:
+                del kwargs[key]
         server = self._manager.servers_client.create_server(
             name=util.rand_name(self._name) + "-instance",
             imageRef=self.image_ref,
@@ -204,7 +207,7 @@ class BaseTempestBackend(base_backend.CloudBackend):
             key_name=self._keypair.name,
             disk_config='AUTO',
             user_data=self.userdata,
-            meta=self.metadata,
+            metadata=self.metadata,
             networks=self._networks,
             availability_zone=self._availability_zone)
         self._floating_ip = self._assign_floating_ip()
