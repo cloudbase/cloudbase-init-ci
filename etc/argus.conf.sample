@@ -15,6 +15,10 @@ debug = False
 # for network connectivity inside the instance.
 dns_nameservers = 8.8.8.8
 
+# A url that holds the resources usualy from /argus/resources
+# avalible on the web
+resources = https://raw.githubusercontent.com/cloudbase/cloudbase-init-ci/master/argus/resources
+
 
 [openstack]
 # The id of the image that is to be used for tests.

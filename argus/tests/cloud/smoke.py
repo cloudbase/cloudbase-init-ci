@@ -19,7 +19,7 @@ import time
 import unittest
 
 # pylint: disable=import-error
-from sixmoves import urllib
+from six.moves import urllib
 
 from argus.tests import base
 from argus.tests.cloud import util as test_util

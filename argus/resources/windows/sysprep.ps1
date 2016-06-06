@@ -7,6 +7,13 @@ try
     $programFilesDir = Get-ProgramDir
     $Host.UI.RawUI.WindowTitle = "Running Sysprep..."
     $unattendedXmlPath = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\Unattend.xml"
+
+    if (-Not (Test-Path -LiteralPath $unattendedXmlPath -PathType Leaf)){
+    # if there is no Unnatended.xml the command will halt and we will never
+    # ge to the last exit or reboot
+        exit 1
+    }
+
     & "$ENV:SystemRoot\System32\Sysprep\Sysprep.exe" `/generalize `/oobe `/reboot `/unattend:"$unattendedXmlPath"
 
     # the CI will wait for the service to be stopped, in order to consider

@@ -218,7 +218,8 @@ class ScenarioNetworkConfig(BaseWindowsScenario):
     availability_zone = 'static_network'
 
 
-@unittest.skipIf(CONFIG.openstack.require_sysprep)
+@unittest.skipIf(CONFIG.openstack.require_sysprep,
+                 'Needs sysprep')
 class ScenarioImageSmoke(ScenarioSmoke):
 
     recipe_type = recipe.CloudbaseinitImageRecipe
