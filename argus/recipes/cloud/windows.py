@@ -66,6 +66,14 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         self._execute(cmd)
 
     def install_cbinit(self, service_type):
+        """Proceed on checking if cloudbase-init should be installed."""
+        try:
+            cbdir = introspection.get_cbinit_dir(self._execute)
+            # If the directory already exists, we won't be installing Cb-init.
+        except exceptions.ArgusError:
+            self._run_installation(service_type)
+
+    def _run_installation(self, service_type):
         """Run the installation script for CloudbaseInit."""
         installer = "CloudbaseInitSetup_{build}_{arch}.msi".format(
             build=self._conf.argus.build,
