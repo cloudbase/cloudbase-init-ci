@@ -69,8 +69,13 @@ class WinRemoteClient(base.BaseClient):
         self._cert_key = cert_key
 
     @staticmethod
-    def _run_command(protocol_client, shell_id, command):
+    def _run_command(protocol_client, shell_id, command,
+                     command_type=util.POWERSHELL):
         command_id = None
+        bare_command = command
+
+        command = util.get_command(command, command_type)
+
         try:
             command_id = protocol_client.run_command(shell_id, command)
             stdout, stderr, exit_code = protocol_client.get_command_output(
@@ -78,9 +83,11 @@ class WinRemoteClient(base.BaseClient):
             if exit_code:
                 output = "\n\n".join([out for out in (stdout, stderr) if out])
                 raise exceptions.ArgusError(
-                    "Executing command {command!r} failed with "
-                    "exit code {exit_code!r} and output {output!r}."
-                    .format(command=command,
+                    "Executing command {command!r} with encoded Command"
+                    "{encoded_command!r} failed with exit code {exit_code!r}"
+                    " and output {output!r}."
+                    .format(command=bare_command,
+                            encoded_command=command,
                             exit_code=exit_code,
                             output=output))
 
@@ -88,11 +95,12 @@ class WinRemoteClient(base.BaseClient):
         finally:
             protocol_client.cleanup_command(shell_id, command_id)
 
-    def _run_commands(self, commands):
+    def _run_commands(self, commands, commands_type=util.POWERSHELL):
         protocol_client = self._get_protocol()
         shell_id = protocol_client.open_shell()
         try:
-            results = [self._run_command(protocol_client, shell_id, command)
+            results = [self._run_command(protocol_client, shell_id, command,
+                                         command_type=commands_type)
                        for command in commands]
         finally:
             protocol_client.close_shell(shell_id)
@@ -107,14 +115,14 @@ class WinRemoteClient(base.BaseClient):
                                  cert_pem=self._cert_pem,
                                  cert_key_pem=self._cert_key)
 
-    def run_remote_cmd(self, cmd):
+    def run_remote_cmd(self, cmd, command_type=util.POWERSHELL):
         """Run the given remote command.
 
         The command will be executed on the remote underlying server.
         It will return a tuple of three elements, stdout, stderr
         and the return code of the command.
         """
-        return self._run_commands([cmd])[0]
+        return self._run_commands([cmd], command_type)[0]
 
     def copy_file(self, filepath, remote_destination):
         """Copy the given filepath in the remote destination.
@@ -131,19 +139,19 @@ class WinRemoteClient(base.BaseClient):
         commands = []
         for command in _base64_read_file(filepath):
             remote_command = (
-                "powershell \"{content}\" >> {remote_destination}"
+                "{content} >> {remote_destination}"
                 .format(content=get_string_cmd.format(command),
                         remote_destination=remote_destination))
 
             commands.append(remote_command)
-        self._run_commands(commands)
+        self._run_commands(commands, commands_type=util.POWERSHELL)
 
     def read_file(self, filepath):
         """Get the content of the given file."""
-        cmd = 'powershell Get-Content "{}"'.format(filepath)
-        return self.run_remote_cmd(cmd)[0]
+        cmd = 'Get-Content "{}"'.format(filepath)
+        return self.run_remote_cmd(cmd, command_type=util.POWERSHELL)[0]
 
-    def run_command(self, cmd):
+    def run_command(self, cmd, command_type=util.POWERSHELL):
         """Run the given command and return execution details.
 
         :rtype: tuple
@@ -151,9 +159,9 @@ class WinRemoteClient(base.BaseClient):
         """
 
         LOG.info("Running command %s...", cmd)
-        return self.run_remote_cmd(cmd)
+        return self.run_remote_cmd(cmd, command_type=command_type)
 
-    def run_command_verbose(self, cmd):
+    def run_command_verbose(self, cmd, command_type=util.POWERSHELL):
         """Run the given command and log anything it returns.
 
         Do this with retrying support.
@@ -161,14 +169,16 @@ class WinRemoteClient(base.BaseClient):
         :rtype: string
         :returns: stdout
         """
-        stdout, stderr, exit_code = self.run_command_with_retry(cmd)
+        result = self.run_command_with_retry(cmd, command_type=command_type)
+        stdout, stderr, exit_code = result 
         LOG.info("The command returned the output: %s", stdout)
         LOG.info("The stderr of the command was: %s", stderr)
         LOG.info("The exit code of the command was: %s", exit_code)
         return stdout
 
     def run_command_with_retry(self, cmd, count=util.RETRY_COUNT,
-                               delay=util.RETRY_DELAY):
+                               delay=util.RETRY_DELAY,
+                               command_type=util.POWERSHELL):
         """Run the given `cmd` until succeeds.
 
         :param cmd:
@@ -190,7 +200,7 @@ class WinRemoteClient(base.BaseClient):
 
         while True:
             try:
-                return self.run_command(cmd)
+                return self.run_command(cmd, command_type=command_type)
             except Exception as exc:  # pylint: disable=broad-except
                 LOG.debug("Command failed with %r.", exc)
                 # A negative `count` means no count at all.
@@ -205,7 +215,8 @@ class WinRemoteClient(base.BaseClient):
 
     def run_command_until_condition(self, cmd, cond,
                                     retry_count=util.RETRY_COUNT,
-                                    delay=util.RETRY_DELAY):
+                                    delay=util.RETRY_DELAY,
+                                    command_type=util.POWERSHELL):
         """Run the given `cmd` until a condition `cond` occurs.
 
         :param cond:
@@ -225,7 +236,8 @@ class WinRemoteClient(base.BaseClient):
 
         while True:
             try:
-                stdout, stderr, _ = self.run_command(cmd)
+                stdout, stderr, _ = self.run_command(cmd,
+                                                     command_type=command_type)
             except Exception as exc:  # pylint: disable=broad-except
                 LOG.debug("Command failed with %r.", exc)
             else:

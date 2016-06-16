@@ -34,7 +34,7 @@ class BaseClient(object):
         self._hostname = hostname
 
     @abc.abstractmethod
-    def run_remote_cmd(self, command):
+    def run_remote_cmd(self, command, command_type=None):
         """Run the given remote command.
 
         The command will be executed on the remote underlying server.
