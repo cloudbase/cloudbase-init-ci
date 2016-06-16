@@ -33,6 +33,16 @@ from argus import config
 RETRY_COUNT = 15
 RETRY_DELAY = 10
 
+CMD = "cmd"
+POWERSHELL = "powershell"
+POWERSHELL_SCRIPT = "powershell_script"
+POWERSHELL_SCRIPT_RESTRICTED = "powershell_script_restricted"
+POWERSHELL_SCRIPT_ALLSIGNED = "powershell_script_allsigned"
+POWERSHELL_SCRIPT_REMOTESIGNED = "powershell_script_remotesigned"
+POWERSHELL_SCRIPT_UNRESTRICTED = "powershell_script_unrestricted"
+POWERSHELL_SCRIPT_BYPASS = "powershell_script_bypass"
+POWERSHELL_SCRIPT_UNDEFINED = "powershell_script_undefined"
+
 __all__ = (
     'decrypt_password',
     'get_config',
@@ -240,6 +250,53 @@ def get_certificate():
     Used by the cloudbaseinit's tests.
     """
     return get_resource("certificate")
+
+
+def _get_command_powershell(command):
+    """Return the CMD command that runs the specific powershell command."""
+    encoded = base64.b64encode(command.encode("UTF-16LE"))
+    if six.PY3:
+        encoded = encoded.decode()
+
+    command = ("powershell -Noninteractive -NoLogo"
+               " -EncodedCommand {}").format(encoded)
+
+    return command
+
+
+def _get_command_powershell_script(command):
+    """Return a valid CMD command that runs a powershell script."""
+    return "powershell -File {}".format(command)
+
+
+def _get_cmd_with_privileges(policy=None):
+    """Factory of function that run powershell scripts
+       with a specific Policy.
+    """
+    if not policy:
+        return _get_command_powershell_script
+
+    def _get_cmd(command):
+        return "powershell -ExecutionPolicy {} -File {}".format(policy,
+                                                                command)
+    return _get_cmd
+
+
+COMMAND_MODIFIERS = {
+    POWERSHELL: _get_command_powershell,
+    POWERSHELL_SCRIPT: _get_command_powershell_script,
+    POWERSHELL_SCRIPT_ALLSIGNED: _get_cmd_with_privileges("AllSigned"),
+    POWERSHELL_SCRIPT_REMOTESIGNED: _get_cmd_with_privileges("RemoteSigned"),
+    POWERSHELL_SCRIPT_UNRESTRICTED: _get_cmd_with_privileges("Unrestricted"),
+    POWERSHELL_SCRIPT_BYPASS: _get_cmd_with_privileges("Bypass"),
+    POWERSHELL_SCRIPT_UNDEFINED: _get_cmd_with_privileges("Undefined"),
+    }
+
+
+def get_command(command, command_type=None):
+    """Returns the command decorated acording to the command_type """
+    modifier = COMMAND_MODIFIERS.get(command_type, lambda command: command)
+    return modifier(command)
 
 
 LOG = get_logger()
