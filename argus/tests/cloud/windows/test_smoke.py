@@ -20,6 +20,7 @@ import pkg_resources
 from argus.tests import base
 from argus.tests.cloud import smoke
 from argus.tests.cloud import util as test_util
+from argus import exceptions
 from argus import util
 
 
@@ -45,26 +46,29 @@ class TestSmoke(smoke.TestsBaseSmoke):
     """Test additional Windows specific behaviour."""
 
     def test_service_display_name(self):
-        cmd = ('powershell (Get-Service "| where -Property Name '
-               '-match cloudbase-init").DisplayName')
+        cmd = ('(Get-Service | where -Property Name '
+               '-match cloudbase-init).DisplayName')
 
-        stdout = self._backend.remote_client.run_command_verbose(cmd)
+        stdout = self._backend.remote_client.run_command_verbose(
+                cmd, command_type=util.POWERSHELL)
         self.assertEqual("Cloud Initialization Service\r\n", str(stdout))
 
     @test_util.skip_unless_dnsmasq_configured
     def test_ntp_service_running(self):
         # Test that the NTP service is started.
-        cmd = ('powershell (Get-Service "| where -Property Name '
-               '-match W32Time").Status')
-        stdout = self._backend.remote_client.run_command_verbose(cmd)
+        cmd = ('(Get-Service | where -Property Name '
+               '-match W32Time).Status')
+        stdout = self._backend.remote_client.run_command_verbose(
+            cmd, command_type=util.POWERSHELL)
 
         self.assertEqual("Running\r\n", str(stdout))
 
     def test_licensing(self):
         # Check that the instance OS was licensed properly.
-        command = ('powershell "Get-WmiObject SoftwareLicensingProduct | '
-                   'where PartialProductKey | Select Name, LicenseStatus"')
-        stdout = self._backend.remote_client.run_command_verbose(command)
+        command = ('Get-WmiObject SoftwareLicensingProduct | '
+                   'where PartialProductKey | Select Name, LicenseStatus')
+        stdout = self._backend.remote_client.run_command_verbose(
+                command, command_type=util.POWERSHELL)
         licenses = _parse_licenses(stdout)
         if len(licenses) > 1:
             self.fail("Too many expected products in licensing output.")
@@ -79,7 +83,8 @@ class TestSmoke(smoke.TestsBaseSmoke):
             self._conf.openstack.image_username,
             self._conf.openstack.image_password,
             protocol='https')
-        stdout = remote_client.run_command_verbose('echo 1')
+        stdout = remote_client.run_command_verbose(
+                'echo 1', command_type=util.POWERSHELL)
         self.assertEqual('1', stdout.strip())
 
     @test_util.skip_unless_dnsmasq_configured
@@ -87,7 +92,7 @@ class TestSmoke(smoke.TestsBaseSmoke):
         # Test that w32time has network availability triggers, not
         # domain joined triggers
         if self._introspection.get_instance_os_version() > (6, 0):
-            start_trigger, _ = self._introspection.get_service_triggers('w32time')
+            start_trigger, _ = self._introspection.get_service_triggers("w32time")
             self.assertEqual('IP ADDRESS AVAILABILITY', start_trigger)
 
 
@@ -149,7 +154,8 @@ class TestCertificateWinRM(base.BaseTestCase):
             "argus.resources", "key.pem")
         client = self._backend.get_remote_client(cert_pem=cert_pem,
                                                  cert_key=cert_key)
-        stdout = client.run_command_verbose("echo 1")
+        stdout = client.run_command_verbose(
+                "echo 1", command_type=util.POWERSHELL)
         self.assertEqual(stdout.strip(), "1")
 
 
@@ -158,15 +164,27 @@ class TestNextLogonPassword(base.BaseTestCase):
     password_expired_flag = 1
 
     def _wait_for_completion(self):
-        wait_cmd = ('powershell (Get-Service "| where -Property Name '
-                    '-match cloudbase-init").Status')
+        wait_cmd = ('powershell (Get-Service | where -Property Name '
+                    '-match cloudbase-init).Status')
         remote_client = self._backend.get_remote_client(
             self._conf.openstack.image_username,
             self._conf.openstack.image_password)
+        LOG = util.get_logger()
+        try:
+            remote_client.run_command_until_condition(
+                wait_cmd,
+                lambda out: out.strip() == 'Stopped',
+                retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+                command_type=util.POWERSHELL)
+        except exceptions.ArgusCLIError as err:
+            LOG.debug(("We got an ArgusCLIError and it is ignored"
+                      " with the output : {}").format(err.message))
+
         remote_client.run_command_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'Stopped',
-            retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY)
+            retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+            command_type=util.POWERSHELL)
 
     def test_next_logon_password_not_changed(self):
         self._wait_for_completion()

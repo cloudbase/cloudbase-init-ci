@@ -165,8 +165,8 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
         return False
 
     def _wait_for_completion(self, password):
-        wait_cmd = ('powershell (Get-Service "| where -Property Name '
-                    '-match cloudbase-init").Status')
+        wait_cmd = ('powershell (Get-Service | where -Property Name '
+                    '-match cloudbase-init).Status')
         remote_client = self._backend.get_remote_client(
             self._conf.cloudbaseinit.created_user, password)
         remote_client.run_command_until_condition(
