@@ -21,6 +21,7 @@ import socket
 
 import six
 from winrm import exceptions as winrm_exceptions
+import requests
 
 from argus import exceptions
 from argus.introspection.cloud import windows as introspection
@@ -246,10 +247,14 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         try:
             self._backend.remote_client.run_command(
                 'powershell C:\\sysprep.ps1')
-        except (socket.error, winrm_exceptions.WinRMTransportError):
-            # This error is to be expected because the vm will restart
-            # before sysprep.ps1 finishes execution.
-            # Any other error should propagate.
+        except (socket.error, winrm_exceptions.WinRMTransportError,
+                winrm_exceptions.InvalidCredentialsError,
+                requests.ConnectionError, requests.Timeout):
+            # After executing sysprep.ps1 the instance will reboot and
+            # it is normal to have conectivity issues during that time.
+            # Knowing this we have to except this kind of errors.
+            # This fixes errors that stops scenarios from getting
+            # created on different windows images.
             pass
 
     def _wait_cbinit_finalization(self, searched_paths=None):
