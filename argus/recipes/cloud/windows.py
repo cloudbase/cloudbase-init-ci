@@ -75,9 +75,11 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         """Proceed on checking if cloudbase-init should be installed."""
         try:
             cbdir = introspection.get_cbinit_dir(self._execute)
-            # If the directory already exists, we won't be installing Cb-init.
         except exceptions.ArgusError:
             self._run_installation(service_type)
+        else:
+            # If the directory already exists, we won't be installing Cb-init.
+            LOG.info("Cloudbase-init is already installed, skipping installation.")
 
     def _run_installation(self, service_type):
         """Run the installation script for CloudbaseInit."""
@@ -102,6 +104,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             # can't be installed through WinRM on some OSes
             # for whatever reason. In this case, we're falling back
             # to use a scheduled task.
+            LOG.debug("Cannot install, deploying using a scheduled task.")
             self._deploy_using_scheduled_task(installer, service_type)
 
         self._grab_cbinit_installation_log()
@@ -265,7 +268,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             # Knowing this we have to except this kind of errors.
             # This fixes errors that stops scenarios from getting
             # created on different windows images.
-            pass
+            LOG.debug("Currently rebooting...")
 
     def _wait_cbinit_finalization(self, searched_paths=None):
         """Wait for the finalization of CloudbaseInit.
