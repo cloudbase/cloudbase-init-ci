@@ -21,8 +21,8 @@ import six
 
 from argus.backends import base
 from argus.backends.heat import client
-from argus.backends import windows
 from argus.backends.tempest import manager as api_manager
+from argus.backends import windows
 from argus import exceptions
 from argus import util
 
@@ -37,7 +37,8 @@ HEAT_RESOURCE_TIMEOUT = 0.5
 RETRY_COUNT = 50
 RETRY_DELAY = 10
 
-# pylint: disable=abstract-method; FP: https://bitbucket.org/logilab/pylint/issues/565
+
+# pylint: disable=abstract-method
 @six.add_metaclass(abc.ABCMeta)
 class BaseHeatBackend(base.CloudBackend):
     """A backend which uses Heat as the driving core."""
@@ -85,7 +86,10 @@ class BaseHeatBackend(base.CloudBackend):
                     u'type': u'OS::Neutron::Port',
                     u'properties': {
                         u'network_id': private_net_id,
-                        u'security_groups': [{u'get_resource': u'server_security_group'}]}
+                        u'security_groups': [
+                            {u'get_resource': u'server_security_group'}
+                        ]
+                    }
                 },
                 u'server_security_group': {
                     u'type': u'OS::Neutron::SecurityGroup',
@@ -134,7 +138,8 @@ class BaseHeatBackend(base.CloudBackend):
         # Get network info.
         credentials = self._manager.primary_credentials()
         self._configure_networking(credentials)
-        floating_network_id = credentials.router['external_gateway_info']['network_id']
+        gateway = credentials.router['external_gateway_info']
+        floating_network_id = gateway['network_id']
         private_net_id = credentials.network['id']
 
         template = self._build_template(
@@ -201,7 +206,8 @@ class BaseHeatBackend(base.CloudBackend):
             # Can't find it, just quit.
             return
 
-    def _search_resource_until_status(self, resource_name, limit=HEAT_RESOURCE_LIMIT,
+    def _search_resource_until_status(self, resource_name,
+                                      limit=HEAT_RESOURCE_LIMIT,
                                       status=RESOURCE_COMPLETED_STATUS):
         fields = {
             'stack_id': self._name,
@@ -233,13 +239,17 @@ class BaseHeatBackend(base.CloudBackend):
         return self._search_resource_until_status(OS_NOVA_RESOURCE)
 
     def internal_instance_id(self):
-        """Get the underlying's instance id, depending on the internals of the backend."""
+        """Get the underlying's instance id.
+
+        Gets the instance id depending on the internals of the backend.
+        """
         return self._internal_id
 
     @util.cached_property
     def _floating_ip_resource(self):
         resource = self._search_resource_until_status(OS_NEUTRON_FLOATING_IP)
-        floating_ip = self._manager.floating_ips_client.show_floating_ip(resource)
+        floating_ip = self._manager.floating_ips_client.show_floating_ip(
+            resource)
         return floating_ip['floating_ip']
 
     def floating_ip(self):
@@ -276,7 +286,8 @@ class BaseHeatBackend(base.CloudBackend):
 
     def get_image_by_ref(self):
         """Get the image object by its reference id."""
-        return self._manager.compute_images_client.show_image(self._conf.openstack.image_ref)
+        return self._manager.compute_images_client.show_image(
+            self._conf.openstack.image_ref)
 
     def get_mtu(self):
         return self._manager.get_mtu()

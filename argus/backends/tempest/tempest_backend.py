@@ -20,8 +20,8 @@ import base64
 import six
 
 from argus.backends import base as base_backend
-from argus.backends import windows
 from argus.backends.tempest import manager as api_manager
+from argus.backends import windows
 from argus import util
 
 with util.restore_excepthook():
@@ -34,7 +34,7 @@ LOG = util.get_logger()
 OUTPUT_SIZE = 128
 
 
-# pylint: disable=abstract-method; FP: https://bitbucket.org/logilab/pylint/issues/565
+# pylint: disable=abstract-method
 @six.add_metaclass(abc.ABCMeta)
 class BaseTempestBackend(base_backend.CloudBackend):
     """Base class for backends built on top of Tempest.
@@ -181,7 +181,8 @@ class BaseTempestBackend(base_backend.CloudBackend):
 
         if self._security_groups_rules:
             for rule in self._security_groups_rules:
-                self._manager.security_group_rules_client.delete_security_group_rule(rule)
+                (self._manager.security_group_rules_client.
+                 delete_security_group_rule(rule))
 
         if self._security_group:
             self._manager.servers_client.remove_security_group(
@@ -217,7 +218,8 @@ class BaseTempestBackend(base_backend.CloudBackend):
             disk_config='AUTO',
             user_data=self.userdata,
             metadata=self.metadata,
-            networks=self._networks or [{"uuid": self.__get_id_tenant_network}],
+            networks=self._networks or ([
+                {"uuid": self.__get_id_tenant_network}]),
             availability_zone=self._availability_zone)
         self._floating_ip = self._assign_floating_ip()
         self._security_group = self._create_security_groups()
@@ -265,7 +267,8 @@ class BaseWindowsTempestBackend(windows.WindowsBackendMixin,
     """Base Tempest backend for testing Windows."""
 
     def _get_log_template(self, suffix):
-        template = super(BaseWindowsTempestBackend, self)._get_log_template(suffix)
+        template = super(BaseWindowsTempestBackend,
+                         self)._get_log_template(suffix)
         if self._conf.argus.build and self._conf.argus.arch:
             # Prepend the log with the installer information (cloud).
             template = "{}-{}-{}".format(self._conf.argus.build,

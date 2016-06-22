@@ -50,7 +50,8 @@ class ScenarioMeta(type):
             test_names = test_loader.getTestCaseNames(test_class)
             for test_name in test_names:
 
-                # skip tests that have required_service_type != cls.service_type
+                # skip tests that have
+                # required_service_type != cls.service_type
                 test_obj = getattr(test_class, test_name)
                 if hasattr(test_obj, 'required_service_type'):
                     if test_obj.required_service_type != cls.service_type:
@@ -75,8 +76,9 @@ class ScenarioMeta(type):
         return cls
 
     def is_final(cls):
-        """
-        Check if the current class is final, if it has all the attributes set.
+        """Check current class if is final.
+
+        Checks if the class is final and if it has all the attributes set.
         """
         return all(item for item in (cls.backend_type, cls.introspection_type,
                                      cls.recipe_type, cls.test_classes))
@@ -84,7 +86,7 @@ class ScenarioMeta(type):
 
 @six.add_metaclass(ScenarioMeta)
 class BaseScenario(unittest.TestCase):
-    """Scenario which sets up an instance and prepares it using a recipe"""
+    """Scenario which sets up an instance and prepares it using a recipe."""
 
     backend_type = None
     """The backend class which will be used."""
@@ -115,7 +117,6 @@ class BaseScenario(unittest.TestCase):
     introspection = None
     recipe = None
     conf = None
-
 
     @classmethod
     def setUpClass(cls):
@@ -148,8 +149,9 @@ class BaseScenario(unittest.TestCase):
 
             cls.introspection = cls.introspection_type(
                 cls.conf, cls.backend.remote_client)
-        except:
-            LOG.exception("Building scenario %s failed", cls.__name__)
+        except Exception as exc:
+            LOG.exception("Building scenario %r failed with %s",
+                          cls.__name__, exc)
             cls.tearDownClass()
             raise
 

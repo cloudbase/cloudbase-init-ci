@@ -71,7 +71,8 @@ class ConfigurationParser(object):
         if not isinstance(dns_nameservers, list):
             # pylint: disable=no-member
             dns_nameservers = dns_nameservers.split(",")
-        output_directory = _get_default(self._parser, 'argus', 'output_directory')
+        output_directory = (_get_default(self._parser,
+                                         'argus', 'output_directory'))
         build = _get_default(self._parser, 'argus', 'build', 'Beta')
         arch = _get_default(self._parser, 'argus', 'arch', 'x64')
         patch_install = _get_default(self._parser, 'argus', 'patch_install')
@@ -89,7 +90,8 @@ class ConfigurationParser(object):
 
         group = self._parser.get('cloudbaseinit', 'group')
         created_user = self._parser.get('cloudbaseinit', 'created_user')
-        activate_windows = self._parser.getboolean('cloudbaseinit', 'activate_windows')
+        activate_windows = self._parser.getboolean('cloudbaseinit',
+                                                   'activate_windows')
         return cloudbaseinit(created_user, group, activate_windows)
 
     @property

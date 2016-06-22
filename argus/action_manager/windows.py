@@ -259,7 +259,7 @@ class WindowsActionManager(base.BaseActionManager):
             This can be 'Leaf' or 'Container'
         """
         cmd = 'Test-Path -PathType {} -Path "{}"'.format(path_type, path)
-        stdout, stderr, exit_code = self._client.run_command_with_retry(
+        stdout, _, _ = self._client.run_command_with_retry(
             cmd=cmd, command_type=util.POWERSHELL)
 
         return stdout.strip() == "True"
@@ -365,7 +365,7 @@ class Windows10ActionManager(WindowsActionManager):
 
 class WindowsSever2016ActionManager(Windows10ActionManager):
     def __init__(self, client, config, os_type=util.WINDOWS_SERVER_2016):
-        super(WindowsSever2016ActionManager, self).__init__(client, config, 
+        super(WindowsSever2016ActionManager, self).__init__(client, config,
                                                             os_type)
 
 
@@ -377,7 +377,8 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
     def __init__(self, client, config, os_type=util.WINDOWS_NANO):
         super(WindowsNanoActionManager, self).__init__(client, config, os_type)
 
-    def _get_resource_path(self, resource):
+    @staticmethod
+    def _get_resource_path(resource):
         """Get resource path from argus resources."""
         resource_path = os.path.join(
             os.path.abspath(os.path.dirname(__file__)),

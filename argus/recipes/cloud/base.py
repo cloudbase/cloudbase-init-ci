@@ -44,13 +44,15 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
 
     def __init__(self, conf, backend):
         super(BaseCloudbaseinitRecipe, self).__init__(conf, backend)
+        self._cbinit_conf = None
+        self._cbinit_unattend_conf = None
 
     @abc.abstractmethod
     def wait_for_boot_completion(self):
         """Wait for the instance to finish up booting."""
 
-    def set_mtu(self, interface, subinterface_name,
-                mtu_value, store_type):
+    def set_mtu(self, interface=None, subinterface_name=None,
+                mtu_value=None, store_type=None):
         """Sets the MTU value for the underlying instance.
 
         Sets the MTU value in order to avoid packet loss.
@@ -71,7 +73,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         """Get the installation script for cloudbaseinit."""
 
     @abc.abstractmethod
-    def install_cbinit(self, service_type):
+    def install_cbinit(self):
         """Install the cloudbaseinit code."""
 
     @abc.abstractmethod

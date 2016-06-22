@@ -20,11 +20,11 @@ import os
 
 import six
 
+from argus.config_generator.windows import cb_init as cbinit_config
 from argus import exceptions
 from argus.introspection.cloud import windows as introspection
 from argus.recipes.cloud import base
 from argus import util
-from argus.config_generator.windows import cb_init as cbinit_config
 
 LOG = util.get_logger()
 
@@ -51,7 +51,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         try:
             self._backend.remote_client.run_command_with_retry(set_mtu_cmd)
         except exceptions.ArgusTimeoutError as exc:
-            LOG.debug('Setting MTU failed with %r.' % exc)
+            LOG.debug('Setting MTU failed with %r.', exc)
 
     def execution_prologue(self):
         # Prepare Something specific for the OS
@@ -69,13 +69,14 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     def install_cbinit(self):
         """Proceed on checking if cloudbase-init should be installed."""
         try:
-            cbdir = introspection.get_cbinit_dir(self._execute)
+            introspection.get_cbinit_dir(self._execute)
         except exceptions.ArgusError:
             self._backend.remote_client.manager.install_cbinit()
             self._grab_cbinit_installation_log()
         else:
             # If the directory already exists, we won't be installing Cb-init.
-            LOG.info("Cloudbase-init is already installed, skipping installation.")
+            LOG.info("Cloudbase-init is already installed, "
+                     "skipping installation.")
 
     def _grab_cbinit_installation_log(self):
         """Obtain the installation logs."""
@@ -319,7 +320,8 @@ class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
     pattern = "{}"
 
     def prepare_cbinit_config(self, service_type):
-        super(CloudbaseinitMockServiceRecipe, self).prepare_cbinit_config(service_type)
+        super(CloudbaseinitMockServiceRecipe,
+              self).prepare_cbinit_config(service_type)
         LOG.info("Inject guest IP for mocked service access.")
 
         # TODO(mmicu): The service type is specific to each scenario,
@@ -370,7 +372,8 @@ class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
     pattern = "http://{}:2002"
 
     def prepare_cbinit_config(self, service_type):
-        super(CloudbaseinitMaasRecipe, self).prepare_cbinit_config(service_type)
+        super(CloudbaseinitMaasRecipe,
+              self).prepare_cbinit_config(service_type)
 
         required_fields = (
             "maas_oauth_consumer_key",
@@ -387,7 +390,8 @@ class CloudbaseinitWinrmRecipe(CloudbaseinitCreateUserRecipe):
     """A recipe for testing the WinRM configuration plugin."""
 
     def prepare_cbinit_config(self, service_type):
-        super(CloudbaseinitWinrmRecipe, self).prepare_cbinit_config(service_type)
+        super(CloudbaseinitWinrmRecipe,
+              self).prepare_cbinit_config(service_type)
         self._cbinit_conf.set_conf_value(
             name="plugins",
             value="cloudbaseinit.plugins.windows.winrmcertificateauth."
@@ -408,7 +412,8 @@ class CloudbaseinitKeysRecipe(CloudbaseinitHTTPRecipe,
     """Recipe that facilitates x509 certificates and public keys testing."""
 
     def prepare_cbinit_config(self, service_type):
-        super(CloudbaseinitKeysRecipe, self).prepare_cbinit_config(service_type)
+        super(CloudbaseinitKeysRecipe,
+              self).prepare_cbinit_config(service_type)
         self._cbinit_conf.set_conf_value(
             name="plugins",
             value="cloudbaseinit.plugins.windows.createuser."

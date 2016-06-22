@@ -26,6 +26,7 @@ class ArgusTimeoutError(ArgusError):
 class ArgusCLIError(ArgusError):
     pass
 
+
 class ArgusPermissionDenied(ArgusError):
     pass
 
