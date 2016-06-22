@@ -136,7 +136,7 @@ class BaseScenario(unittest.TestCase):
             try:
                 os.mkdir(cls.conf.argus.output_directory)
             except OSError:
-                pass
+                LOG.warning("Could not create the output directory.")
 
         try:
             cls.backend = cls.backend_type(cls.conf, cls.__name__,
