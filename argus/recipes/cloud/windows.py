@@ -41,30 +41,35 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     def wait_for_boot_completion(self):
         LOG.info("Waiting for boot completion...")
 
-        wait_cmd = ('powershell "(Get-WmiObject Win32_Account | '
-                    'where -Property Name -contains {0}).Name"'
-                    .format(self._conf.openstack.image_username))
-        self._execute_until_condition(
-            wait_cmd,
-            lambda stdout: stdout.strip() == self._conf.openstack.image_username,
-            count=COUNT, delay=DELAY)
+        username = self._conf.openstack.image_username
+        wait_cmd = ('(Get-WmiObject Win32_Account | '
+                    'where -Property Name -contains {0}).Name'
+                    .format(username))
+        try:
+            self._execute_until_condition(
+                wait_cmd,
+                lambda stdout: stdout.strip() == username,
+                count=COUNT, delay=DELAY, command_type=util.POWERSHELL)
+        except exceptions.ArgusCLIError as err:
+            LOG.debug(("We got an ArgusCLIError and it is ignored"
+                       " with the output : %"), err.message)
 
     def execution_prologue(self):
         LOG.info("Retrieve common module for proper script execution.")
 
-        cmd = ("powershell Invoke-webrequest -uri "
+        cmd = ("Invoke-webrequest -uri "
                "{}/windows/common.psm1 -outfile C:\\common.psm1"
                .format(self._conf.argus.resources))
-        self._execute(cmd)
+        self._execute(cmd, command_type=util.POWERSHELL)
 
     def get_installation_script(self):
         """Get an insallation script for CloudbaseInit."""
         LOG.info("Retrieve an installation script for CloudbaseInit.")
 
-        cmd = ("powershell Invoke-webrequest -uri "
+        cmd = ("Invoke-webrequest -uri "
                "{}/windows/installCBinit.ps1 -outfile C:\\installcbinit.ps1"
                .format(self._conf.argus.resources))
-        self._execute(cmd)
+        self._execute(cmd, command_type=util.POWERSHELL)
 
     def install_cbinit(self, service_type):
         """Proceed on checking if cloudbase-init should be installed."""
@@ -86,10 +91,11 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                  "using the installer %r with service %r.",
                  installer, service_type)
 
-        cmd = ('powershell "C:\\\\installcbinit.ps1 -serviceType {} '
-               '-installer {}"'.format(service_type, installer))
+        cmd = (r'C:\\installcbinit.ps1 -serviceType {} '
+               '-installer {}'.format(service_type, installer))
         try:
-            self._execute(cmd, count=5, delay=5)
+            self._execute(cmd, count=5, delay=5,
+                          command_type=util.POWERSHELL_SCRIPT)
         except exceptions.ArgusError:
             # This can happen for multiple reasons,
             # but one of them is the fact that the installer
@@ -101,16 +107,16 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         self._grab_cbinit_installation_log()
 
     def _deploy_using_scheduled_task(self, installer, service_type):
-        cmd = ("powershell Invoke-webrequest -uri "
+        cmd = ("Invoke-webrequest -uri "
                "{}/windows/schedule_installer.bat -outfile "
                "C:\\schedule_installer.bat"
                .format(self._conf.argus.resources))
-        self._execute(cmd)
+        self._execute(cmd, command_type=util.POWERSHELL)
 
         # Now run it.
         cmd = ("C:\\\\schedule_installer.bat {0} {1}"
                .format(service_type, installer))
-        self._execute(cmd)
+        self._execute(cmd, command_type=util.CMD)
 
     def _grab_cbinit_installation_log(self):
         """Obtain the installation logs."""
@@ -142,25 +148,27 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         LOG.info("Replacing cloudbaseinit's files...")
 
         LOG.debug("Download and extract installation bundle.")
+        cmd_type = util.CMD
         if link.startswith("\\\\"):
             cmd = 'copy "{}" "C:\\install.zip"'.format(link)
         else:
-            cmd = ("powershell Invoke-webrequest -uri "
+            cmd = ("Invoke-webrequest -uri "
                    "{} -outfile 'C:\\install.zip'"
                    .format(link))
-        self._execute(cmd)
+            cmd_type = util.POWERSHELL
+        self._execute(cmd, command_type=cmd_type)
         cmds = [
             "Add-Type -A System.IO.Compression.FileSystem",
             "[IO.Compression.ZipFile]::ExtractToDirectory("
             "'C:\\install.zip', 'C:\\install')"
         ]
-        cmd = 'powershell {}'.format("; ".join(cmds))
-        self._execute(cmd)
+        cmd = '{}'.format("; ".join(cmds))
+        self._execute(cmd, command_type=util.POWERSHELL)
 
         LOG.debug("Replace old files with the new ones.")
         cbdir = introspection.get_cbinit_dir(self._execute)
         self._execute('xcopy /y /e /q "C:\\install\\Cloudbase-Init"'
-                      ' "{}"'.format(cbdir))
+                      ' "{}"'.format(cbdir), command_type=util.CMD)
 
     def replace_code(self):
         """Replace the code of cloudbaseinit."""
@@ -181,28 +189,31 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             "Lib",
             "site-packages",
             "cloudbaseinit")
-        self._execute('rmdir "{}" /S /q'.format(cloudbaseinit))
+        self._execute('rmdir "{}" /S /q'.format(cloudbaseinit),
+                      command_type=util.CMD)
 
         # Clone the repo
         LOG.info("Cloning the cloudbaseinit repo...")
         self._execute("git clone https://github.com/stackforge/"
-                      "cloudbase-init C:\\cloudbaseinit")
+                      "cloudbase-init C:\\cloudbaseinit",
+                      command_type=util.CMD)
 
         # Run the command provided at cli.
         LOG.info("Applying cli patch...")
         self._execute("cd C:\\cloudbaseinit && {}".format(
-            self._conf.argus.git_command))
+            self._conf.argus.git_command), command_type=util.CMD)
 
         # Replace the code, by moving the code from cloudbaseinit
         # to the installed location.
         LOG.info("Replacing code...")
-        self._execute('powershell "Copy-Item C:\\cloudbaseinit\\cloudbaseinit '
-                      '\'{}\' -Recurse"'.format(cloudbaseinit))
+        self._execute('Copy-Item C:\\cloudbaseinit\\cloudbaseinit '
+                      '\'{}\' -Recurse'.format(cloudbaseinit),
+                      command_type=util.POWERSHELL)
 
         # Autoinstall packages from the new requirements.txt
         python = ntpath.join(python_dir, "python.exe")
         command = '"{}" -m pip install -r C:\\cloudbaseinit\\requirements.txt'
-        self._execute(command.format(python))
+        self._execute(command.format(python), command_type=util.CMD)
 
     def pre_sysprep(self):
         """Disable first_logon_behaviour for testing purposes.
@@ -226,24 +237,23 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                              'cloudbaseinit')
 
         # Get the shell patching script and patch the installation.
-        cmd = ("powershell Invoke-Webrequest -uri "
+        cmd = ("Invoke-Webrequest -uri "
                "{}/windows/patch_shell.ps1 -outfile "
                "C:\\patch_shell.ps1"
                .format(self._conf.argus.resources))
-        self._execute(cmd)
+        self._execute(cmd, command_type=util.POWERSHELL)
 
-        escaped = introspection.escape_path(cbinit)
-        self._execute('powershell "C:\\\\patch_shell.ps1 \"{}\""'
-                      .format(escaped))
+        self._execute(r'C:\\patch_shell.ps1 "{}"'
+                      .format(cbinit), command_type=util.POWERSHELL_SCRIPT)
 
     def sysprep(self):
         """Prepare the instance for the actual tests, by running sysprep."""
         LOG.info("Running sysprep...")
 
-        cmd = ("powershell Invoke-webrequest -uri "
+        cmd = ("Invoke-webrequest -uri "
                "{}/windows/sysprep.ps1 -outfile 'C:\\sysprep.ps1'"
                .format(self._conf.argus.resources))
-        self._execute(cmd)
+        self._execute(cmd, command_type=util.POWERSHELL)
         try:
             self._backend.remote_client.run_command(
                 'powershell C:\\sysprep.ps1')
@@ -265,22 +275,33 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         LOG.info("Waiting for the finalization of CloudbaseInit execution...")
 
         # Check if the service actually started.
-        test_cmd = 'powershell Test-Path {}'
+        test_cmd = 'Test-Path {}'
         check_cmds = [test_cmd.format(introspection.escape_path(path))
                       for path in searched_paths or []]
         for check_cmd in check_cmds:
             self._execute_until_condition(
                 check_cmd,
                 lambda out: out.strip() == 'True',
-                count=COUNT, delay=DELAY)
+                count=COUNT, delay=DELAY, command_type=util.POWERSHELL)
 
         # Check if the service finished
-        wait_cmd = ('powershell (Get-Service "| where -Property Name '
-                    '-match cloudbase-init").Status')
+        wait_cmd = ('(Get-Service | where -Property Name '
+                    '-match cloudbase-init).Status')
+        try:
+            self._execute_until_condition(
+                wait_cmd,
+                lambda out: out.strip() == 'Stopped',
+                count=COUNT, delay=DELAY, command_type=util.POWERSHELL)
+        except exceptions.ArgusCLIError as err:
+            # This error ocures when you execute the first command when you boot 
+            # the machine
+            LOG.debug(("We got an ArgusCLIError and it is ignored"
+                       " with the output : %"), err.message)
+
         self._execute_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'Stopped',
-            count=COUNT, delay=DELAY)
+            count=COUNT, delay=DELAY, command_type=util.POWERSHELL)
 
     def wait_cbinit_finalization(self):
         paths = [
@@ -296,10 +317,10 @@ class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):
         super(CloudbaseinitScriptRecipe, self).pre_sysprep()
         LOG.info("Doing last step before sysprepping.")
 
-        cmd = ("powershell Invoke-WebRequest -uri "
+        cmd = ("Invoke-WebRequest -uri "
                "{}/windows/test_exe.exe -outfile "
                "'C:\\Scripts\\test_exe.exe'".format(self._conf.argus.resources))
-        self._execute(cmd)
+        self._execute(cmd, command_type=util.POWERSHELL)
 
 
 class CloudbaseinitCreateUserRecipe(CloudbaseinitRecipe):
@@ -312,13 +333,14 @@ class CloudbaseinitCreateUserRecipe(CloudbaseinitRecipe):
     def pre_sysprep(self):
         super(CloudbaseinitCreateUserRecipe, self).pre_sysprep()
         LOG.info("Creating the user %s...", self._conf.cloudbaseinit.created_user)
-        cmd = ("powershell Invoke-webrequest -uri "
+        cmd = ("Invoke-webrequest -uri "
                "{}/windows/create_user.ps1 -outfile C:\\\\create_user.ps1"
                .format(self._conf.argus.resources))
-        self._execute(cmd)
+        self._execute(cmd, command_type=util.POWERSHELL)
 
-        self._execute('powershell "C:\\\\create_user.ps1 -user {}"'.format(
-            self._conf.cloudbaseinit.created_user))
+        self._execute('C:\\\\create_user.ps1 -user {}'.format(
+            self._conf.cloudbaseinit.created_user),
+            command_type=util.POWERSHELL_SCRIPT)
 
 
 class BaseNextLogonRecipe(CloudbaseinitRecipe):
@@ -387,18 +409,18 @@ class CloudbaseinitCloudstackRecipe(CloudbaseinitMockServiceRecipe):
         # Install mock
         python = ntpath.join(python_dir, "python.exe")
         command = '"{}" -m pip install mock'
-        self._execute(command.format(python))
+        self._execute(command.format(python), command_type=util.CMD)
 
         # Get the cloudstack patching script and patch the installation.
-        cmd = ("powershell Invoke-Webrequest -uri "
+        cmd = ("Invoke-Webrequest -uri "
                "{}/windows/patch_cloudstack.ps1 -outfile "
                "C:\\patch_cloudstack.ps1"
                .format(self._conf.argus.resources))
-        self._execute(cmd)
+        self._execute(cmd, command_type=util.POWERSHELL)
 
         escaped = introspection.escape_path(cbinit)
-        self._execute('powershell "C:\\\\patch_cloudstack.ps1 \"{}\""'
-                      .format(escaped))
+        self._execute('C:\\\\patch_cloudstack.ps1 \"{}\"'
+                      .format(escaped), command_type=util.POWERSHELL_SCRIPT)
 
 
 class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
@@ -471,11 +493,11 @@ class CloudbaseinitLocalScriptsRecipe(CloudbaseinitRecipe):
         super(CloudbaseinitLocalScriptsRecipe, self).pre_sysprep()
         LOG.info("Download reboot-required local script.")
 
-        cmd = ("powershell Invoke-WebRequest -uri "
+        cmd = ("Invoke-WebRequest -uri "
                "{}/windows/reboot.cmd -outfile "
                "'C:\\Scripts\\reboot.cmd'")
         cmd = cmd.format(self._conf.argus.resources)
-        self._execute(cmd)
+        self._execute(cmd, command_type=util.POWERSHELL)
 
 
 class CloudbaseinitImageRecipe(CloudbaseinitRecipe):

@@ -126,22 +126,24 @@ def _get_nic_details(details):
 def get_cbinit_dir(execute_function):
     """Get the location of cloudbase-init from the instance."""
     stdout = execute_function(
-        'powershell "(Get-WmiObject  Win32_OperatingSystem).'
-        'OSArchitecture"')
+        '(Get-WmiObject  Win32_OperatingSystem).'
+        'OSArchitecture', command_type=util.POWERSHELL)
     architecture = stdout.strip()
 
-    locations = [execute_function('powershell "$ENV:ProgramFiles"')]
+    locations = [execute_function('powershell "$ENV:ProgramFiles"',
+                                  command_type=util.CMD)]
     if architecture == '64-bit':
         location = execute_function(
-            'powershell "${ENV:ProgramFiles(x86)}"')
+            'powershell "${ENV:ProgramFiles(x86)}"',
+            command_type=util.CMD)
         locations.append(location)
 
     for location in locations:
         location = location.strip()
         _location = escape_path(location)
         status = execute_function(
-            'powershell Test-Path "{}\\Cloudbase` Solutions"'.format(
-                _location)).strip().lower()
+            'Test-Path "{}\\Cloudbase` Solutions"'.format(
+                _location), command_type=util.POWERSHELL).strip().lower()
 
         if status == "true":
             return ntpath.join(
@@ -160,16 +162,17 @@ def set_config_option(option, value, execute_function):
     cbdir = get_cbinit_dir(execute_function)
     conf = ntpath.join(cbdir, "conf", "cloudbase-init.conf")
 
-    cmd = ('powershell "((Get-Content {0!r}) + {1!r}) |'
-           ' Set-Content {0!r}"'.format(conf, line))
-    execute_function(cmd)
+    cmd = ('((Get-Content {0!r}) + {1!r}) |'
+           ' Set-Content {0!r}'.format(conf, line))
+    execute_function(cmd, command_type=util.POWERSHELL)
 
 
 def get_python_dir(execute_function):
     """Find python directory from the cb-init installation."""
     cbinit_dir = get_cbinit_dir(execute_function)
     command = 'dir "{}" /b'.format(cbinit_dir)
-    stdout = execute_function(command).strip()
+    stdout = execute_function(command,
+                              command_type=util.CMD).strip()
     names = list(filter(None, stdout.splitlines()))
     for name in names:
         if "python" in name.lower():
@@ -182,8 +185,9 @@ def get_cbinit_key(execute_function):
            "Cloudbase-init")
     key_x64 = ("HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` Solutions\\"
                "Cloudbase-init")
-    cmd = 'powershell "Test-Path {}"'.format(key)
-    if execute_function(cmd).strip().lower() == "true":
+    cmd = 'Test-Path {}'.format(key)
+    result = execute_function(cmd, command_type=util.POWERSHELL)
+    if result.strip().lower() == "true":
         return key
     return key_x64
 
@@ -192,38 +196,44 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
     """Utilities for introspecting a Windows instance."""
 
     def get_disk_size(self):
-        cmd = ('powershell (Get-WmiObject "win32_logicaldisk | '
-               'where -Property DeviceID -Match C:").Size')
-        return int(self.remote_client.run_command_verbose(cmd))
+        cmd = ('(Get-WmiObject win32_logicaldisk | '
+               'where -Property DeviceID -Match "C:").Size')
+        return int(self.remote_client.run_command_verbose(
+            cmd, command_type=util.POWERSHELL))
 
     def username_exists(self, username):
-        cmd = ('powershell "Get-WmiObject Win32_Account | '
-               'where -Property Name -contains {0}"'
+        cmd = ('Get-WmiObject Win32_Account | '
+               'where -Property Name -contains {0}'
                .format(username))
 
-        stdout = self.remote_client.run_command_verbose(cmd)
+        stdout = self.remote_client.run_command_verbose(
+            cmd, command_type=util.POWERSHELL)
         return bool(stdout)
 
     def get_instance_ntp_peers(self):
         command = 'w32tm /query /peers'
-        stdout = self.remote_client.run_command_verbose(command)
+        stdout = self.remote_client.run_command_verbose(command,
+                                                        command_type=util.CMD)
         return _get_ntp_peers(stdout)
 
     def get_instance_keys_path(self):
         cmd = 'echo %cd%'
-        stdout = self.remote_client.run_command_verbose(cmd)
+        stdout = self.remote_client.run_command_verbose(cmd,
+                                                        command_type=util.CMD)
         homedir, _, _ = stdout.rpartition(ntpath.sep)
         return ntpath.join(
             homedir, self._conf.cloudbaseinit.created_user,
             ".ssh", "authorized_keys")
 
     def get_instance_file_content(self, filepath):
-        cmd = 'powershell "cat %s"' % filepath
-        return self.remote_client.run_command_verbose(cmd)
+        cmd = 'cat %s' % filepath
+        return self.remote_client.run_command_verbose(
+            cmd, command_type=util.POWERSHELL)
 
     def get_userdata_executed_plugins(self):
-        cmd = 'powershell "(Get-ChildItem -Path  C:\\ *.txt).Count'
-        stdout = self.remote_client.run_command_verbose(cmd)
+        cmd = '"(Get-ChildItem -Path  C:\\ *.txt).Count'
+        stdout = self.remote_client.run_command_verbose(
+            cmd, command_type=util.POWERSHELL)
         return int(stdout)
 
     @staticmethod
@@ -245,7 +255,8 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
 
     def get_instance_mtu(self):
         cmd = 'netsh interface ipv4 show subinterfaces level=verbose'
-        stdout = self.remote_client.run_command_verbose(cmd)
+        stdout = self.remote_client.run_command_verbose(
+            cmd, command_type=util.CMD)
         return next(self._parse_netsh_output(stdout), None)
 
     def get_cloudbaseinit_traceback(self):
@@ -254,12 +265,13 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
         with _create_tempfile(content=code) as tmp:
             self.remote_client.copy_file(tmp, remote_script)
             stdout = self.remote_client.run_command_verbose(
-                "powershell " + remote_script)
+                remote_script,
+                command_type=util.POWERSHELL)
             return stdout.strip()
 
     def _file_exist(self, filepath):
         stdout = self.remote_client.run_command_verbose(
-            'powershell "Test-Path {}"'.format(filepath))
+            'Test-Path {}'.format(filepath), command_type=util.POWERSHELL)
         return stdout.strip() == 'True'
 
     def instance_exe_script_executed(self):
@@ -267,7 +279,8 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
 
     def get_group_members(self, group):
         cmd = "net localgroup {}".format(group)
-        std_out = self.remote_client.run_command_verbose(cmd)
+        std_out = self.remote_client.run_command_verbose(
+            cmd, command_type=util.CMD)
         member_search = re.search(
             r"Members\s+-+\s+(.*?)The\s+command",
             std_out, re.MULTILINE | re.DOTALL)
@@ -278,7 +291,8 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
 
     def list_location(self, location):
         command = "dir {} /b".format(location)
-        stdout = self.remote_client.run_command_verbose(command)
+        stdout = self.remote_client.run_command_verbose(
+            command, command_type=util.CMD)
         return list(filter(None, stdout.splitlines()))
 
     def get_service_triggers(self, service):
@@ -288,7 +302,8 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
         trigger and the second is the end trigger.
         """
         command = "sc qtriggerinfo {}".format(service)
-        stdout = self.remote_client.run_command_verbose(command)
+        stdout = self.remote_client.run_command_verbose(
+            command, command_type=util.CMD)
         match = re.search(r"START SERVICE\s+(.*?):.*?STOP SERVICE\s+(.*?):",
                           stdout, re.DOTALL)
         if not match:
@@ -302,8 +317,9 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
          Return a tuple of two elements, the major and the minor
          version.
         """
-        cmd = "powershell (Get-CimInstance Win32_OperatingSystem).Version"
-        stdout = self.remote_client.run_command_verbose(cmd)
+        cmd = "(Get-CimInstance Win32_OperatingSystem).Version"
+        stdout = self.remote_client.run_command_verbose(
+            cmd, command_type=util.POWERSHELL)
         elems = stdout.split(".")
         return list(map(int, elems))[:2]
 
@@ -323,12 +339,13 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
     def get_timezone(self):
         command = "[System.TimeZone]::CurrentTimeZone.StandardName"
         stdout = self.remote_client.run_command_verbose(
-            "powershell {}".format(command))
+            "{}".format(command), command_type=util.POWERSHELL)
         return stdout
 
     def get_instance_hostname(self):
         command = "hostname"
-        stdout = self.remote_client.run_command_verbose(command)
+        stdout = self.remote_client.run_command_verbose(
+            command, command_type=util.CMD)
         return stdout.lower().strip()
 
     def get_network_interfaces(self):
@@ -336,17 +353,19 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
 
         If a value is an empty string, then that value is missing.
         """
-        cmd = ("powershell Invoke-WebRequest -uri "
+        cmd = ("Invoke-WebRequest -uri "
                "{}/windows/network_details.ps1 -outfile "
                "C:\\network_details.ps1".format(self._conf.argus.resources))
-        self.remote_client.run_command_with_retry(cmd)
+        self.remote_client.run_command_with_retry(
+            cmd, command_type=util.POWERSHELL)
 
         # Run and parse the output, where each adapter details
         # block is separated by a specific separator.
         # Each block contains multiple fields separated by EOLs
         # and each field contains multiple details separated by spaces.
-        cmd = "powershell C:\\network_details.ps1"
-        output = self.remote_client.run_command_verbose(cmd)
+        cmd = "C:\\network_details.ps1"
+        output = self.remote_client.run_command_verbose(cmd,
+                                                        command_type=util.POWERSHELL)
 
         output = output.replace(SEP, "", 1)
         nics = []
@@ -377,5 +396,5 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
         with _create_tempfile(content=code) as tmp:
             self.remote_client.copy_file(tmp, remote_script)
             stdout = self.remote_client.run_command_verbose(
-                "powershell {0} {1}".format(remote_script, user))
+                "{0} {1}".format(remote_script, user), command=util.POWERSHELL)
             return stdout.strip()
