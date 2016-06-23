@@ -253,3 +253,88 @@ WindowsActionManagers = {
     util.WINDOWS_SERVER_2016: WindowsSever2016ActionManager,
     util.WINDOWS_NANO: WindowsNanoActionManager
 }
+
+
+def _is_nanoserver(client):
+    """Returns True if the client is connected to a nanoserver machine.
+
+       Using the powershell code from here: https://goo.gl/UD27SK
+    """
+    server_level_key = (r'HKLM:Software\Microsoft\Windows NT\CurrentVersion'
+                        r'\Server\ServerLevels')
+
+    cmd = r'Test-Path "{}"'.format(server_level_key)
+    path_exists, _, _ = client.run_command_with_retry(
+        cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+        command_type=util.POWERSHELL)
+
+    if path_exists == "False":
+        return False
+
+    cmd = r'(Get-ItemProperty {}).NanoServer'.format(server_level_key)
+    nanoserver_property, _, _ = client.run_command_with_retry(
+        cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+        command_type=util.POWERSHELL)
+
+    return nanoserver_property == "1"
+
+
+def _get_major_version(client):
+    """Return the major version of the OS.
+
+    :param client:
+        A Windows Client.
+    """
+    cmd = r"[System.Environment]::OSVersion.Version.Major"
+    major_version, _, _ = client.run_command_with_retry(
+        cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+        command_type=util.POWERSHELL)
+    return int(major_version.strip())
+
+
+def _get_product_type(client):
+    """Return the minor version of the OS.
+
+    :param client:
+        A Windows Client.
+    """
+    cmd = r"(Get-WmiObject -Class Win32_OperatingSystem).producttype"
+    product_type, _, _ = client.run_command_with_retry(
+        cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+        command_type=util.POWERSHELL)
+    return int(product_type.strip())
+
+
+def get_windows_action_manager(client):
+    """Get the OS specific Action Manager."""
+    LOG.info("Waiting for boot completion in order to select an "
+             "Action Manager ...")
+
+    conf = util.get_config()
+    username = conf.openstack.image_username
+    wait_cmd = ('(Get-WmiObject Win32_Account | '
+                'where -Property Name -contains {0}).Name'
+                .format(username))
+    client.run_command_until_condition(
+        wait_cmd,
+        lambda stdout: stdout.strip() == username,
+        retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+        command_type=util.POWERSHELL)
+
+    # get os type
+    product_type = _get_product_type(client)
+    major_version = _get_major_version(client)
+    windows_type = util.WINDOWS_VERSION.get((major_version, product_type),
+                                            util.WINDOWS)
+    is_nanoserver = _is_nanoserver(client)
+
+    if isinstance(windows_type, dict):
+        windows_type = windows_type[is_nanoserver]
+
+    LOG.debug(("We got the OS type %s because we have the major Version : %d,"
+               "The product Type : %d, and IsNanoserver: %d"), windows_type,
+              major_version, product_type, is_nanoserver)
+
+    action_manager = WindowsActionManagers[windows_type]
+    conf = util.get_config()
+    return action_manager(client=client, config=conf)
