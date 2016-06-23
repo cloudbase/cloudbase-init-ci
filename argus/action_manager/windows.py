@@ -217,3 +217,39 @@ class WindowsActionManager(base.BaseActionManager):
         """Prepare some OS specific resources."""
         # We don't have anythong specific for the base
         LOG.debug("Prepare something specific for OS Type %s", self._os_type)
+
+
+class Windows8ActionManager(WindowsActionManager):
+    def __init__(self, client, config, os_type=util.WINDOWS8):
+        super(Windows8ActionManager, self).__init__(client, config, os_type)
+
+
+class WindowsSever2012ActionManager(Windows8ActionManager):
+    def __init__(self, client, config, os_type=util.WINDOWS_SERVER_2012):
+        super(WindowsSever2012ActionManager, self).__init__(client, config)
+
+
+class Windows10ActionManager(WindowsActionManager):
+    def __init__(self, client, config, os_type=util.WINDOWS10):
+        super(Windows10ActionManager, self).__init__(client, config, os_type)
+
+
+class WindowsSever2016ActionManager(Windows10ActionManager):
+    def __init__(self, client, config, os_type=util.WINDOWS_SERVER_2016):
+        super(WindowsSever2016ActionManager, self).__init__(client, config, 
+                                                            os_type)
+
+
+class WindowsNanoActionManager(WindowsSever2016ActionManager):
+    def __init__(self, client, config, os_type=util.WINDOWS_NANO):
+        super(WindowsNanoActionManager, self).__init__(client, config, os_type)
+
+
+WindowsActionManagers = {
+    util.WINDOWS: WindowsNanoActionManager,
+    util.WINDOWS8: Windows8ActionManager,
+    util.WINDOWS10: Windows10ActionManager,
+    util.WINDOWS_SERVER_2012: WindowsSever2012ActionManager,
+    util.WINDOWS_SERVER_2016: WindowsSever2016ActionManager,
+    util.WINDOWS_NANO: WindowsNanoActionManager
+}
