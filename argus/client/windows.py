@@ -25,6 +25,7 @@ from winrm import protocol
 from argus.client import base
 from argus import exceptions
 from argus import util
+from argus.action_manager.windows import get_windows_action_manager
 
 
 LOG = util.get_logger()
@@ -67,6 +68,7 @@ class WinRemoteClient(base.BaseClient):
         self._password = password
         self._cert_pem = cert_pem
         self._cert_key = cert_key
+        self.manager = get_windows_action_manager(self)
 
     @staticmethod
     def _run_command(protocol_client, shell_id, command,
@@ -241,7 +243,7 @@ class WinRemoteClient(base.BaseClient):
             except Exception as exc:  # pylint: disable=broad-except
                 LOG.debug("Command failed with %r.", exc)
             else:
-                if stderr and not exit_code:
+                if stderr and exit_code:
                     raise exceptions.ArgusCLIError(
                         ("Executing command {!r} failed with {!r}"
                          " and exit code {}.")
