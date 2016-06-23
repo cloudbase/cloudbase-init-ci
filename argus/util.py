@@ -34,6 +34,7 @@ RETRY_COUNT = 15
 RETRY_DELAY = 10
 
 CMD = "cmd"
+BAT_SCRIPT = "bat"
 POWERSHELL = "powershell"
 POWERSHELL_SCRIPT = "powershell_script"
 POWERSHELL_SCRIPT_RESTRICTED = "powershell_script_restricted"
