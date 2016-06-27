@@ -53,7 +53,8 @@ class BaseTestPassword(base.BaseTestCase):
         remote_client = self._backend.get_remote_client(
             self._conf.cloudbaseinit.created_user, password)
 
-        stdout = remote_client.run_command_verbose(cmd)
+        stdout = remote_client.run_command_verbose(
+            cmd, command_type=util.CMD)
         return stdout
 
     def is_password_set(self, password):
@@ -165,14 +166,9 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
         return False
 
     def _wait_for_completion(self, password):
-        wait_cmd = ('powershell (Get-Service | where -Property Name '
-                    '-match cloudbase-init).Status')
         remote_client = self._backend.get_remote_client(
             self._conf.cloudbaseinit.created_user, password)
-        remote_client.run_command_until_condition(
-            wait_cmd,
-            lambda out: out.strip() == 'Stopped',
-            retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY)
+        remote_client.manager.wait_cbinit_service()
 
     def _test_password(self, password, expected):
         # Set the password in the Password Server.
