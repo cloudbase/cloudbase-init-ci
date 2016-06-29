@@ -231,7 +231,7 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
             cmd, command_type=util.POWERSHELL)
 
     def get_userdata_executed_plugins(self):
-        cmd = '"(Get-ChildItem -Path  C:\\ *.txt).Count'
+        cmd = r'(Get-ChildItem -Path  C:\ *.txt).Count'
         stdout = self.remote_client.run_command_verbose(
             cmd, command_type=util.POWERSHELL)
         return int(stdout)
@@ -353,19 +353,17 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
 
         If a value is an empty string, then that value is missing.
         """
-        cmd = ("Invoke-WebRequest -uri "
-               "{}/windows/network_details.ps1 -outfile "
-               "C:\\network_details.ps1".format(self._conf.argus.resources))
-        self.remote_client.run_command_with_retry(
-            cmd, command_type=util.POWERSHELL)
+        location = r"C:\network_details.ps1"
+        self.remote_client.manager.download_resource(
+            resource_location="windows/network_details.ps1",
+            location=location)
 
         # Run and parse the output, where each adapter details
         # block is separated by a specific separator.
         # Each block contains multiple fields separated by EOLs
         # and each field contains multiple details separated by spaces.
-        cmd = "C:\\network_details.ps1"
-        output = self.remote_client.run_command_verbose(cmd,
-                                                        command_type=util.POWERSHELL)
+        output = self.remote_client.run_command_verbose(
+            location, command_type=util.POWERSHELL)
 
         output = output.replace(SEP, "", 1)
         nics = []
@@ -396,5 +394,6 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
         with _create_tempfile(content=code) as tmp:
             self.remote_client.copy_file(tmp, remote_script)
             stdout = self.remote_client.run_command_verbose(
-                "{0} {1}".format(remote_script, user), command=util.POWERSHELL)
+                "{0} {1}".format(remote_script, user),
+                command_type=util.POWERSHELL_SCRIPT_BYPASS)
             return stdout.strip()
