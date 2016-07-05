@@ -236,15 +236,16 @@ class WinRemoteClient(base.BaseClient):
 
         while True:
             try:
-                stdout, stderr, _ = self.run_command(cmd,
-                                                     command_type=command_type)
+                stdout, stderr, exit_code = self.run_command(
+                    cmd, command_type=command_type)
             except Exception as exc:  # pylint: disable=broad-except
                 LOG.debug("Command failed with %r.", exc)
             else:
-                if stderr:
+                if stderr and not exit_code:
                     raise exceptions.ArgusCLIError(
-                        "Executing command {!r} failed with {!r}."
-                        .format(cmd, stderr))
+                        ("Executing command {!r} failed with {!r}"
+                         " and exit code {}.")
+                        .format(cmd, stderr, exit_code))
                 elif cond(stdout):
                     return
                 else:
