@@ -84,7 +84,7 @@ class TestSmoke(smoke.TestsBaseSmoke):
             self._conf.openstack.image_password,
             protocol='https')
         stdout = remote_client.run_command_verbose(
-                'echo 1', command_type=util.POWERSHELL)
+                'echo 1', command_type=util.CMD)
         self.assertEqual('1', stdout.strip())
 
     @test_util.skip_unless_dnsmasq_configured
@@ -155,7 +155,7 @@ class TestCertificateWinRM(base.BaseTestCase):
         client = self._backend.get_remote_client(cert_pem=cert_pem,
                                                  cert_key=cert_key)
         stdout = client.run_command_verbose(
-                "echo 1", command_type=util.POWERSHELL)
+            "echo 1", command_type=util.CMD)
         self.assertEqual(stdout.strip(), "1")
 
 
@@ -164,27 +164,10 @@ class TestNextLogonPassword(base.BaseTestCase):
     password_expired_flag = 1
 
     def _wait_for_completion(self):
-        wait_cmd = ('powershell (Get-Service | where -Property Name '
-                    '-match cloudbase-init).Status')
         remote_client = self._backend.get_remote_client(
             self._conf.openstack.image_username,
             self._conf.openstack.image_password)
-        LOG = util.get_logger()
-        try:
-            remote_client.run_command_until_condition(
-                wait_cmd,
-                lambda out: out.strip() == 'Stopped',
-                retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
-                command_type=util.POWERSHELL)
-        except exceptions.ArgusCLIError as err:
-            LOG.debug(("We got an ArgusCLIError and it is ignored"
-                      " with the output : {}").format(err.message))
-
-        remote_client.run_command_until_condition(
-            wait_cmd,
-            lambda out: out.strip() == 'Stopped',
-            retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
-            command_type=util.POWERSHELL)
+        remote_client.manager.wait_boot_completion()
 
     def test_next_logon_password_not_changed(self):
         self._wait_for_completion()

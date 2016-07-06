@@ -34,6 +34,7 @@ RETRY_COUNT = 15
 RETRY_DELAY = 10
 
 CMD = "cmd"
+BAT_SCRIPT = "bat"
 POWERSHELL = "powershell"
 POWERSHELL_SCRIPT = "powershell_script"
 POWERSHELL_SCRIPT_RESTRICTED = "powershell_script_restricted"
@@ -305,3 +306,32 @@ _BUILDS = ["Beta", "Stable", "test"]
 _ARCHES = ["x64", "x86"]
 BUILDS = get_namedtuple("BUILDS", _BUILDS, _BUILDS)
 ARCHES = get_namedtuple("ARCHES", _ARCHES, _ARCHES)
+
+WINDOWS = "windows"
+
+WINDOWS8 = "windows_8"
+WINDOWS10 = "windows_10"
+
+WINDOWS_SERVER_2012 = "windows_sever_2012"
+WINDOWS_SERVER_2016 = "windows_server_2016"
+WINDOWS_NANO = "windows_nano"
+
+# The key has this format (Version number, Product Type)
+# Version number acording to this page :
+# https://msdn.microsoft.com/en-us/library/windows/desktop/ms724833%28v=vs.85%29.aspx
+# Product Type acording to this :
+# https://msdn.microsoft.com/en-us/library/aa394239(v=vs.85).aspx
+# For the Version 10 Server edition we have two possibilities:
+# 1. is Windows Nano Server
+# 2. is not Windows Nano Server (so it's Windows Server 2016)
+# IsNanoserver False/True based on this code : https://goo.gl/UD27SK
+
+WINDOWS_VERSION = {
+    (6, 1): WINDOWS8,
+    (10, 1): WINDOWS10,
+    (6, 3): WINDOWS_SERVER_2012,
+    (10, 3): {
+        False: WINDOWS_SERVER_2016,
+        True: WINDOWS_NANO
+    }
+}
