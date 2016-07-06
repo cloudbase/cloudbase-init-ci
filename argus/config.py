@@ -44,6 +44,9 @@ def _get_default(parser, section, option, default=None):
 class ConfigurationParser(object):
     """A parser class which knows how to parse argus configurations."""
 
+    RESOURCES_LINK = ('https://raw.githubusercontent.com/cloudbase/'
+                      'cloudbase-init-ci/master/argus/resources')
+
     def __init__(self, filename):
         self._filename = filename
         self._parser = _ConfigParser()
@@ -58,9 +61,7 @@ class ConfigurationParser(object):
                                        'output_directory build arch '
                                        'patch_install git_command')
         resources = _get_default(
-            self._parser, 'argus', 'resources',
-            'https://raw.githubusercontent.com/PCManticore/'
-            'argus-ci/master/argus/resources')
+            self._parser, 'argus', 'resources', self.RESOURCES_LINK)
         pause = self._parser.getboolean('argus', 'pause')
         file_log = _get_default(self._parser, 'argus', 'file_log')
         log_format = _get_default(self._parser, 'argus', 'log_format')
