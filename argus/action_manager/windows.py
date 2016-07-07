@@ -301,7 +301,7 @@ def _get_product_type(client):
     :param client:
         A Windows Client.
     """
-    cmd = r"(Get-WmiObject -Class Win32_OperatingSystem).producttype"
+    cmd = r"(Get-CimInstance -Class Win32_OperatingSystem).producttype"
     product_type, _, _ = client.run_command_with_retry(
         cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
         command_type=util.POWERSHELL)
