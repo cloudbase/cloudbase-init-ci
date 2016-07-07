@@ -26,6 +26,17 @@ from winrm import exceptions as winrm_exceptions
 LOG = util.LOG
 
 
+def wait_boot_completion(client, username):
+    wait_cmd = ('(Get-CimInstance Win32_Account | '
+                'where -Property Name -contains {0}).Name'
+                .format(username))
+    client.run_command_until_condition(
+        wait_cmd,
+        lambda stdout: stdout.strip() == username,
+        retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+        command_type=util.POWERSHELL)
+
+
 class WindowsActionManager(base.BaseActionManager):
 
     def __init__(self, client, config, os_type=util.WINDOWS):
@@ -202,16 +213,8 @@ class WindowsActionManager(base.BaseActionManager):
     def wait_boot_completion(self):
         """Wait for a resonable amount of time the instance to boot."""
         LOG.info("Waiting for boot completion...")
-
         username = self._conf.openstack.image_username
-        wait_cmd = ('(Get-WmiObject Win32_Account | '
-                    'where -Property Name -contains {0}).Name'
-                    .format(username))
-        self._client.run_command_until_condition(
-            wait_cmd,
-            lambda stdout: stdout.strip() == username,
-            retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
-            command_type=util.POWERSHELL)
+        wait_boot_completion(self._client, username)
 
     def specific_prepare(self):
         """Prepare some OS specific resources."""
@@ -312,14 +315,7 @@ def get_windows_action_manager(client):
 
     conf = util.get_config()
     username = conf.openstack.image_username
-    wait_cmd = ('(Get-WmiObject Win32_Account | '
-                'where -Property Name -contains {0}).Name'
-                .format(username))
-    client.run_command_until_condition(
-        wait_cmd,
-        lambda stdout: stdout.strip() == username,
-        retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
-        command_type=util.POWERSHELL)
+    wait_boot_completion(client, username)
 
     # get os type
     product_type = _get_product_type(client)
