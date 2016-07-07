@@ -279,7 +279,7 @@ def _is_nanoserver(client):
         cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
         command_type=util.POWERSHELL)
 
-    return nanoserver_property == "1"
+    return len(nanoserver_property) > 0 and nanoserver_property[0] == "1"
 
 
 def _get_major_version(client):
