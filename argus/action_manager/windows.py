@@ -263,7 +263,7 @@ def _is_nanoserver(client):
 
        Using the powershell code from here: https://goo.gl/UD27SK
     """
-    server_level_key = (r'HKLM:Software\Microsoft\Windows NT\CurrentVersion'
+    server_level_key = (r'HKLM:\Software\Microsoft\Windows NT\CurrentVersion'
                         r'\Server\ServerLevels')
 
     cmd = r'Test-Path "{}"'.format(server_level_key)
@@ -274,7 +274,7 @@ def _is_nanoserver(client):
     if path_exists == "False":
         return False
 
-    cmd = r'(Get-ItemProperty {}).NanoServer'.format(server_level_key)
+    cmd = r'(Get-ItemProperty "{}").NanoServer'.format(server_level_key)
     nanoserver_property, _, _ = client.run_command_with_retry(
         cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
         command_type=util.POWERSHELL)
