@@ -28,6 +28,7 @@ from argus import util
 
 
 LOG = util.get_logger()
+CODEPAGE_UTF8 = 65001
 
 
 def _base64_read_file(filepath, size=8192):
@@ -97,7 +98,7 @@ class WinRemoteClient(base.BaseClient):
 
     def _run_commands(self, commands, commands_type=util.POWERSHELL):
         protocol_client = self._get_protocol()
-        shell_id = protocol_client.open_shell()
+        shell_id = protocol_client.open_shell(codepage=CODEPAGE_UTF8)
         try:
             results = [self._run_command(protocol_client, shell_id, command,
                                          command_type=commands_type)
