@@ -126,7 +126,7 @@ def _get_nic_details(details):
 def get_cbinit_dir(execute_function):
     """Get the location of cloudbase-init from the instance."""
     stdout = execute_function(
-        '(Get-WmiObject  Win32_OperatingSystem).'
+        '(Get-CimInstance Win32_OperatingSystem).'
         'OSArchitecture', command_type=util.POWERSHELL)
     architecture = stdout.strip()
 
