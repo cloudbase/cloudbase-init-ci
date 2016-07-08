@@ -148,12 +148,14 @@ class WinRemoteClient(base.BaseClient):
         commands = []
         for command in _base64_read_file(filepath):
             remote_command = (
-                "{content} >> '{remote_destination}'"
+                r'powershell "{content}" >> "{remote_destination}"'
                 .format(content=get_string_cmd.format(command),
                         remote_destination=remote_destination))
 
             commands.append(remote_command)
-        self._run_commands(commands, commands_type=util.POWERSHELL)
+        # NOTE(mmicu): If the command would be POWERSHELL type
+        #              it will get over the 8191 char limit.
+        self._run_commands(commands, commands_type=util.CMD)
 
     def write_file(self, data, remote_destination):
         """Copy the given data in the remote destination.
