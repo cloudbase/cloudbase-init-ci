@@ -248,6 +248,44 @@ class WindowsActionManager(base.BaseActionManager):
         cmd = "Remove-Item -Recurse -Path '{}'".format(path)
         self._client.run_command_with_retry(cmd, command_type=util.POWERSHELL)
 
+    def _exists(self, path, path_type):
+        """Check if the path exists and it has the specified type.
+
+        :param path:
+            Path to check if it exists.
+        :param path_type:
+            This can be 'Leaf' or 'Container'
+        """
+        cmd = 'Test-Path -PathType {} -Path "{}"'.format(path_type, path)
+        stdout, stderr, exit_code = self._client.run_command_with_retry(
+            cmd=cmd, command_type=util.POWERSHELL)
+
+        return stdout.strip() == "True"
+
+    def exists(self, path):
+        """Check if the path exists.
+
+        :param path:
+            Path to check if it exists.
+        """
+        return self._exists(path, self.PATH_ANY)
+
+    def is_file(self, path):
+        """Check if the file exists.
+
+        :param path:
+            Path to check if it exists and if it's a file.
+        """
+        return self._exists(path, self.PATH_LEAF)
+
+    def is_dir(self, path):
+        """Check if the directory exists.
+
+        :param path:
+            Path to check if it exists and it's a directory.
+        """
+        return self._exists(path, self.PATH_CONTAINER)
+
 
 class Windows8ActionManager(WindowsActionManager):
     def __init__(self, client, config, os_type=util.WINDOWS8):
