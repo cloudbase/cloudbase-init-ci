@@ -103,3 +103,13 @@ class BaseActionManager(object):
     def specific_prepare(self):
         """Prepare some OS specific resources."""
         pass
+
+    @abc.abstractmethod
+    def remove(self, path):
+        """Remove a file."""
+        pass
+
+    @abc.abstractmethod
+    def rmdir(self, path):
+        """Remove a directory."""
+        pass

@@ -18,6 +18,7 @@
 import base64
 import functools
 import time
+import StringIO
 
 import six
 from winrm import protocol
@@ -32,14 +33,18 @@ LOG = util.get_logger()
 CODEPAGE_UTF8 = 65001
 
 
+def _encode(data):
+    encoded = base64.b64encode(data)
+    if six.PY3:
+        encoded = encoded.decode()
+    return encoded
+
+
 def _base64_read_file(filepath, size=8192):
     with open(filepath, 'rb') as stream:
         reader = functools.partial(stream.read, size)
         for data in iter(reader, b''):
-            encoded = base64.b64encode(data)
-            if six.PY3:
-                # Get a string instead.
-                encoded = encoded.decode()
+            encoded = _encode(data)
             yield encoded
 
 
@@ -147,6 +152,33 @@ class WinRemoteClient(base.BaseClient):
                         remote_destination=remote_destination))
 
             commands.append(remote_command)
+        self._run_commands(commands, commands_type=util.POWERSHELL)
+
+    def write_file(self, data, remote_destination):
+        """Copy the given data in the remote destination.
+
+        The remote destination is the file name where the content
+        of filepath will be written.
+        """
+        LOG.debug("Write data in file %s", remote_destination)
+
+        # TODO(mmicu): This powershell dance is a little complicated,
+        # find a simpler way to send a file over a remote server,
+        # without relying on OpenStack infra.
+        get_string_cmd = ("[System.Text.Encoding]::UTF8.GetString("
+                          "[System.Convert]::FromBase64String('{}'))")
+        commands = []
+        data = StringIO.StringIO(data)
+        data.seek(0)
+        content = data.read(1024)
+        while content:
+            remote_command = (
+                "{content} >> '{remote_destination}'"
+                .format(content=get_string_cmd.format(_encode(content)),
+                        remote_destination=remote_destination))
+
+            commands.append(remote_command)
+            content = data.read(1024)
         self._run_commands(commands, commands_type=util.POWERSHELL)
 
     def read_file(self, filepath):

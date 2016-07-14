@@ -38,6 +38,9 @@ def wait_boot_completion(client, username):
 
 
 class WindowsActionManager(base.BaseActionManager):
+    PATH_ANY = "Any"
+    PATH_LEAF = "Leaf"
+    PATH_CONTAINER = "Container"
 
     def __init__(self, client, config, os_type=util.WINDOWS):
         super(WindowsActionManager, self).__init__(client, config, os_type)
@@ -220,6 +223,30 @@ class WindowsActionManager(base.BaseActionManager):
         """Prepare some OS specific resources."""
         # We don't have anythong specific for the base
         LOG.debug("Prepare something specific for OS Type %s", self._os_type)
+
+    def remove(self, path):
+        """Remove a file."""
+        if not self.exists(path):
+            raise exceptions.ArgusCLIError("Invalid Path.")
+
+        if not self.is_file(path):
+            raise exceptions.ArgusCLIError("The path is not a file.")
+
+        LOG.debug("Remove file %s", path)
+        cmd = "Remove-Item -Path '{}'".format(path)
+        self._client.run_command_with_retry(cmd, command_type=util.POWERSHELL)
+
+    def rmdir(self, path):
+        """Remove a directory."""
+        if not self.exists(path):
+            raise exceptions.ArgusCLIError("Invalid Path.")
+
+        if not self.is_file(path):
+            raise exceptions.ArgusCLIError("The path is not a directory.")
+
+        LOG.debug("Remove directory  %s", path)
+        cmd = "Remove-Item -Recurse -Path '{}'".format(path)
+        self._client.run_command_with_retry(cmd, command_type=util.POWERSHELL)
 
 
 class Windows8ActionManager(WindowsActionManager):
