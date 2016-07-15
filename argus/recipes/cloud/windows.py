@@ -24,6 +24,7 @@ from argus import exceptions
 from argus.introspection.cloud import windows as introspection
 from argus.recipes.cloud import base
 from argus import util
+from argus.config_generator.windows import cb_init as cbinit_config
 
 LOG = util.get_logger()
 
@@ -158,17 +159,6 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         self._execute(command.format(python), command_type=util.CMD)
 
     def pre_sysprep(self):
-        """Disable first_logon_behaviour for testing purposes.
-
-        Because first_logon_behaviour will control how the password
-        should work on next logon, we could have troubles in tests,
-        so this is always disabled, excepting tests which sets
-        it manual to whatever they want.
-        """
-        introspection.set_config_option(
-            option="first_logon_behaviour", value="no",
-            execute_function=self._execute)
-
         # Patch the installation of cloudbaseinit in order to create
         # a file when the execution ends. We're doing this instead of
         # monitoring the service, because on some OSes, just checking
@@ -204,6 +194,55 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         LOG.debug("Wait for the CloudBase Initit service to stop ...")
         self._backend.remote_client.manager.wait_cbinit_service()
+
+    def prepare_cbinit_config(self, service_type):
+        """Prepare the cloudbase-init config."""
+        self._cbinit_conf = cbinit_config.CBInitConfig(
+            client=self._backend.remote_client)
+
+        self._cbinit_unattend_conf = cbinit_config.UnattendCBInitConfig(
+            client=self._backend.remote_client)
+
+        # NOTE(mmicu): Because first_logon_behaviour will control
+        #              how the password should work on next logon,
+        #              we could have failing tests due to
+        #              authentication failures.
+
+        self._cbinit_conf.set_service_type(service_type)
+
+        self._cbinit_conf.set_conf_value(name="first_logon_behaviour",
+                                         value="no")
+        self._cbinit_conf.set_conf_value(
+            name="activate_windows",
+            value=self._conf.cloudbaseinit.activate_windows)
+        self._cbinit_conf.set_conf_value(name="local_scripts_path",
+                                         value="\Scripts")
+
+        self._cbinit_conf.set_conf_value(
+            name="activate_windows",
+            value=self._conf.cloudbaseinit.activate_windows)
+
+    def _make_dir_if_needed(self, path):
+        """Check if the directory exists, if it doesn't create it."""
+        if not self._backend.remote_client.manager.is_dir(path):
+            cmd = 'mkdir "{}"'.format(path)
+            self._backend.remote_client.run_remote_cmd(cmd, util.POWERSHELL)
+
+    def inject_cbinit_config(self):
+        """Inject the cloudbase-init config in the right place."""
+        cbinit_dir = introspection.get_cbinit_dir(self._execute)
+
+        conf_dir = ntpath.join(cbinit_dir, "conf")
+        needed_directories = [
+            ntpath.join(cbinit_dir, "log"),
+            conf_dir,
+        ]
+
+        for directory in needed_directories:
+            self._make_dir_if_needed(directory)
+
+        self._cbinit_conf.apply_config(conf_dir)
+        self._cbinit_unattend_conf.apply_config(conf_dir)
 
 
 class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):
@@ -242,13 +281,11 @@ class BaseNextLogonRecipe(CloudbaseinitRecipe):
 
     behaviour = None
 
-    def pre_sysprep(self):
-        super(BaseNextLogonRecipe, self).pre_sysprep()
-
-        introspection.set_config_option(
-            option="first_logon_behaviour",
-            value=self.behaviour,
-            execute_function=self._execute)
+    def prepare_cbinit_config(self, service_type):
+        super(BaseNextLogonRecipe, self).prepare_cbinit_config(service_type)
+        self._cbinit_conf.set_conf_value(
+            name="first_logon_behaviour",
+            value=self.behaviour)
 
 
 class AlwaysChangeLogonPasswordRecipe(BaseNextLogonRecipe):
@@ -269,15 +306,14 @@ class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
     config_entry = None
     pattern = "{}"
 
-    def pre_sysprep(self):
-        super(CloudbaseinitMockServiceRecipe, self).pre_sysprep()
+    def prepare_cbinit_config(self, service_type):
+        super(CloudbaseinitMockServiceRecipe, self).prepare_cbinit_config(service_type)
         LOG.info("Inject guest IP for mocked service access.")
 
         # Append service IP as a config option.
         address = self.pattern.format(util.get_local_ip())
-        introspection.set_config_option(option=self.config_entry,
-                                        value=address,
-                                        execute_function=self._execute)
+        self._cbinit_conf.set_conf_value(name=self.config_entry,
+                                         value=address)
 
 
 class CloudbaseinitEC2Recipe(CloudbaseinitMockServiceRecipe):
@@ -318,8 +354,8 @@ class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
     config_entry = "maas_metadata_url"
     pattern = "http://{}:2002"
 
-    def pre_sysprep(self):
-        super(CloudbaseinitMaasRecipe, self).pre_sysprep()
+    def prepare_cbinit_config(self, service_type):
+        super(CloudbaseinitMaasRecipe, self).prepare_cbinit_config(service_type)
 
         required_fields = (
             "maas_oauth_consumer_key",
@@ -329,22 +365,20 @@ class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
         )
 
         for field in required_fields:
-            introspection.set_config_option(option=field, value="secret",
-                                            execute_function=self._execute)
+            self._cbinit_conf.set_conf_value(name=field, value="secret")
 
 
 class CloudbaseinitWinrmRecipe(CloudbaseinitCreateUserRecipe):
     """A recipe for testing the WinRM configuration plugin."""
 
-    def pre_sysprep(self):
-        super(CloudbaseinitWinrmRecipe, self).pre_sysprep()
-        introspection.set_config_option(
-            option="plugins",
+    def prepare_cbinit_config(self, service_type):
+        super(CloudbaseinitWinrmRecipe, self).prepare_cbinit_config(service_type)
+        self._cbinit_conf.set_conf_value(
+            name="plugins",
             value="cloudbaseinit.plugins.windows.winrmcertificateauth."
                   "ConfigWinRMCertificateAuthPlugin,"
                   "cloudbaseinit.plugins.windows.winrmlistener."
-                  "ConfigWinRMListenerPlugin",
-            execute_function=self._execute)
+                  "ConfigWinRMListenerPlugin")
 
 
 class CloudbaseinitHTTPRecipe(CloudbaseinitMockServiceRecipe):
@@ -358,10 +392,10 @@ class CloudbaseinitKeysRecipe(CloudbaseinitHTTPRecipe,
                               CloudbaseinitCreateUserRecipe):
     """Recipe that facilitates x509 certificates and public keys testing."""
 
-    def pre_sysprep(self):
-        super(CloudbaseinitKeysRecipe, self).pre_sysprep()
-        introspection.set_config_option(
-            option="plugins",
+    def prepare_cbinit_config(self, service_type):
+        super(CloudbaseinitKeysRecipe, self).prepare_cbinit_config(service_type)
+        self._cbinit_conf.set_conf_value(
+            name="plugins",
             value="cloudbaseinit.plugins.windows.createuser."
                   "CreateUserPlugin,"
                   "cloudbaseinit.plugins.windows.setuserpassword."
@@ -371,8 +405,7 @@ class CloudbaseinitKeysRecipe(CloudbaseinitHTTPRecipe,
                   "cloudbaseinit.plugins.windows.winrmlistener."
                   "ConfigWinRMListenerPlugin,"
                   "cloudbaseinit.plugins.windows.winrmcertificateauth."
-                  "ConfigWinRMCertificateAuthPlugin",
-            execute_function=self._execute)
+                  "ConfigWinRMCertificateAuthPlugin")
 
 
 class CloudbaseinitLocalScriptsRecipe(CloudbaseinitRecipe):
