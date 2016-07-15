@@ -52,12 +52,12 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         """Get instalation script for CloudbaseInit."""
         self._backend.remote_client.manager.get_installation_script()
 
-    def install_cbinit(self, service_type):
+    def install_cbinit(self):
         """Proceed on checking if cloudbase-init should be installed."""
         try:
             cbdir = introspection.get_cbinit_dir(self._execute)
         except exceptions.ArgusError:
-            self._backend.remote_client.manager.install_cbinit(service_type)
+            self._backend.remote_client.manager.install_cbinit()
             self._grab_cbinit_installation_log()
         else:
             # If the directory already exists, we won't be installing Cb-init.

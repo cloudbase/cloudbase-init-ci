@@ -1,54 +1,11 @@
 param
 (
-    [string]$serviceType = 'http',
-    [string]$installer = 'CloudbaseInitSetup_Beta_x64.msi',
-    [string]$activation = 'False'
+    [string]$installer = 'CloudbaseInitSetup_Beta_x64.msi'
 )
 
 Import-Module C:\common.psm1
 $ErrorActionPreference = "Stop"
 
-
-function Set-LocalScripts([string]$ProgramFilesDir) {
-    $path = "$ProgramFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
-
-    # Write the locations of the scripts in the cloudbase-init configuration file.
-    $home_drive = ${ENV:HOMEDRIVE}
-    $scripts = $home_drive + '\Scripts'
-    $value = "`nlocal_scripts_path=$scripts"
-    ((Get-Content $path) + $value) | Set-Content $path
-    mkdir $scripts -ErrorAction Ignore
-}
-
-
-function Set-Service([string]$ProgramFilesDir) {
-    $path = "$ProgramFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
-
-    if ($serviceType -eq 'http') {
-        $value = "metadata_services=cloudbaseinit.metadata.services.httpservice.HttpService"
-    } elseif ($serviceType -eq 'configdrive') {
-        $value = "metadata_services=cloudbaseinit.metadata.services.configdrive.ConfigDriveService"
-    } elseif ($serviceType -eq 'ec2') {
-        $value = "metadata_services=cloudbaseinit.metadata.services.ec2service.EC2Service"
-    } elseif ($serviceType -eq 'opennebula') {
-        $value = "metadata_services=cloudbaseinit.metadata.services.opennebulaservice.OpenNebulaService"
-    } elseif ($serviceType -eq 'cloudstack') {
-        $value = "metadata_services=cloudbaseinit.metadata.services.cloudstack.CloudStack"
-    } elseif ($serviceType -eq 'maas') {
-        $value = "metadata_services=cloudbaseinit.metadata.services.maasservice.MaaSHttpService"
-    }
-    ((Get-Content $path) + $value) | Set-content $path
-}
-
-function Set-WindowsActivation([string]$ProgramFilesDir) {
-    if ($activation -eq 'False') {
-        $value = "activate_windows=False"
-    } elseif ($activation -eq 'True') {
-        $value = "activate_windows=True"
-    }
-    $path = "$ProgramFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
-    ((Get-Content $path) + $value) | Set-content $path
-}
 
 function Set-CloudbaseInitServiceStartupPolicy {
     #Cloudbase Init service must start only after the sysprep has rebooted the
@@ -86,15 +43,6 @@ try {
     if ($p.ExitCode -ne 0)
     {
         throw "Installing $CloudbaseInitMsiPath failed. Log: $CloudbaseInitMsiLog"
-    }
-
-    $programFilesDir = Get-ProgramDir
-    Set-LocalScripts $ProgramFilesDir
-    Set-WindowsActivation $ProgramFilesDir
-
-    if ($serviceType)
-    {
-        Set-Service $ProgramFilesDir
     }
 
     Set-CloudbaseInitServiceStartupPolicy

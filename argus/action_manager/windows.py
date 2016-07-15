@@ -115,7 +115,7 @@ class WindowsActionManager(base.BaseActionManager):
         self.download_resource("windows/installCBinit.ps1",
                                r"C:\installCBinit.ps1")
 
-    def install_cbinit(self, service_type):
+    def install_cbinit(self):
         """Run the installation script for CloudbaseInit."""
         LOG.debug("Installing Cloudbase-Init ...")
 
@@ -126,11 +126,9 @@ class WindowsActionManager(base.BaseActionManager):
         # TODO(cpopa): the service type is specific to each scenario,
         # find a way to pass it
         LOG.info("Run the downloaded installation script "
-                 "using the installer %r with service %r.",
-                 installer, service_type)
-        activation = self._conf.cloudbaseinit.activate_windows
-        parameters = ('-serviceType {} -installer {} -activation {}'
-                      .format(service_type, installer, activation))
+                 "using the installer %r.", installer)
+
+        parameters = '-installer {}'.format(installer)
         try:
             self.execute_powershell_resource_script(
                 resource_location='windows/installCBinit.ps1',
@@ -142,12 +140,11 @@ class WindowsActionManager(base.BaseActionManager):
             # for whatever reason. In this case, we're falling back
             # to use a scheduled task.
             LOG.debug("Cannot install, deploying using a scheduled task.")
-            self._deploy_using_scheduled_task(installer, service_type)
+            self._deploy_using_scheduled_task(installer)
 
-    def _deploy_using_scheduled_task(self, installer, service_type):
+    def _deploy_using_scheduled_task(self, installer):
         resource_script = 'windows/schedule_installer.bat'
-        parameters = '-serviceeType {} -installer {}'.format(service_type,
-                                                             installer)
+        parameters = '-installer {}'.format(installer)
         self.execute_cmd_resource_script(resource_script, parameters)
 
     def sysprep(self):
