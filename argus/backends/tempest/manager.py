@@ -21,7 +21,7 @@ from argus import util
 
 with util.restore_excepthook():
     from tempest import clients
-    from tempest.common import credentials
+    from tempest.common import credentials_factory as credentials
     from tempest.common import waiters
 
 
