@@ -245,7 +245,7 @@ class BaseHeatBackend(base.CloudBackend):
 
     def get_image_by_ref(self):
         """Get the image object by its reference id."""
-        return self._manager.images_client.show_image(self._conf.openstack.image_ref)
+        return self._manager.compute_images_client.show_image(self._conf.openstack.image_ref)
 
 
 class WindowsHeatBackend(windows.WindowsBackendMixin, BaseHeatBackend):
