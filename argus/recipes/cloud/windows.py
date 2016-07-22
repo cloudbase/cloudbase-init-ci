@@ -396,7 +396,13 @@ class CloudbaseinitImageRecipe(CloudbaseinitRecipe):
         paths = [ntpath.join(cbdir, "log", name)
                  for name in ["cloudbase-init-unattend.log",
                               "cloudbase-init.log"]]
-        self._wait_cbinit_finalization(searched_paths=paths)
+
+        LOG.debug("Check the heartbeat patch ...")
+        self._backend.remote_client.manager.check_cbinit_service(
+            searched_paths=paths)
+
+        LOG.debug("Wait for the CloudBase Initit service to stop ...")
+        self._backend.remote_client.manager.wait_cbinit_service()
 
     def prepare(self, service_type=None, **kwargs):
         LOG.info("Preparing already syspreped instance...")
