@@ -34,6 +34,8 @@ RESOURCE_DELETED_STATUS = "DELETE_CREATE"
 HEAT_RESOURCE_LIMIT = 10
 HEAT_RESOURCE_TIMEOUT = 0.5
 
+RETRY_COUNT = 50
+RETRY_DELAY = 10
 
 # pylint: disable=abstract-method; FP: https://bitbucket.org/logilab/pylint/issues/565
 @six.add_metaclass(abc.ABCMeta)
@@ -154,13 +156,42 @@ class BaseHeatBackend(base.CloudBackend):
         if self._keypair:
             self._keypair.destroy()
 
+        # if no stack was created
+        if not reduce(lambda a, b: a + 1, self._heat_client.stacks.list(), 0):
+            return
         try:
-            self._heat_client.stacks.delete(stack_id=self._name)
-        finally:
             self._delete_floating_ip()
+            self._heat_client.stacks.delete(stack_id=self._name)
+            self._wait_stacks()
+        finally:
             self._manager.cleanup_credentials()
 
+    def _get_stacks(self):
+        """Return the number of heat stacks."""
+        iterator = self._heat_client.stacks.list()
+        return reduce(lambda acc, e: acc + 1, iterator, 0)
+
+    def _wait_stacks(self, retry_count=RETRY_COUNT,
+                     retry_delay=RETRY_DELAY):
+        """We are going to wait untill all stacks are deleted."""
+        stacks = self._get_stacks()
+        retry_count = stacks * retry_count
+        retry_delay = stacks * retry_delay
+        while retry_count > 0:
+            if not self._get_stacks():
+                return
+            else:
+                retry_count -= 1
+            time.sleep(retry_delay)
+        raise exceptions.ArgusHeatTeardown(
+            "All stacks failed to be deleted in time!")
+
     def _delete_floating_ip(self):
+        # The floating IP in the new version is deleted when the
+        # stack is deleted
+        # In the new scenarios this code is not called but I keep
+        # it to preserve the logic if more complicated backends are
+        # needed
         self._manager.floating_ips_client.delete_floating_ip(
             self._floating_ip_resource['id'])
         try:

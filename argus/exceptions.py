@@ -28,3 +28,7 @@ class ArgusCLIError(ArgusError):
 
 class ArgusPermissionDenied(ArgusError):
     pass
+
+
+class ArgusHeatTeardown(ArgusError):
+    pass
