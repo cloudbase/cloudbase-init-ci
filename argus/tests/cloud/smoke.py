@@ -125,7 +125,7 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
     @property
     def service_url(self):
         return "http://%(host)s:%(port)s/" % {"host": "0.0.0.0",
-                                              "port": 8080}
+                                              "port": 8888}
 
     @property
     def password(self):
