@@ -18,6 +18,7 @@
 import os
 import unittest
 
+from argus import exceptions
 from argus import util
 
 
@@ -40,13 +41,17 @@ def _dnsmasq_configured():
     """
     if not os.path.exists(DHCP_AGENT):
         return False
-    with open(DHCP_AGENT) as stream:
-        for line in stream:
-            if not line.startswith('dnsmasq_config_file'):
-                continue
-            _, _, dnsmasq_file = line.partition("=")
-            if dnsmasq_file.strip() == DNSMASQ_NEUTRON:
-                return True
+    try:
+        with open(DHCP_AGENT) as stream:
+            for line in stream:
+                if not line.startswith('dnsmasq_config_file'):
+                    continue
+                _, _, dnsmasq_file = line.partition("=")
+                if dnsmasq_file.strip() == DNSMASQ_NEUTRON:
+                    return True
+    except IOError:
+        raise exceptions.ArgusPermissionDenied("Add read premission for %s." %
+                                               DHCP_AGENT)
     return False
 
 

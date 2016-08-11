@@ -25,3 +25,10 @@ class ArgusTimeoutError(ArgusError):
 
 class ArgusCLIError(ArgusError):
     pass
+
+class ArgusPermissionDenied(ArgusError):
+    pass
+
+
+class ArgusHeatTeardown(ArgusError):
+    pass

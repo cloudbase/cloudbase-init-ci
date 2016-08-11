@@ -48,7 +48,7 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
         All these networks will be attached to the newly created
         instance without letting nova to handle this part.
         """
-        _networks = self._manager.networks_client.list_networks()["networks"]
+        _networks = self._manager.compute_networks_client.list_networks()["networks"]
         # Skip external/private networks.
         networks = [net["id"] for net in _networks
                     if not net["router:external"]]
@@ -131,13 +131,14 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
 
     def get_network_interfaces(self):
         """Retrieve and parse network details from the compute node."""
+        compute_networks_client = self._manager.compute_networks_client
         networks_client = self._manager.networks_client
-        network_client = self._manager.network_client
         subnets_client = self._manager.subnets_client
         guest_nics = []
         for network in self._networks or []:
             network_id = network["uuid"]
-            net_details = networks_client.show_network(network_id)["network"]
+            net_details = (compute_networks_client.
+                           show_network(network_id)["network"])
             nic = dict.fromkeys(util.NETWORK_KEYS)
             for subnet_id in net_details["subnets"]:
                 details = subnets_client.show_subnet(subnet_id)["subnet"]
@@ -158,7 +159,7 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
                 # There should be no conflicts because on the current
                 # architecture every instance is using its own router,
                 # subnet and network accessible only to it.
-                ports = network_client.list_ports()["ports"]
+                ports = networks_client.list_ports()["ports"]
                 for port in ports:
                     # Select instance related ports only, with the
                     # corresponding subnet ID.

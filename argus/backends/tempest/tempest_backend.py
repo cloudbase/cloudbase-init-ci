@@ -102,6 +102,12 @@ class BaseTempestBackend(base_backend.CloudBackend):
             floating_ip['ip'], self.internal_instance_id())
         return floating_ip
 
+    @property
+    def __get_id_tenant_network(self):
+        # TODO(mmicu): Isolate the project better so you don't
+        # need to specify the tenant network
+        return self._manager.primary_credentials().network["id"]
+
     def _add_security_group_exceptions(self, secgroup_id):
         _client = self._manager.security_group_rules_client
         rulesets = [
@@ -156,8 +162,8 @@ class BaseTempestBackend(base_backend.CloudBackend):
         for rule in self._add_security_group_exceptions(secgroup['id']):
             self._security_groups_rules.append(rule['id'])
         self._manager.servers_client.add_security_group(
-            self.internal_instance_id(),
-            secgroup['name'])
+            server_id=self.internal_instance_id(),
+            name=secgroup['name'])
         return secgroup
 
     def cleanup(self):
@@ -176,8 +182,8 @@ class BaseTempestBackend(base_backend.CloudBackend):
 
         if self._security_group:
             self._manager.servers_client.remove_security_group(
-                self.internal_instance_id(),
-                self._security_group['name'])
+                server_id=self.internal_instance_id(),
+                name=self._security_group['name'])
 
         if self._server:
             self._manager.servers_client.delete_server(
@@ -208,7 +214,7 @@ class BaseTempestBackend(base_backend.CloudBackend):
             disk_config='AUTO',
             user_data=self.userdata,
             metadata=self.metadata,
-            networks=self._networks,
+            networks=self._networks or [{"uuid": self.__get_id_tenant_network}],
             availability_zone=self._availability_zone)
         self._floating_ip = self._assign_floating_ip()
         self._security_group = self._create_security_groups()
@@ -243,7 +249,8 @@ class BaseTempestBackend(base_backend.CloudBackend):
         return self._keypair.private_key
 
     def get_image_by_ref(self):
-        image = self._manager.images_client.show_image(self._conf.openstack.image_ref)
+        image = self._manager.compute_images_client.show_image(
+            self._conf.openstack.image_ref)
         return image['image']
 
     def floating_ip(self):

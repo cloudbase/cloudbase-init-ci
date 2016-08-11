@@ -21,7 +21,7 @@ from argus import util
 
 with util.restore_excepthook():
     from tempest import clients
-    from tempest.common import credentials
+    from tempest.common import credentials_factory as credentials
     from tempest.common import waiters
 
 
@@ -53,20 +53,21 @@ class APIManager(object):
 
         # Underlying clients.
         self.flavors_client = self._manager.flavors_client
-        self.floating_ips_client = self._manager.floating_ips_client
+        self.floating_ips_client = self._manager.compute_floating_ips_client
 
         # Glance image client v1
         self.image_client = self._manager.image_client
 
         # Compute image client
-        self.images_client = self._manager.images_client
+        self.compute_images_client = self._manager.compute_images_client
         self.keypairs_client = self._manager.keypairs_client
         self.availability_zone_client = self._manager.availability_zone_client
 
         # Nova security groups client
-        self.security_groups_client = self._manager.security_groups_client
-        self.security_group_rules_client = \
-            self._manager.security_group_rules_client
+        self.security_groups_client = (
+            self._manager.compute_security_groups_client)
+        self.security_group_rules_client = (
+            self._manager.compute_security_group_rules_client)
 
         self.servers_client = self._manager.servers_client
         self.volumes_client = self._manager.volumes_client
@@ -74,8 +75,8 @@ class APIManager(object):
         self.interface_client = self._manager.interfaces_client
 
         # Neutron network client
-        self.network_client = self._manager.network_client
-        self.networks_client = self._manager.networks_client
+        self.networks_client = self._manager.compute_networks_client
+        self.compute_networks_client = self._manager.compute_networks_client
         self.subnets_client = self._manager.subnets_client
 
         # Heat client
@@ -107,7 +108,7 @@ class APIManager(object):
     def reboot_instance(self, instance_id):
         """Reboot the instance with the given id."""
         self.servers_client.reboot_server(
-            server_id=instance_id, reboot_type='soft')
+            server_id=instance_id, type='soft')
         waiters.wait_for_server_status(
             self.servers_client,
             instance_id, 'ACTIVE')
@@ -122,7 +123,7 @@ class APIManager(object):
             A keypair whose private key can be used to decrypt
             the password.
         """
-        encoded_password = self.servers_client.get_password(
+        encoded_password = self.servers_client.show_password(
             instance_id)
         with _create_tempfile(keypair.private_key) as tmp:
             return util.decrypt_password(
@@ -131,7 +132,7 @@ class APIManager(object):
 
     def _instance_output(self, instance_id, limit):
         return self.servers_client.get_console_output(
-            instance_id, limit)['output']
+            server_id=instance_id, length=limit)['output']
 
     def instance_output(self, instance_id, limit):
         """Get the console output, sent from the instance.

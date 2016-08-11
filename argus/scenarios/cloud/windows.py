@@ -78,7 +78,7 @@ class CloudstackWindowsScenario(BaseServiceMockMixin,
         named(application=service_mock.CloudstackPasswordManagerApp,
               script_name="",
               host="0.0.0.0",
-              port=8080),
+              port=8888),
     ]
 
 
