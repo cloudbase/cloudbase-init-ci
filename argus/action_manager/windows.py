@@ -26,6 +26,17 @@ from winrm import exceptions as winrm_exceptions
 LOG = util.LOG
 
 
+def wait_boot_completion(client, username):
+    wait_cmd = ('(Get-CimInstance Win32_Account | '
+                'where -Property Name -contains {0}).Name'
+                .format(username))
+    client.run_command_until_condition(
+        wait_cmd,
+        lambda stdout: stdout.strip() == username,
+        retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+        command_type=util.POWERSHELL)
+
+
 class WindowsActionManager(base.BaseActionManager):
 
     def __init__(self, client, config, os_type=util.WINDOWS):
@@ -202,16 +213,8 @@ class WindowsActionManager(base.BaseActionManager):
     def wait_boot_completion(self):
         """Wait for a resonable amount of time the instance to boot."""
         LOG.info("Waiting for boot completion...")
-
         username = self._conf.openstack.image_username
-        wait_cmd = ('(Get-WmiObject Win32_Account | '
-                    'where -Property Name -contains {0}).Name'
-                    .format(username))
-        self._client.run_command_until_condition(
-            wait_cmd,
-            lambda stdout: stdout.strip() == username,
-            retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
-            command_type=util.POWERSHELL)
+        wait_boot_completion(self._client, username)
 
     def specific_prepare(self):
         """Prepare some OS specific resources."""
@@ -260,7 +263,7 @@ def _is_nanoserver(client):
 
        Using the powershell code from here: https://goo.gl/UD27SK
     """
-    server_level_key = (r'HKLM:Software\Microsoft\Windows NT\CurrentVersion'
+    server_level_key = (r'HKLM:\Software\Microsoft\Windows NT\CurrentVersion'
                         r'\Server\ServerLevels')
 
     cmd = r'Test-Path "{}"'.format(server_level_key)
@@ -271,12 +274,12 @@ def _is_nanoserver(client):
     if path_exists == "False":
         return False
 
-    cmd = r'(Get-ItemProperty {}).NanoServer'.format(server_level_key)
+    cmd = r'(Get-ItemProperty "{}").NanoServer'.format(server_level_key)
     nanoserver_property, _, _ = client.run_command_with_retry(
         cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
         command_type=util.POWERSHELL)
 
-    return nanoserver_property == "1"
+    return len(nanoserver_property) > 0 and nanoserver_property[0] == "1"
 
 
 def _get_major_version(client):
@@ -298,7 +301,7 @@ def _get_product_type(client):
     :param client:
         A Windows Client.
     """
-    cmd = r"(Get-WmiObject -Class Win32_OperatingSystem).producttype"
+    cmd = r"(Get-CimInstance -Class Win32_OperatingSystem).producttype"
     product_type, _, _ = client.run_command_with_retry(
         cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
         command_type=util.POWERSHELL)
@@ -312,14 +315,7 @@ def get_windows_action_manager(client):
 
     conf = util.get_config()
     username = conf.openstack.image_username
-    wait_cmd = ('(Get-WmiObject Win32_Account | '
-                'where -Property Name -contains {0}).Name'
-                .format(username))
-    client.run_command_until_condition(
-        wait_cmd,
-        lambda stdout: stdout.strip() == username,
-        retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
-        command_type=util.POWERSHELL)
+    wait_boot_completion(client, username)
 
     # get os type
     product_type = _get_product_type(client)
