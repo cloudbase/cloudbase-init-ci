@@ -142,7 +142,7 @@ class WinRemoteClient(base.BaseClient):
         commands = []
         for command in _base64_read_file(filepath):
             remote_command = (
-                "{content} >> {remote_destination}"
+                "{content} >> '{remote_destination}'"
                 .format(content=get_string_cmd.format(command),
                         remote_destination=remote_destination))
 
