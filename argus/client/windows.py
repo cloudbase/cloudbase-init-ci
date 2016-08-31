@@ -120,6 +120,7 @@ class WinRemoteClient(base.BaseClient):
                                  transport='plaintext',
                                  username=self._username,
                                  password=self._password,
+                                 server_cert_validation='ignore',
                                  cert_pem=self._cert_pem,
                                  cert_key_pem=self._cert_key)
 
