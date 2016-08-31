@@ -304,7 +304,7 @@ class TestsBaseSmoke(TestCreatedUser,
     def test_mtu(self):
         # Verify that we have the expected MTU in the instance.
         mtu = self._introspection.get_instance_mtu()
-        expected_mtu = _get_dhcp_value('26')
+        expected_mtu = str(self._backend._get_mtu())
         self.assertEqual(expected_mtu, mtu)
 
     def test_user_belongs_to_group(self):
