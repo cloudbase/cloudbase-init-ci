@@ -112,4 +112,18 @@ class BaseActionManager(object):
     @abc.abstractmethod
     def rmdir(self, path):
         """Remove a directory."""
+
+    @abc.abstractmethod
+    def exists(self, path):
+        """Check if the path exists."""
+        pass
+
+    @abc.abstractmethod
+    def is_file(self, path):
+        """Check if the file exists."""
+        pass
+
+    @abc.abstractmethod
+    def is_dir(self, path):
+        """Check if the directory exists."""
         pass
