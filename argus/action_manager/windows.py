@@ -61,8 +61,8 @@ class WindowsActionManager(base.BaseActionManager):
             remote resouce.
         """
         LOG.debug("Downloading from %s to %s ", uri, location)
-        cmd = ("Invoke-WebRequest -Uri {} "
-               "-OutFile {}".format(uri, location))
+        cmd = ('Invoke-WebRequest -Uri {} '
+               '-OutFile "{}"'.format(uri, location))
         self._client.run_command_with_retry(cmd,
                                             count=util.RETRY_COUNT,
                                             delay=util.RETRY_DELAY,
@@ -94,7 +94,7 @@ class WindowsActionManager(base.BaseActionManager):
 
         instance_location = r"C:\{}".format(resource_location.split('/')[-1])
         self.download_resource(resource_location, instance_location)
-        cmd = "{} {}".format(instance_location, parameters)
+        cmd = '"{}" {}'.format(instance_location, parameters)
         self._client.run_command_with_retry(cmd,
                                             count=util.RETRY_COUNT,
                                             delay=util.RETRY_DELAY,
@@ -204,7 +204,7 @@ class WindowsActionManager(base.BaseActionManager):
             Paths to files that should exist if the hearbeat patch is
             aplied.
         """
-        test_cmd = 'Test-Path {}'
+        test_cmd = 'Test-Path "{}"'
         check_cmds = [test_cmd.format(path) for path in searched_paths or []]
         for check_cmd in check_cmds:
             self._client.run_command_until_condition(
@@ -226,28 +226,20 @@ class WindowsActionManager(base.BaseActionManager):
 
     def remove(self, path):
         """Remove a file."""
-        if not self.exists(path):
+        if not self.exists(path) or not self.is_file(path):
             raise exceptions.ArgusCLIError("Invalid Path '{}'.".format(path))
 
-        if not self.is_file(path):
-            raise exceptions.ArgusCLIError(
-                "The path '{}' is not a file.".format(path))
-
         LOG.debug("Remove file %s", path)
-        cmd = "Remove-Item -Path '{}'".format(path)
+        cmd = "Remove-Item -Force -Path '{path}'".format(path=path)
         self._client.run_command_with_retry(cmd, command_type=util.POWERSHELL)
 
     def rmdir(self, path):
         """Remove a directory."""
-        if not self.exists(path):
+        if not self.exists(path) or not self.is_dir(path):
             raise exceptions.ArgusCLIError("Invalid Path '{}'.".format(path))
 
-        if not self.is_file(path):
-            raise exceptions.ArgusCLIError(
-                "The path '{}' is not a directory.".format(path))
-
         LOG.debug("Remove directory  %s", path)
-        cmd = "Remove-Item -Recurse -Path '{}'".format(path)
+        cmd = "Remove-Item -Force -Recurse -Path '{path}'".format(path=path)
         self._client.run_command_with_retry(cmd, command_type=util.POWERSHELL)
 
     def _exists(self, path, path_type):
