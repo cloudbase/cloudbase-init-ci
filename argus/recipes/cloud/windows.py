@@ -327,7 +327,8 @@ class ClearPasswordLogonRecipe(BaseNextLogonRecipe):
 class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
     """A recipe for patching the cloudbaseinit's conf with a custom server."""
 
-    config_entry = None
+    config_entry = "metadata_base_url"
+    config_group = "DEFAULT"
     pattern = "{}"
 
     def prepare_cbinit_config(self, service_type):
@@ -341,45 +342,31 @@ class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
         # Append service IP as a config option.
         address = self.pattern.format(util.get_local_ip())
         self._cbinit_conf.set_conf_value(name=self.config_entry,
-                                         value=address)
+                                         value=address,
+                                         section=self.config_group)
 
 
 class CloudbaseinitEC2Recipe(CloudbaseinitMockServiceRecipe):
     """Recipe for EC2 metadata service mocking."""
 
-    config_entry = "ec2_metadata_base_url"
+    config_group = "ec2"
     pattern = "http://{}:2000/"
 
 
 class CloudbaseinitCloudstackRecipe(CloudbaseinitMockServiceRecipe):
     """Recipe for Cloudstack metadata service mocking."""
 
-    config_entry = "cloudstack_metadata_ip"
-    pattern = "{}:2001"
+    config_group = "cloudstack"
+    pattern = "http://{}:2001"
 
     def pre_sysprep(self):
         super(CloudbaseinitCloudstackRecipe, self).pre_sysprep()
-
-        python_dir = introspection.get_python_dir(self._execute)
-        cbinit = ntpath.join(python_dir, 'Lib', 'site-packages',
-                             'cloudbaseinit')
-
-        # Install mock
-        python = ntpath.join(python_dir, "python.exe")
-        command = '"{}" -m pip install mock'
-        self._execute(command.format(python), command_type=util.CMD)
-
-        # Get the cloudstack patching script and patch the installation.
-        resource_location = "windows/patch_cloudstack.ps1"
-        params = r'"{}"'.format(cbinit)
-        self._backend.remote_client.manager.execute_powershell_resource_script(
-            resource_location=resource_location, parameters=params)
 
 
 class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
     """Recipe for Maas metadata service mocking."""
 
-    config_entry = "maas_metadata_url"
+    config_group = "maas"
     pattern = "http://{}:2002"
 
     def prepare_cbinit_config(self, service_type):
@@ -414,7 +401,6 @@ class CloudbaseinitWinrmRecipe(CloudbaseinitCreateUserRecipe):
 class CloudbaseinitHTTPRecipe(CloudbaseinitMockServiceRecipe):
     """Recipe for http metadata service mocking."""
 
-    config_entry = "metadata_base_url"
     pattern = "http://{}:2003/"
 
 
