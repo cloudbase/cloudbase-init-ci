@@ -22,7 +22,6 @@ import six
 from argus.backends import base as base_backend
 from argus.backends import windows
 from argus.backends.tempest import manager as api_manager
-from argus import exceptions
 from argus import util
 
 with util.restore_excepthook():
@@ -103,12 +102,8 @@ class BaseTempestBackend(base_backend.CloudBackend):
             floating_ip['ip'], self.internal_instance_id())
         return floating_ip
 
-    def _get_mtu(self):
-        try:
-            return self._manager.primary_credentials().network["mtu"]
-        except Exception as exc:
-            raise exceptions.ArgusError('Could not get the MTU from the '
-                                        'tempest backend: %s' % exc)
+    def get_mtu(self):
+        return self._manager.get_mtu()
 
     @property
     def __get_id_tenant_network(self):

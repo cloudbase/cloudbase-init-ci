@@ -300,11 +300,10 @@ class TestsBaseSmoke(TestCreatedUser,
         self.assertEqual(set(self._backend.public_key().splitlines()),
                          set(public_keys))
 
-    @test_util.skip_unless_dnsmasq_configured
     def test_mtu(self):
         # Verify that we have the expected MTU in the instance.
         mtu = self._introspection.get_instance_mtu()
-        expected_mtu = str(self._backend._get_mtu())
+        expected_mtu = str(self._backend.get_mtu())
         self.assertEqual(expected_mtu, mtu)
 
     def test_user_belongs_to_group(self):

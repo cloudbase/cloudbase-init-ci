@@ -278,6 +278,9 @@ class BaseHeatBackend(base.CloudBackend):
         """Get the image object by its reference id."""
         return self._manager.compute_images_client.show_image(self._conf.openstack.image_ref)
 
+    def get_mtu(self):
+        return self._manager.get_mtu()
+
 
 class WindowsHeatBackend(windows.WindowsBackendMixin, BaseHeatBackend):
     """Heat backend tailored to work with Windows platforms."""
