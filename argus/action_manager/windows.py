@@ -128,9 +128,9 @@ class WindowsActionManager(base.BaseActionManager):
         LOG.info("Run the downloaded installation script "
                  "using the installer %r with service %r.",
                  installer, service_type)
-
-        parameters = '-serviceType {} -installer {}'.format(service_type,
-                                                            installer)
+        activation = self._conf.cloudbaseinit.activate_windows
+        parameters = ('-serviceType {} -installer {} -activation {}'
+                      .format(service_type, installer, activation))
         try:
             self.execute_powershell_resource_script(
                 resource_location='windows/installCBinit.ps1',

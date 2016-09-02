@@ -15,6 +15,7 @@
 
 """Smoke tests for the cloudbaseinit."""
 
+import unittest
 import pkg_resources
 
 from argus.tests import base
@@ -22,6 +23,9 @@ from argus.tests.cloud import smoke
 from argus.tests.cloud import util as test_util
 from argus import exceptions
 from argus import util
+
+
+CONFIG = util.get_config()
 
 
 def _parse_licenses(output):
@@ -63,6 +67,8 @@ class TestSmoke(smoke.TestsBaseSmoke):
 
         self.assertEqual("Running\r\n", str(stdout))
 
+    @unittest.skipUnless(CONFIG.cloudbaseinit.activate_windows,
+    	                'Needs Windows activation')
     def test_licensing(self):
         # Check that the instance OS was licensed properly.
         command = ('Get-WmiObject SoftwareLicensingProduct | '
