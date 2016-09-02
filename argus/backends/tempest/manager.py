@@ -17,6 +17,7 @@ import contextlib
 import os
 import tempfile
 
+from argus import exceptions
 from argus import util
 
 with util.restore_excepthook():
@@ -155,6 +156,14 @@ class APIManager(object):
     def instance_server(self, instance_id):
         """Get more details about the given instance id."""
         return self.servers_client.show_server(instance_id)['server']
+
+    def get_mtu(self):
+        """Get the MTU value, from the backend."""
+        try:
+            return self.primary_credentials().network["mtu"]
+        except Exception as exc:
+            raise exceptions.ArgusError('Could not get the MTU from the '
+                                        'tempest backend: %s' % exc)
 
 
 class Keypair(object):
