@@ -85,12 +85,12 @@ class ConfigurationParser(object):
     def cloudbaseinit(self):
         cloudbaseinit = collections.namedtuple(
             'cloudbaseinit',
-            'created_user group')
+            'created_user group activate_windows')
 
         group = self._parser.get('cloudbaseinit', 'group')
         created_user = self._parser.get('cloudbaseinit', 'created_user')
-
-        return cloudbaseinit(created_user, group)
+        activate_windows = self._parser.getboolean('cloudbaseinit', 'activate_windows')
+        return cloudbaseinit(created_user, group, activate_windows)
 
     @property
     def openstack(self):

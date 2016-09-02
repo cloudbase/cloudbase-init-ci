@@ -1,7 +1,8 @@
 param
 (
     [string]$serviceType = 'http',
-    [string]$installer = 'CloudbaseInitSetup_Beta_x64.msi'
+    [string]$installer = 'CloudbaseInitSetup_Beta_x64.msi',
+    [string]$activation = 'False'
 )
 
 Import-Module C:\common.psm1
@@ -40,7 +41,11 @@ function Set-Service([string]$ProgramFilesDir) {
 }
 
 function Set-WindowsActivation([string]$ProgramFilesDir) {
-    $value = "activate_windows=True"
+    if ($activation -eq 'False') {
+        $value = "activate_windows=False"
+    } elseif ($activation -eq 'True') {
+        $value = "activate_windows=True"
+    }
     $path = "$ProgramFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\cloudbase-init.conf"
     ((Get-Content $path) + $value) | Set-content $path
 }
