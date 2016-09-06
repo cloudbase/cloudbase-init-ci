@@ -105,7 +105,7 @@ class ScenarioCloudstackSmokeUpdatePassword(
     test_classes = (smoke.TestCloudstackUpdatePasswordSmoke,
                     smoke.TestNoError)
     recipe_type = recipe.CloudbaseinitCloudstackRecipe
-    service_type = 'cloudstack'
+    service_type = util.CLOUD_STACK_SERVICE
     metadata = {"admin_pass": "PASsw0r4&!="}
 
 
@@ -115,14 +115,14 @@ class ScenarioCloudstackMetadata(
 
     test_classes = (test_smoke.TestSmoke, )
     recipe_type = recipe.CloudbaseinitCloudstackRecipe
-    service_type = 'cloudstack'
+    service_type = util.CLOUD_STACK_SERVICE
 
 
 class ScenarioEC2Metadata(BaseWindowsScenario,
                           windows_scenarios.EC2WindowsScenario):
     test_classes = (test_smoke.TestSmoke, )
     recipe_type = recipe.CloudbaseinitEC2Recipe
-    service_type = 'ec2'
+    service_type = util.EC2_SERVICE
 
 
 class ScenarioMaasMetadata(BaseWindowsScenario,
@@ -130,7 +130,7 @@ class ScenarioMaasMetadata(BaseWindowsScenario,
 
     test_classes = (test_smoke.TestSmoke, )
     recipe_type = recipe.CloudbaseinitMaasRecipe
-    service_type = 'maas'
+    service_type = util.MAAS_SERVICE
 
 
 class ScenarioWinRMPlugin(BaseWindowsScenario):
@@ -153,7 +153,7 @@ class ScenarioX509PublicKeys(BaseWindowsScenario,
                     test_smoke.TestCertificateWinRM)
     recipe_type = recipe.CloudbaseinitKeysRecipe
     metadata = {"admin_pass": "PASsw0r4&!="}
-    service_type = 'http'
+    service_type = util.HTTP_SERVICE
 
 
 class ScenarioNextLogonAlwaysChange(BaseWindowsScenario):
@@ -182,7 +182,7 @@ class ScenarioLocalScripts(BaseWindowsScenario):
                  'Needs special availability zone')
 class ScenarioSmokeConfigdriveVfatDrive(BaseWindowsScenario):
     test_classes = (test_smoke.TestSmoke, )
-    service_type = 'configdrive'
+    service_type = util.CONFIG_DRIVE_SERVICE
     availability_zone = 'configdrive_vfat_drive'
 
 
@@ -190,7 +190,7 @@ class ScenarioSmokeConfigdriveVfatDrive(BaseWindowsScenario):
                  'Needs special availability zone')
 class ScenarioSmokeConfigdriveVfatCdrom(BaseWindowsScenario):
     test_classes = (test_smoke.TestSmoke, )
-    service_type = 'configdrive'
+    service_type = util.CONFIG_DRIVE_SERVICE
     availability_zone = 'configdrive_vfat_cdrom'
 
 
@@ -198,7 +198,7 @@ class ScenarioSmokeConfigdriveVfatCdrom(BaseWindowsScenario):
                  'Needs special availability zone')
 class ScenarioSmokeConfigdriveIso9660Drive(BaseWindowsScenario):
     test_classes = (test_smoke.TestSmoke, )
-    service_type = 'configdrive'
+    service_type = util.CONFIG_DRIVE_SERVICE
     availability_zone = 'configdrive_iso9660_drive'
 
 
@@ -206,7 +206,7 @@ class ScenarioSmokeConfigdriveIso9660Drive(BaseWindowsScenario):
                  'Needs special availability zone')
 class ScenarioSmokeConfigdriveIso9660Cdrom(BaseWindowsScenario):
     test_classes = (test_smoke.TestSmoke, )
-    service_type = 'configdrive'
+    service_type = util.CONFIG_DRIVE_SERVICE
     availability_zone = 'configdrive_iso9660_cdrom'
 
 
