@@ -44,6 +44,14 @@ POWERSHELL_SCRIPT_UNRESTRICTED = "powershell_script_unrestricted"
 POWERSHELL_SCRIPT_BYPASS = "powershell_script_bypass"
 POWERSHELL_SCRIPT_UNDEFINED = "powershell_script_undefined"
 
+SERVICES_PREFIX = "cloudbaseinit.metadata.services"
+HTTP_SERVICE = 'http'
+CONFIG_DRIVE_SERVICE = 'configdrive'
+EC2_SERVICE = 'ec2'
+OPEN_NEBULA_SERVICE = 'opennebula'
+CLOUD_STACK_SERVICE = 'cloudstack'
+MAAS_SERVICE = 'maas'
+
 __all__ = (
     'decrypt_password',
     'get_config',

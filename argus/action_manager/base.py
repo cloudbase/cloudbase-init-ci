@@ -52,15 +52,8 @@ class BaseActionManager(object):
         pass
 
     @abc.abstractmethod
-    def install_cbinit(self, service_type):
-        """Install CloudBase-Init.
-
-        :param service_type:
-            The metadata service type. It can be:
-            http, ec2, configdrive, opennebula, cloudstack and  mass.
-            This parameter will dictate what config option is put in
-            cloubase-init.conf.
-        """
+    def install_cbinit(self):
+        """Install Cloudbase-Init."""
         pass
 
     @abc.abstractmethod

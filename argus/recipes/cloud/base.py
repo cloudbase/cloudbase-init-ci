@@ -42,6 +42,9 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     * waits for the finalization of the installation.
     """
 
+    def __init__(self, conf, backend):
+        super(BaseCloudbaseinitRecipe, self).__init__(conf, backend)
+
     @abc.abstractmethod
     def wait_for_boot_completion(self):
         """Wait for the instance to finish up booting."""
@@ -84,6 +87,21 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     def replace_code(self):
         """Do whatever is necessary to replace the code for cloudbaseinit."""
 
+    @abc.abstractmethod
+    def prepare_cbinit_config(self, service_type):
+        """Prepare the config objects.
+
+        Prepare `self._cbinit_config` and `self._cbinit_unattend_conf
+        ` objects.
+        """
+        self._cbinit_conf = None
+        self._cbinit_unattend_conf = None
+
+    @abc.abstractmethod
+    def inject_cbinit_config(self):
+        """Inject the conf in the instance."""
+        pass
+
     def prepare(self, service_type=None, **kwargs):
         """Prepare the underlying instance.
 
@@ -98,9 +116,11 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         self.wait_for_boot_completion()
         self.execution_prologue()
         self.get_installation_script()
-        self.install_cbinit(service_type)
+        self.install_cbinit()
         self.replace_install()
         self.replace_code()
+        self.prepare_cbinit_config(service_type)
+        self.inject_cbinit_config()
         self.pre_sysprep()
         if self._conf.argus.pause:
             six.moves.input("Press Enter to continue...")
