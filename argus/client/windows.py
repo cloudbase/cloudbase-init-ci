@@ -185,7 +185,7 @@ class WinRemoteClient(base.BaseClient):
     def read_file(self, filepath):
         """Get the content of the given file."""
         cmd = 'Get-Content "{}"'.format(filepath)
-        return self.run_remote_cmd(cmd, command_type=util.POWERSHELL)[0]
+        return self.run_command_with_retry(cmd, command_type=util.POWERSHELL)[0]
 
     def run_command(self, cmd, command_type=util.POWERSHELL):
         """Run the given command and return execution details.
