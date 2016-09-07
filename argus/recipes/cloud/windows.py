@@ -215,8 +215,10 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         self._cbinit_conf.set_conf_value(
             name="activate_windows",
             value=self._conf.cloudbaseinit.activate_windows)
+        scripts_path = "C:\\Scripts"
+        self._make_dir_if_needed(scripts_path)
         self._cbinit_conf.set_conf_value(name="local_scripts_path",
-                                         value="\Scripts")
+                                         value=scripts_path)
 
         self._cbinit_conf.set_conf_value(
             name="activate_windows",
