@@ -87,6 +87,7 @@ class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
         ::
             [uti.MAAS_SERVICE, util.EC2_SERVICE]
         """
+        service_type = service_type or util.HTTP_SERVICE
         if isinstance(service_type, six.string_types):
             service_type = [service_type]
 
