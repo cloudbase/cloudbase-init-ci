@@ -325,11 +325,18 @@ class ClearPasswordLogonRecipe(BaseNextLogonRecipe):
 
 
 class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
-    """A recipe for patching the cloudbaseinit's conf with a custom server."""
+    """A recipe for patching the cloudbaseinit's conf with a custom server.
 
-    config_entry = "metadata_base_url"
+    Attributes:
+        config_group: The group name specific to the metadata provider.
+        config_entry: Field containing the metadata url name for the
+                      specified provider.
+        metadata_address: The address for where to access the metadata service.
+    """
+
     config_group = "DEFAULT"
-    pattern = "{}"
+    config_entry = "metadata_base_url"
+    metadata_address = "metadata_url_value"
 
     def prepare_cbinit_config(self, service_type):
         super(CloudbaseinitMockServiceRecipe,
@@ -338,36 +345,39 @@ class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
 
         # TODO(mmicu): The service type is specific to each scenario,
         # find a way to pass it.
-
-        # Append service IP as a config option.
-        address = self.pattern.format(util.get_local_ip())
         self._cbinit_conf.set_conf_value(name=self.config_entry,
-                                         value=address,
+                                         value=self.metadata_address,
                                          section=self.config_group)
 
 
 class CloudbaseinitEC2Recipe(CloudbaseinitMockServiceRecipe):
     """Recipe for EC2 metadata service mocking."""
 
-    config_group = "ec2"
-    pattern = "http://{}:2000/"
+    config_group = util.EC2_SERVICE
+    metadata_address = CONFIG.ec2_mock.metadata_base_url
 
 
 class CloudbaseinitCloudstackRecipe(CloudbaseinitMockServiceRecipe):
     """Recipe for Cloudstack metadata service mocking."""
 
-    config_group = "cloudstack"
-    pattern = "http://{}:2001"
+    config_group = util.CLOUD_STACK_SERVICE
+    metadata_address = CONFIG.cloudstack_mock.metadata_base_url
 
-    def pre_sysprep(self):
-        super(CloudbaseinitCloudstackRecipe, self).pre_sysprep()
+    def prepare_cbinit_config(self, service_type):
+        super(CloudbaseinitCloudstackRecipe,
+              self).prepare_cbinit_config(service_type)
+
+        field = 'password_server_port'
+        port_value = CONFIG.cloudstack_mock.password_server_port
+        self._cbinit_conf.set_conf_value(name=field, value=port_value,
+                                         section=self.config_group)
 
 
 class CloudbaseinitMaasRecipe(CloudbaseinitMockServiceRecipe):
     """Recipe for Maas metadata service mocking."""
 
-    config_group = "maas"
-    pattern = "http://{}:2002"
+    config_group = util.MAAS_SERVICE
+    metadata_address = CONFIG.maas_mock.metadata_base_url
 
     def prepare_cbinit_config(self, service_type):
         super(CloudbaseinitMaasRecipe,
@@ -401,7 +411,7 @@ class CloudbaseinitWinrmRecipe(CloudbaseinitCreateUserRecipe):
 class CloudbaseinitHTTPRecipe(CloudbaseinitMockServiceRecipe):
     """Recipe for http metadata service mocking."""
 
-    pattern = "http://{}:2003/"
+    metadata_address = CONFIG.openstack_mock.metadata_base_url
 
 
 class CloudbaseinitKeysRecipe(CloudbaseinitHTTPRecipe,

@@ -14,9 +14,29 @@
 #    under the License.
 
 import collections
+from six.moves.urllib import parse
 
+from argus import config as argus_config
 from argus.scenarios.cloud import base
 from argus.scenarios.cloud import service_mock
+
+CONFIG = argus_config.CONFIG
+
+
+def get_port_number(url):
+    """Gets the port number from a given url.
+
+    :param url: String value of a URL.
+
+    :rtype: int
+    :returns: The port value from the given url.
+    """
+    parsed_url = parse.urlparse(url)
+    if parsed_url.port is None:
+        port_number = 443 if parsed_url.scheme == 'https' else 80
+    else:
+        port_number = parsed_url.port
+    return port_number
 
 
 class named(collections.namedtuple("service", "application script_name "
@@ -62,7 +82,7 @@ class EC2WindowsScenario(BaseServiceMockMixin, base.CloudScenario):
         named(application=service_mock.EC2MetadataServiceApp,
               script_name="/2009-04-04/meta-data",
               host="0.0.0.0",
-              port=2000),
+              port=get_port_number(CONFIG.ec2_mock.metadata_base_url)),
     ]
 
 
@@ -74,11 +94,11 @@ class CloudstackWindowsScenario(BaseServiceMockMixin,
         named(application=service_mock.CloudstackMetadataServiceApp,
               script_name="",
               host="0.0.0.0",
-              port=2001),
+              port=get_port_number(CONFIG.cloudstack_mock.metadata_base_url)),
         named(application=service_mock.CloudstackPasswordManagerApp,
               script_name="",
               host="0.0.0.0",
-              port=8080),
+              port=CONFIG.cloudstack_mock.password_server_port),
     ]
 
 
@@ -89,7 +109,7 @@ class MaasWindowsScenario(BaseServiceMockMixin, base.CloudScenario):
         named(application=service_mock.MaasMetadataServiceApp,
               script_name="/2012-03-01",
               host="0.0.0.0",
-              port=2002),
+              port=get_port_number(CONFIG.maas_mock.metadata_base_url)),
     ]
 
 
@@ -101,5 +121,5 @@ class HTTPKeysWindowsScenario(BaseServiceMockMixin, base.CloudScenario):
         named(application=service_mock.HTTPKeysMetadataServiceApp,
               script_name="/openstack",
               host="0.0.0.0",
-              port=2003)
+              port=get_port_number(CONFIG.openstack_mock.metadata_base_url))
     ]
