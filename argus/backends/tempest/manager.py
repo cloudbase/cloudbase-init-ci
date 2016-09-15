@@ -76,7 +76,8 @@ class APIManager(object):
         self.interface_client = self._manager.interfaces_client
 
         # Neutron network client
-        self.networks_client = self._manager.compute_networks_client
+        self.ports_client = self._manager.ports_client
+        self.networks_client = self._manager.networks_client
         self.compute_networks_client = self._manager.compute_networks_client
         self.subnets_client = self._manager.subnets_client
 
