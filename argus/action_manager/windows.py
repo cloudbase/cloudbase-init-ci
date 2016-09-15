@@ -42,6 +42,9 @@ class WindowsActionManager(base.BaseActionManager):
     PATH_LEAF = "Leaf"
     PATH_CONTAINER = "Container"
 
+    _DIRECTORY = "Directory"
+    _FILE = "File"
+
     def __init__(self, client, config, os_type=util.WINDOWS):
         super(WindowsActionManager, self).__init__(client, config, os_type)
 
@@ -282,6 +285,63 @@ class WindowsActionManager(base.BaseActionManager):
             Path to check if it exists and it's a directory.
         """
         return self._exists(path, self.PATH_CONTAINER)
+
+    def _new_item(self, path, item_type):
+        """Create a directory or a file.
+
+        :param path:
+            Instance path of the new item.
+        :param item_type:
+            It can be `Directory` or `File`
+        """
+        cmd = "New-Item -Path '{}' -Type {} -Force".format(path, item_type)
+        self._client.run_command_with_retry(cmd=cmd,
+                                            command_type=util.POWERSHELL)
+
+    def mkdir(self, path):
+        """Create a directory in the instance if the path is valid.
+
+        :param path:
+            Remote path where the new directory should be created.
+        """
+        if self.exists(path):
+            raise exceptions.ArgusCLIError(
+                "Cannot create directory ‘{}’ The path already exists".format(
+                    path))
+        else:
+            self._new_item(path, self._DIRECTORY)
+
+    def mkfile(self, path):
+        """Create a file in the instance if the path is valid.
+
+        :param path:
+            Remote path where the new file should be created.
+        """
+        if self.is_file(path):
+            LOG.warning("File already exists."
+                        " LastWriteTime and LastAccessTime will be updated.")
+            self._client.run_command_with_retry(
+                "echo $null >> '{}'".format(path),
+                command_type=util.POWERSHELL)
+        elif self.is_dir(path):
+            raise exceptions.ArgusCLIError("Path leads to a directory.")
+        self._new_item(path, self._FILE)
+
+    def touch(self, path):
+        """Update the access and modification time.
+
+        If the file doesn't exist, an empty file will be created
+        as side effect.
+        """
+        if self.is_dir(path):
+            cmd = ("$datetime = get-date;"
+                   "$dir = Get-Item '{}';"
+                   "$dir.LastWriteTime = $datetime;"
+                   "$dir.LastAccessTime = $datetime;").format(path)
+            self._client.run_command_with_retry(
+                cmd, command_type=util.POWERSHELL)
+        else:
+            self.mkfile(path)
 
 
 class Windows8ActionManager(WindowsActionManager):

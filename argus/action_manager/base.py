@@ -120,3 +120,30 @@ class BaseActionManager(object):
     def is_dir(self, path):
         """Check if the directory exists."""
         pass
+
+    @abc.abstractmethod
+    def mkdir(self, path):
+        """Create a directory in the instance if the path is valid.
+
+        :param path:
+            Remote path where the new directory should be created.
+        """
+        pass
+
+    @abc.abstractmethod
+    def mkfile(self, path):
+        """Create a file in the instance if the path is valid.
+
+        :param path:
+            Remote path where the new file should be created.
+        """
+        pass
+
+    @abc.abstractmethod
+    def touch(self, path):
+        """Update the access and modification time.
+
+        If the file doesn't exist, an empty file will be created
+        as side effect.
+        """
+        pass
