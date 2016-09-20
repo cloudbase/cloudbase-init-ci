@@ -52,6 +52,7 @@ class WindowsActionManager(base.BaseActionManager):
     _FILE = "File"
 
     WINDOWS_MANAGEMENT_CMDLET = "Get-WmiObject"
+    _INSTALL_SCRIPT = r"C:\installCBinit.ps1"
 
     def __init__(self, client, os_type=util.WINDOWS):
         super(WindowsActionManager, self).__init__(client, os_type)
@@ -117,7 +118,7 @@ class WindowsActionManager(base.BaseActionManager):
         """Get installation script for Cloudbase-Init."""
         LOG.info("Retrieve an installation script for Cloudbase-Init.")
         self.download_resource("windows/installCBinit.ps1",
-                               r"C:\installCBinit.ps1")
+                               self._INSTALL_SCRIPT)
 
     def _execute(self, cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
                  command_type=util.CMD):
@@ -187,10 +188,9 @@ class WindowsActionManager(base.BaseActionManager):
         """Run the installation script for Cloudbase-Init."""
         LOG.info("Running the installation script for Cloudbase-Init.")
 
-        parameters = '-installer {}'.format(installer)
-        self.execute_powershell_resource_script(
-            resource_location='windows/installCBinit.ps1',
-            parameters=parameters)
+        cmd = r'"{}" -installer {}'.format(self._INSTALL_SCRIPT, installer)
+        self._client.run_command_with_retry(
+            cmd, command_type=util.POWERSHELL_SCRIPT_BYPASS)
 
     def _deploy_using_scheduled_task(self, installer):
         """Deploy Cloudbase-Init using a scheduled task."""
