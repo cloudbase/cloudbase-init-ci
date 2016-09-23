@@ -20,6 +20,8 @@ from argus.config_generator import base
 from argus import util
 import six
 
+LOG = util.get_logger()
+
 
 class BaseWindowsConfig(base.BaseConfig):
     """Class that abstract the config files for windows.
@@ -83,6 +85,8 @@ class BaseWindowsConfig(base.BaseConfig):
         self.conf.write(buff)
         buff.seek(0)
         data = buff.read()
+
+        LOG.debug("Writing data in file '%s'.", file_path)
         for line in data.splitlines():
             self._client.write_file(data=line, remote_destination=file_path)
 

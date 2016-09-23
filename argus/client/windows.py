@@ -161,8 +161,6 @@ class WinRemoteClient(base.BaseClient):
         The remote destination is the file name where the content
         of filepath will be written.
         """
-        LOG.debug("Write data in file %s", remote_destination)
-
         # TODO(mmicu): This powershell dance is a little complicated,
         # find a simpler way to send a file over a remote server,
         # without relying on OpenStack infra.
@@ -194,7 +192,6 @@ class WinRemoteClient(base.BaseClient):
         :returns: stdout, stderr, exit_code
         """
 
-        LOG.info("Running command %s...", cmd)
         return self.run_remote_cmd(cmd, command_type=command_type)
 
     def run_command_verbose(self, cmd, command_type=util.POWERSHELL):
