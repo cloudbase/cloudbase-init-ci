@@ -49,6 +49,16 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     def wait_for_boot_completion(self):
         """Wait for the instance to finish up booting."""
 
+    def set_mtu(self, interface, subinterface_name,
+                mtu_value, store_type):
+        """Sets the MTU value for the underlying instance.
+
+        Sets the MTU value in order to avoid packet loss.
+        More details about the parameters can be found below:
+        https://technet.microsoft.com/en-us/library/cc731521(v=ws.10).aspx
+        """
+        pass
+
     def execution_prologue(self):
         """Executed before any downloaded script.
 
@@ -114,6 +124,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         """
         LOG.info("Preparing instance...")
         self.wait_for_boot_completion()
+        self.set_mtu()
         self.execution_prologue()
         self.get_installation_script()
         self.install_cbinit()
