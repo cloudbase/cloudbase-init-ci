@@ -54,8 +54,10 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             LOG.debug('Setting MTU failed with %r.' % exc)
 
     def execution_prologue(self):
-        LOG.info("Retrieve common module for proper script execution.")
+        # Prepare Something specific for the OS
+        self._backend.remote_client.manager.specific_prepare()
 
+        LOG.info("Retrieve common module for proper script execution.")
         resource_location = "windows/common.psm1"
         self._backend.remote_client.manager.download_resource(
             resource_location=resource_location, location=r'C:\common.psm1')
@@ -185,9 +187,6 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         params = r' "{}"'.format(cbinit)
         self._backend.remote_client.manager.execute_powershell_resource_script(
             resource_location=resource_location, parameters=params)
-
-        # Prepare Something specific for the OS
-        self._backend.remote_client.manager.specific_prepare()
 
     def sysprep(self):
         """Prepare the instance for the actual tests, by running sysprep."""

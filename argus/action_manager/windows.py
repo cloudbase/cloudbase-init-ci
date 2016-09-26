@@ -13,6 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ntpath
+import os
 import socket
 import urlparse
 
@@ -366,8 +368,45 @@ class WindowsSever2016ActionManager(Windows10ActionManager):
 
 
 class WindowsNanoActionManager(WindowsSever2016ActionManager):
+    _DOWNLOAD_SCRIPT = "FastWebRequest.ps1"
+    _COMMON = "common.psm1"
+    _RESOURCE_DIRECTORY = r"C:\nano_server"
+
     def __init__(self, client, config, os_type=util.WINDOWS_NANO):
         super(WindowsNanoActionManager, self).__init__(client, config, os_type)
+
+    def _get_resource_path(self, resource):
+        """Get resource path from argus resources."""
+        resource_path = os.path.join(
+            os.path.abspath(os.path.dirname(__file__)),
+            "..", "resources", "windows", "nano_server",
+            resource)
+        return os.path.normpath(resource_path)
+
+    def specific_prepare(self):
+        super(WindowsNanoActionManager, self).specific_prepare()
+
+        if not self.is_dir(self._RESOURCE_DIRECTORY):
+            self.mkdir(self._RESOURCE_DIRECTORY)
+
+        resource_path = self._get_resource_path(self._COMMON)
+        self._client.copy_file(
+            resource_path, ntpath.join(self._RESOURCE_DIRECTORY,
+                                       self._COMMON))
+
+        LOG.info("Copy Download script for Windows Nanoserver.")
+        resource_path = self._get_resource_path(self._DOWNLOAD_SCRIPT)
+        self._client.copy_file(
+            resource_path, ntpath.join(self._RESOURCE_DIRECTORY,
+                                       self._DOWNLOAD_SCRIPT))
+
+    def download(self, uri, location):
+        resource_path = ntpath.join(self._RESOURCE_DIRECTORY,
+                                    self._DOWNLOAD_SCRIPT)
+        cmd = r"{script_path} -Uri {uri} -OutFile '{outfile}'".format(
+            script_path=resource_path, uri=uri, outfile=location)
+        self._client.run_command_with_retry(
+            cmd, command_type=util.POWERSHELL)
 
 
 WindowsActionManagers = {
