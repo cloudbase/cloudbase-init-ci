@@ -135,12 +135,12 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         LOG.info("Replacing cloudbaseinit's code...")
 
-        LOG.info("Getting cloudbase-init location...")
+        LOG.debug("Getting cloudbase-init location...")
         # Get cb-init python location.
         python_dir = introspection.get_python_dir(self._execute)
 
         # Remove everything from the cloudbaseinit installation.
-        LOG.info("Removing recursively cloudbaseinit...")
+        LOG.debug("Recursively removing Cloudbase-Init...")
         cloudbaseinit = ntpath.join(
             python_dir,
             "Lib",
@@ -150,19 +150,18 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                       command_type=util.CMD)
 
         # Clone the repo
-        LOG.info("Cloning the cloudbaseinit repo...")
         self._backend.remote_client.manager.git_clone(
             repo_url=_CBINIT_REPO,
             location=r"C:\cloudbaseinit")
 
         # Run the command provided at cli.
-        LOG.info("Applying cli patch...")
+        LOG.debug("Applying cli patch...")
         self._execute("cd C:\\cloudbaseinit && {}".format(
             self._conf.argus.git_command), command_type=util.CMD)
 
         # Replace the code, by moving the code from cloudbaseinit
         # to the installed location.
-        LOG.info("Replacing code...")
+        LOG.debug("Replacing code...")
         self._execute('Copy-Item C:\\cloudbaseinit\\cloudbaseinit '
                       '\'{}\' -Recurse'.format(cloudbaseinit),
                       command_type=util.POWERSHELL)
@@ -323,6 +322,9 @@ class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
         super(CloudbaseinitMockServiceRecipe, self).prepare_cbinit_config(service_type)
         LOG.info("Inject guest IP for mocked service access.")
 
+        # TODO(mmicu): The service type is specific to each scenario,
+        # find a way to pass it.
+
         # Append service IP as a config option.
         address = self.pattern.format(util.get_local_ip())
         self._cbinit_conf.set_conf_value(name=self.config_entry,
@@ -426,7 +428,7 @@ class CloudbaseinitLocalScriptsRecipe(CloudbaseinitRecipe):
 
     def pre_sysprep(self):
         super(CloudbaseinitLocalScriptsRecipe, self).pre_sysprep()
-        LOG.info("Download reboot-required local script.")
+        LOG.debug("Downloading reboot-required local script.")
 
         resource_location = "windows/reboot.cmd"
         self._backend.remote_client.manager.download_resource(

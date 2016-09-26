@@ -128,8 +128,6 @@ class WindowsActionManager(base.BaseActionManager):
             build=self._conf.argus.build,
             arch=self._conf.argus.arch
         )
-        # TODO(cpopa): the service type is specific to each scenario,
-        # find a way to pass it
         LOG.info("Run the downloaded installation script "
                  "using the installer %r.", installer)
 
@@ -229,10 +227,11 @@ class WindowsActionManager(base.BaseActionManager):
     def remove(self, path):
         """Remove a file."""
         if not self.exists(path):
-            raise exceptions.ArgusCLIError("Invalid Path.")
+            raise exceptions.ArgusCLIError("Invalid Path '{}'.".format(path))
 
         if not self.is_file(path):
-            raise exceptions.ArgusCLIError("The path is not a file.")
+            raise exceptions.ArgusCLIError(
+                "The path '{}' is not a file.".format(path))
 
         LOG.debug("Remove file %s", path)
         cmd = "Remove-Item -Path '{}'".format(path)
@@ -241,10 +240,11 @@ class WindowsActionManager(base.BaseActionManager):
     def rmdir(self, path):
         """Remove a directory."""
         if not self.exists(path):
-            raise exceptions.ArgusCLIError("Invalid Path.")
+            raise exceptions.ArgusCLIError("Invalid Path '{}'.".format(path))
 
         if not self.is_file(path):
-            raise exceptions.ArgusCLIError("The path is not a directory.")
+            raise exceptions.ArgusCLIError(
+                "The path '{}' is not a directory.".format(path))
 
         LOG.debug("Remove directory  %s", path)
         cmd = "Remove-Item -Recurse -Path '{}'".format(path)
@@ -308,7 +308,7 @@ class WindowsActionManager(base.BaseActionManager):
         """
         if self.exists(path):
             raise exceptions.ArgusCLIError(
-                "Cannot create directory ‘{}’ The path already exists".format(
+                "Cannot create directory {} . It already exists.".format(
                     path))
         else:
             self._new_item(path, self._DIRECTORY)
@@ -320,13 +320,15 @@ class WindowsActionManager(base.BaseActionManager):
             Remote path where the new file should be created.
         """
         if self.is_file(path):
-            LOG.warning("File already exists."
-                        " LastWriteTime and LastAccessTime will be updated.")
+            LOG.warning("File '{}' already exists. LastWriteTime and"
+                        " LastAccessTime will be updated.").format(path)
             self._client.run_command_with_retry(
                 "echo $null >> '{}'".format(path),
                 command_type=util.POWERSHELL)
         elif self.is_dir(path):
-            raise exceptions.ArgusCLIError("Path leads to a directory.")
+            raise exceptions.ArgusCLIError(
+                "Path '{}' leads to a"
+                " directory.".format(path))
         self._new_item(path, self._FILE)
 
     def touch(self, path):
