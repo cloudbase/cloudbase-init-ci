@@ -16,6 +16,7 @@
 import ntpath
 import os
 import socket
+import time
 import urlparse
 
 
@@ -171,20 +172,42 @@ class WindowsActionManager(base.BaseActionManager):
         LOG.info("Wait for the machine to finish rebooting ...")
         self.wait_boot_completion()
 
-    def git_clone(self, repo_url, location):
-        """Clone from an remote repo to a specific location on the instance.
+    def git_clone(self, repo_url, location, count=util.RETRY_COUNT,
+                  delay=util.RETRY_DELAY):
+        """Clone from a remote repository to a specified location.
 
-        :param repo_url:
-            The remote repo url.
-        :param location:
-            Specific location on the instance.
+        :param repo_url: The remote repository url.
+        :param location: The target location for where to clone the repository.
+        :param count:
+            The number of tries that should be attempted in case it fails.
+        :param delay: The time delay before retrying.
+        :returns: True if the clone was successful, False if not.
+        :raises: ArgusCLIError if the path is not valid.
+        :rtype: bool
         """
+        if self.exists(location):
+            raise exceptions.ArgusCLIError("Destination path '{}' already "
+                                           "exists.".format(location))
         LOG.info("Cloning from %s to %s", repo_url, location)
-        cmd = "git clone {} {}".format(repo_url, location)
-        self._client.run_command_with_retry(cmd,
-                                            count=util.RETRY_COUNT,
-                                            delay=util.RETRY_DELAY,
-                                            command_type=util.CMD)
+        cmd = "git clone '{repo}' '{location}'".format(repo=repo_url,
+                                                       location=location)
+        while count > 0:
+            try:
+                self._client.run_command(cmd)
+            except exceptions.ArgusError as exc:
+                LOG.debug("Cloning failed with %r.", exc)
+                if self.exists(location):
+                    rem = self.rmdir if self.is_dir(location) else self.remove
+                    rem(location)
+                count -= 1
+                if count:
+                    LOG.debug('Retrying...')
+                    time.sleep(delay)
+            else:
+                return True
+        else:
+            LOG.debug('Could not clone %s', repo_url)
+            return False
 
     def wait_cbinit_service(self):
         """Wait if the CloudBase Init Service to stop."""

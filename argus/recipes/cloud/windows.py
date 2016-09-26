@@ -32,6 +32,7 @@ LOG = util.get_logger()
 COUNT = 20
 DELAY = 20
 _CBINIT_REPO = "https://github.com/openstack/cloudbase-init"
+_CBINIT_TARGET_LOCATION = r"C:\cloudbaseinit"
 
 
 class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
@@ -151,26 +152,31 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                       command_type=util.CMD)
 
         # Clone the repo
-        self._backend.remote_client.manager.git_clone(
-            repo_url=_CBINIT_REPO,
-            location=r"C:\cloudbaseinit")
-
+        clone_res = self._backend.remote_client.manager.git_clone(
+            repo_url=_CBINIT_REPO, location=_CBINIT_TARGET_LOCATION)
+        if not clone_res:
+            raise exceptions.ArgusError('Code repository could not '
+                                        'be cloned.')
         # Run the command provided at cli.
         LOG.debug("Applying cli patch...")
-        self._execute("cd C:\\cloudbaseinit && {}".format(
-            self._conf.argus.git_command), command_type=util.CMD)
+        self._execute("cd {location} && {command}".format(
+            location=_CBINIT_TARGET_LOCATION,
+            command=self._conf.argus.git_command), command_type=util.CMD)
 
         # Replace the code, by moving the code from cloudbaseinit
         # to the installed location.
         LOG.debug("Replacing code...")
-        self._execute('Copy-Item C:\\cloudbaseinit\\cloudbaseinit '
-                      '\'{}\' -Recurse'.format(cloudbaseinit),
+        self._execute('Copy-Item {location}\\cloudbaseinit \'{folder}\''
+                      '-Recurse'.format(location=_CBINIT_TARGET_LOCATION,
+                                        folder=cloudbaseinit),
                       command_type=util.POWERSHELL)
 
         # Autoinstall packages from the new requirements.txt
         python = ntpath.join(python_dir, "python.exe")
-        command = '"{}" -m pip install -r C:\\cloudbaseinit\\requirements.txt'
-        self._execute(command.format(python), command_type=util.CMD)
+        command = '"{folder}" -m pip install -r {location}\\requirements.txt'
+        self._execute(command.format(folder=python,
+                                     location=_CBINIT_TARGET_LOCATION),
+                      command_type=util.CMD)
 
     def pre_sysprep(self):
         # Patch the installation of cloudbaseinit in order to create
