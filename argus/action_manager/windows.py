@@ -23,6 +23,7 @@ import urlparse
 from argus.action_manager import base
 from argus import config as argus_config
 from argus import exceptions
+from argus.introspection.cloud import windows as introspection
 from argus import util
 import requests
 from winrm import exceptions as winrm_exceptions
@@ -110,48 +111,90 @@ class WindowsActionManager(base.BaseActionManager):
             resource_location=resource_location, parameters=parameters,
             script_type=util.POWERSHELL_SCRIPT_BYPASS)
 
-    def execute_cmd_resource_script(self, resource_location,
-                                    parameters=""):
-        """Execute a .bat resource script."""
-        self._execute_resource_script(resource_location=resource_location,
-                                      parameters=parameters,
-                                      script_type=util.BAT_SCRIPT)
-
     def get_installation_script(self):
         """Get instalation script for CloudbaseInit."""
         LOG.info("Retrieve an installation script for CloudbaseInit.")
         self.download_resource("windows/installCBinit.ps1",
                                r"C:\installCBinit.ps1")
 
+    def _execute(self, cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+                 command_type=util.CMD):
+        """Execute until succeeds and return only the standard output."""
+        stdout, _, _ = self._client.run_command_with_retry(
+            cmd, count=count, delay=delay, command_type=command_type)
+        return stdout
+
+    def check_cbinit_installation(self):
+        """Check if Cloudbase-Init was installed successfully."""
+        LOG.info("Checking Cloudbase-Init installation.")
+
+        try:
+            python_dir = introspection.get_python_dir(self._execute)
+        except exceptions.ArgusError as exc:
+            LOG.warning("Could not check Cloudbase-Init installation: %s", exc)
+            return False
+
+        check_cmd = r'& "{}\python.exe" -c "import cloudbaseinit"'.format(
+            python_dir)
+        try:
+            self._client.run_remote_cmd(
+                cmd=check_cmd, command_type=util.POWERSHELL)
+        except exceptions.ArgusError as exc:
+            LOG.debug("Cloudbase-Init installation failed: %s", exc)
+            return False
+
+        LOG.info("Cloudbase-Init was successfully installed!")
+        return True
+
+    def cbinit_cleanup(self):
+        """Cleans up Cloudbase-Init if the installation failed."""
+        LOG.debug("Cleaning up Cloudbase-Init from the instance.")
+        try:
+            cbinit_dir = introspection.get_cbinit_dir(self._execute)
+            self.rmdir(ntpath.dirname(cbinit_dir))
+        except exceptions.ArgusError as exc:
+            LOG.warning("Could not cleanup Cloudbase-Init: %s", exc)
+            return False
+        else:
+            return True
+
     def install_cbinit(self):
-        """Run the installation script for CloudbaseInit."""
-        LOG.debug("Installing Cloudbase-Init ...")
+        """Install Cloudbase-Init on the underlying instance."""
+        LOG.info("Trying to install Cloudbase-Init.")
 
         installer = "CloudbaseInitSetup_{build}_{arch}.msi".format(
             build=CONFIG.argus.build,
             arch=CONFIG.argus.arch
         )
-        LOG.info("Run the downloaded installation script "
-                 "using the installer %r.", installer)
+
+        for _ in range(util.RETRY_COUNT):
+            for install_method in (self._run_installation_script,
+                                   self._deploy_using_scheduled_task):
+                try:
+                    install_method(installer)
+                except exceptions.ArgusError as exc:
+                    LOG.debug("Could not install Cloudbase-Init: %s", exc)
+                else:
+                    if self.check_cbinit_installation():
+                        return True
+                self.cbinit_cleanup()
+
+        return False
+
+    def _run_installation_script(self, installer):
+        """Run the installation script for Cloudbase-Init."""
+        LOG.info("Running the installation script for Cloudbase-Init.")
 
         parameters = '-installer {}'.format(installer)
-        try:
-            self.execute_powershell_resource_script(
-                resource_location='windows/installCBinit.ps1',
-                parameters=parameters)
-        except exceptions.ArgusError:
-            # This can happen for multiple reasons,
-            # but one of them is the fact that the installer
-            # can't be installed through WinRM on some OSes
-            # for whatever reason. In this case, we're falling back
-            # to use a scheduled task.
-            LOG.debug("Cannot install, deploying using a scheduled task.")
-            self._deploy_using_scheduled_task(installer)
+        self.execute_powershell_resource_script(
+            resource_location='windows/installCBinit.ps1',
+            parameters=parameters)
 
     def _deploy_using_scheduled_task(self, installer):
-        resource_script = 'windows/schedule_installer.bat'
-        parameters = '-installer {}'.format(installer)
-        self.execute_cmd_resource_script(resource_script, parameters)
+        """Deploy Cloudbase-Init using a scheduled task."""
+        LOG.info("Deploying Cloudbase-Init using a scheduled task.")
+        resource_script = 'windows/schedule_installer.ps1'
+        self.execute_powershell_resource_script(resource_script, installer)
 
     def sysprep(self):
         resource_location = "windows/sysprep.ps1"
