@@ -18,10 +18,10 @@
 import unittest
 import pkg_resources
 
+
 from argus.tests import base
 from argus.tests.cloud import smoke
 from argus.tests.cloud import util as test_util
-from argus import exceptions
 from argus import util
 
 
@@ -54,7 +54,7 @@ class TestSmoke(smoke.TestsBaseSmoke):
                '-match cloudbase-init).DisplayName')
 
         stdout = self._backend.remote_client.run_command_verbose(
-                cmd, command_type=util.POWERSHELL)
+            cmd, command_type=util.POWERSHELL)
         self.assertEqual("Cloud Initialization Service\r\n", str(stdout))
 
     @test_util.skip_unless_dnsmasq_configured
@@ -68,13 +68,13 @@ class TestSmoke(smoke.TestsBaseSmoke):
         self.assertEqual("Running\r\n", str(stdout))
 
     @unittest.skipUnless(CONFIG.cloudbaseinit.activate_windows,
-    	                'Needs Windows activation')
+                         'Needs Windows activation')
     def test_licensing(self):
         # Check that the instance OS was licensed properly.
         command = ('Get-WmiObject SoftwareLicensingProduct | '
                    'where PartialProductKey | Select Name, LicenseStatus')
         stdout = self._backend.remote_client.run_command_verbose(
-                command, command_type=util.POWERSHELL)
+            command, command_type=util.POWERSHELL)
         licenses = _parse_licenses(stdout)
         if len(licenses) > 1:
             self.fail("Too many expected products in licensing output.")
@@ -90,7 +90,7 @@ class TestSmoke(smoke.TestsBaseSmoke):
             self._conf.openstack.image_password,
             protocol='https')
         stdout = remote_client.run_command_verbose(
-                'echo 1', command_type=util.CMD)
+            'echo 1', command_type=util.CMD)
         self.assertEqual('1', stdout.strip())
 
     @test_util.skip_unless_dnsmasq_configured
@@ -98,7 +98,8 @@ class TestSmoke(smoke.TestsBaseSmoke):
         # Test that w32time has network availability triggers, not
         # domain joined triggers
         if self._introspection.get_instance_os_version() > (6, 0):
-            start_trigger, _ = self._introspection.get_service_triggers("w32time")
+            start_trigger, _ = (self._introspection.
+                                get_service_triggers("w32time"))
             self.assertEqual('IP ADDRESS AVAILABILITY', start_trigger)
 
 

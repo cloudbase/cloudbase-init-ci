@@ -44,7 +44,10 @@ def _create_tempfile(content):
 
 
 class APIManager(object):
-    """Manager which uses tempest modules for interacting with the OpenStack API."""
+    """The APIManager for interacting between modules.
+
+    Manager which uses tempest modules for interacting with the OpenStack API.
+    """
 
     def __init__(self):
         self.isolated_creds = credentials.get_credentials_provider(
@@ -89,7 +92,10 @@ class APIManager(object):
         self.isolated_creds.clear_creds()
 
     def primary_credentials(self):
-        """Get the underlying :class:`tempest.common.isolated_creds.IsolatedCreds`."""
+        """Get the primary credentials.
+
+        Get the underlying:class:`tempest.common.isolated_creds.IsolatedCreds`.
+        """
         return self.isolated_creds.get_primary_creds()
 
     def create_keypair(self, name):

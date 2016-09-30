@@ -279,9 +279,7 @@ def _get_command_powershell_script(command):
 
 
 def _get_cmd_with_privileges(policy=None):
-    """Factory of function that run powershell scripts
-       with a specific Policy.
-    """
+    """Factory function that runs powershell scripts with a specific Policy."""
     if not policy:
         return _get_command_powershell_script
 

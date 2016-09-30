@@ -24,5 +24,8 @@ class CloudScenario(base.BaseScenario):
 
     @classmethod
     def prepare_recipe(cls):
-        """Prepare the underlying recipe using custom behavior tailored to cloudbaseinit."""
+        """Prepare the underlying recipe.
+
+        Prepare the recipe using custom behavior tailored to cloudbaseinit.
+        """
         return cls.recipe.prepare(service_type=cls.service_type)

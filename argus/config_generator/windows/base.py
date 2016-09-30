@@ -89,4 +89,3 @@ class BaseWindowsConfig(base.BaseConfig):
         LOG.debug("Writing data in file '%s'.", file_path)
         for line in data.splitlines():
             self._client.write_file(data=line, remote_destination=file_path)
-

@@ -128,4 +128,3 @@ class UnattendCBInitConfig(BasePopulatedCBInitConfig):
 
     default_config = "cloudbase-init-unattend.conf-template"
     config_name = "cloudbase-init-unattend.conf"
-

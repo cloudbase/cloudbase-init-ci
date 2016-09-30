@@ -25,13 +25,15 @@ class BaseClient(object):
     :param hostname:
         A hostname where the client should connect. This can be
         anything that the client needs (an ip, a fully qualified domain
-        name etc.). If more information is required, the **kwargs**
-        parameter can be used by subclasses.
+        name etc.).
     """
 
-    # pylint: disable=unused-argument; left for subclasses
-    def __init__(self, hostname, **kwargs):
+    def __init__(self, hostname, username, password, cert_pem, cert_key):
         self._hostname = hostname
+        self._username = username
+        self._password = password
+        self._cert_pem = cert_pem
+        self._cert_key = cert_key
 
     @abc.abstractmethod
     def run_remote_cmd(self, command, command_type=None):

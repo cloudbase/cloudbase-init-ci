@@ -14,6 +14,7 @@
 #    under the License.
 
 import binascii
+import operator
 import os
 import time
 import unittest
@@ -117,9 +118,10 @@ class TestPasswordPostedRescueSmoke(TestPasswordPostedSmoke):
 
 
 class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
-    """
-    Test that the cloud initialisation service
-    can update passwords when using the Cloudstack metadata service.
+    """Tests that the service can update passwords.
+
+    Test that the cloud initialisation service can update passwords when
+    using the Cloudstack metadata service.
     """
 
     @property
@@ -205,7 +207,8 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
 
 
 class TestCreatedUser(base.BaseTestCase):
-    """
+    """Test that the user was created.
+
     Test that the user created by the cloud initialisation service
     was actually created.
     """
@@ -259,7 +262,7 @@ class TestNoError(base.BaseTestCase):
 
 
 class TestPowershellMultipartX86TxtExists(base.BaseTestCase):
-    """Tests that the file powershell_multipart_x86.txt exists on C:"""
+    """Tests that the file powershell_multipart_x86.txt exists on 'C:'."""
 
     def test_file_exists(self):
         names = self._introspection.list_location("C:\\")
@@ -339,15 +342,12 @@ class TestStaticNetwork(base.BaseTestCase):
         # Get network adapter details within the instance.
         instance_nics = self._introspection.get_network_interfaces()
 
-        # Filter them by DHCP disabled status for static checks.
-        filter_nics = lambda nics: [nic for nic in nics if not nic["dhcp"]]
-        guest_nics = filter_nics(guest_nics)
-        instance_nics = filter_nics(instance_nics)
+        guest_nics = [nic for nic in guest_nics if not nic["dhcp"]]
+        instance_nics = [nic for nic in instance_nics if not nic["dhcp"]]
 
         # Sort by hardware address and compare results.
-        sort_func = lambda arg: arg["mac"]
-        guest_nics.sort(key=sort_func)
-        instance_nics.sort(key=sort_func)
+        guest_nics.sort(key=operator.itemgetter('mac'))
+        instance_nics.sort(key=operator.itemgetter('mac'))
         # Do not take into account v6 DNSes, because
         # they aren't retrieved even when they are set.
         for nics in (guest_nics, instance_nics):

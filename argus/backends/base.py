@@ -60,7 +60,11 @@ class BaseBackend(object):
 
     @abc.abstractmethod
     def cleanup(self):
-        """Destroy and cleanup the relevant resources created by :meth:`setup_instance`."""
+        """Destroy and cleanup the relevant resources.
+
+         Cleanup the resources created by :meth:`setup_instance`,
+         such as the keypairs, floating ips and credentials.
+         """
 
     @abc.abstractmethod
     def get_remote_client(self, **kwargs):
@@ -69,7 +73,6 @@ class BaseBackend(object):
     @abc.abstractproperty
     def remote_client(self):
         """An astract property which should return the default client."""
-
 
 
 class CloudBackend(BaseBackend):
@@ -83,7 +86,8 @@ class CloudBackend(BaseBackend):
         will always return a client with predefined credentials,
         while this method allows for a fine-grained control over this aspect.
         `password` can be omitted if authentication by SSH key is used.
-        The **kwargs parameter can be used for additional options (currently none).
+        The **kwargs parameter can be used for additional
+        options (currently none).
         """
 
     @staticmethod
@@ -121,7 +125,10 @@ class CloudBackend(BaseBackend):
 
     @abc.abstractmethod
     def internal_instance_id(self):
-        """Get the underlying's instance id, depending on the internals of the backend."""
+        """Get the underlying's instance id.
+
+        Gets the id depending on the internals of the backend.
+        """
 
     @abc.abstractmethod
     def reboot_instance(self):

@@ -64,7 +64,7 @@ def skip_unless_dnsmasq_configured(func):
 
 
 def requires_service(service_type='http'):
-    """Sets function attribute required_service_type to service_type"""
+    """Sets function attribute required_service_type to service_type."""
 
     def decorator(func):
         func.required_service_type = service_type

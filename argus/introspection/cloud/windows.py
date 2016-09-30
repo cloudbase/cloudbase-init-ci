@@ -22,8 +22,8 @@ import re
 import shutil
 import tempfile
 
-from argus.introspection.cloud import base
 from argus import exceptions
+from argus.introspection.cloud import base
 from argus import util
 
 
@@ -67,7 +67,7 @@ def _get_ntp_peers(output):
 
 
 def escape_path(path):
-    """Escape the spaces in the given path in order to work with Powershell properly."""
+    """Escape the spaces in the given path in order to work with Powershell."""
     for char in ESC:
         path = path.replace(char, "`{}".format(char))
     return path

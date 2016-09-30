@@ -17,16 +17,16 @@
 
 import base64
 import functools
-import time
 import StringIO
+import time
 
 import six
 from winrm import protocol
 
+from argus.action_manager.windows import get_windows_action_manager
 from argus.client import base
 from argus import exceptions
 from argus import util
-from argus.action_manager.windows import get_windows_action_manager
 
 
 LOG = util.get_logger()
@@ -65,15 +65,12 @@ class WinRemoteClient(base.BaseClient):
     def __init__(self, hostname, username, password,
                  transport_protocol='http',
                  cert_pem=None, cert_key=None):
-        super(WinRemoteClient, self).__init__(hostname)
+        super(WinRemoteClient, self).__init__(hostname, username, password,
+                                              cert_pem, cert_key)
         self._hostname = "{protocol}://{hostname}:{port}/wsman".format(
             protocol=transport_protocol,
             hostname=hostname,
             port=5985 if transport_protocol == 'http' else 5986)
-        self._username = username
-        self._password = password
-        self._cert_pem = cert_pem
-        self._cert_key = cert_key
         self.manager = get_windows_action_manager(self)
 
     @staticmethod
@@ -185,7 +182,8 @@ class WinRemoteClient(base.BaseClient):
     def read_file(self, filepath):
         """Get the content of the given file."""
         cmd = 'Get-Content "{}"'.format(filepath)
-        return self.run_command_with_retry(cmd, command_type=util.POWERSHELL)[0]
+        return (self.run_command_with_retry(
+            cmd, command_type=util.POWERSHELL)[0])
 
     def run_command(self, cmd, command_type=util.POWERSHELL):
         """Run the given command and return execution details.
@@ -205,7 +203,7 @@ class WinRemoteClient(base.BaseClient):
         :returns: stdout
         """
         result = self.run_command_with_retry(cmd, command_type=command_type)
-        stdout, stderr, exit_code = result 
+        stdout, stderr, exit_code = result
         LOG.info("The command returned the output: %s", stdout)
         LOG.info("The stderr of the command was: %s", stderr)
         LOG.info("The exit code of the command was: %s", exit_code)
