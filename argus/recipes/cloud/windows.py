@@ -423,6 +423,17 @@ class CloudbaseinitKeysRecipe(CloudbaseinitHTTPRecipe,
                   "ConfigWinRMCertificateAuthPlugin")
 
 
+class CloudbaseinitLongHostname(CloudbaseinitRecipe):
+    """Recipe for testing the netbios long hostname compatibility option."""
+
+    def prepare_cbinit_config(self, service_type):
+        super(CloudbaseinitLongHostname, self).prepare_cbinit_config(
+               service_type)
+        LOG.info("Injecting netbios option in conf file.")
+        self._cbinit_conf.set_conf_value(name='netbios_host_name_compatibility',
+                                         value='False')
+
+
 class CloudbaseinitLocalScriptsRecipe(CloudbaseinitRecipe):
     """Recipe for testing local scripts return codes."""
 

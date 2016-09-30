@@ -77,6 +77,13 @@ class ScenarioMultipartSmokeWindowsPartTwo(BaseWindowsScenario):
     userdata = util.get_resource('windows/multipart_userdata_part_two')
 
 
+class ScenarioLongHostname(BaseWindowsScenario):
+
+    test_classes = (smoke.TestLongHostname, )
+    recipe_type = recipe.CloudbaseinitLongHostname
+    userdata = util.get_resource('windows/netbios_hostname')
+
+
 class ScenarioUserAlreadyCreated(BaseWindowsScenario):
 
     test_classes = (test_smoke.TestSmoke, )

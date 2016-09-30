@@ -238,6 +238,16 @@ class TestSetHostname(base.BaseTestCase):
         self.assertEqual("newhostname", hostname.strip())
 
 
+class TestLongHostname(base.BaseTestCase):
+
+    def test_hostname_compatibility(self):
+        # Verify that the hostname is set accordingly
+        # when the netbios option is set to False
+
+        hostname = self._introspection.get_instance_hostname()
+        self.assertEqual("someverylonghostnametosetonthemachine-00", hostname)
+
+
 class TestNoError(base.BaseTestCase):
     """Test class which verifies that no traceback occurs."""
 
