@@ -197,16 +197,20 @@ def get_cbinit_key(execute_function):
 class InstanceIntrospection(base.CloudInstanceIntrospection):
     """Utilities for introspecting a Windows instance."""
 
+    def __init__(self, remote_client):
+        super(InstanceIntrospection, self).__init__(remote_client)
+        self._cmdlet = remote_client.manager.WINDOWS_MANAGEMENT_CMDLET
+
     def get_disk_size(self):
-        cmd = ('(Get-WmiObject win32_logicaldisk | '
-               'where -Property DeviceID -Match "C:").Size')
+        cmd = ('({} win32_logicaldisk | where -Property DeviceID '
+               '-Match "C:").Size').format(self._cmdlet)
         return int(self.remote_client.run_command_verbose(
             cmd, command_type=util.POWERSHELL))
 
     def username_exists(self, username):
-        cmd = ('Get-WmiObject Win32_Account | '
-               'where -Property Name -contains {0}'
-               .format(username))
+        cmd = ('{0} Win32_Account | '
+               'where -Property Name -contains {1}'
+               .format(self._cmdlet, username))
 
         stdout = self.remote_client.run_command_verbose(
             cmd, command_type=util.POWERSHELL)
