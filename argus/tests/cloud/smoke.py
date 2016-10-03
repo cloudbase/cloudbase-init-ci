@@ -251,6 +251,15 @@ class TestLongHostname(base.BaseTestCase):
         self.assertEqual("someverylonghostnametosetonthemachine-00", hostname)
 
 
+class TestSwapEnabled(base.BaseTestCase):
+    """Tests whether the instance has swap enabled."""
+
+    def test_swap_enabled(self):
+        """Tests the swap status on the underlying instance."""
+        swap_status = self._introspection.get_swap_status()
+        self.assertTrue(swap_status)
+
+
 class TestNoError(base.BaseTestCase):
     """Test class which verifies that no traceback occurs."""
 
