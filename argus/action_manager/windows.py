@@ -364,6 +364,17 @@ class WindowsActionManager(base.BaseActionManager):
         else:
             self.mkfile(path)
 
+    # pylint: disable=unused-argument
+    def prepare_config(self, cbinit_conf, cbinit_unattend_conf):
+        """Prepare Cloudbase-Init config for every OS.
+
+        :param cbinit_config:
+            Cloudbase-Init config file.
+        :param cbinit_unattend_conf:
+            Cloudbase-Init Unattend config file.
+        """
+        LOG.info("Config Cloudbase-Init for %s", self._os_type)
+
 
 class Windows8ActionManager(WindowsActionManager):
     def __init__(self, client, os_type=util.WINDOWS8):
@@ -429,6 +440,22 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
         self._client.run_command_with_retry(
             cmd, command_type=util.POWERSHELL)
 
+    def prepare_config(self, cbinit_conf, cbinit_unattend_conf):
+        """Prepare Cloudbase-Init config for every OS.
+
+        :param cbinit_config:
+            Cloudbase-Init config file.
+        :param cbinit_unattend_conf:
+            Cloudbase-Init Unattend config file.
+        """
+        super(WindowsNanoActionManager, self).prepare_config(
+            cbinit_conf, cbinit_unattend_conf)
+        cbinit_conf.set_conf_value("stop_service_on_exit", False)
+
+        cbinit_conf.conf.remove_option(
+            "DEFAULT", "logging_serial_port_settings")
+        cbinit_unattend_conf.conf.remove_option(
+            "DEFAULT", "logging_serial_port_settings")
 
 WindowsActionManagers = {
     util.WINDOWS: WindowsNanoActionManager,

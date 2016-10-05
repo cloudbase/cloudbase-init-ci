@@ -151,3 +151,16 @@ class BaseActionManager(object):
         as side effect.
         """
         pass
+
+    # TODO(mmicu): Make a Cloudbase-Init Action Manager and move
+    # specific methods
+    @abc.abstractmethod
+    def prepare_config(self, cbinit_config, cbinit_unattend_conf):
+        """Prepare Cloudbase-Init config for every OS.
+
+        :param cbinit_config:
+            Cloudbase-Init config file.
+        :param cbinit_unattend_conf:
+            Cloudbase-Init Unattend config file.
+        """
+        pass
