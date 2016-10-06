@@ -48,8 +48,11 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
         All these networks will be attached to the newly created
         instance without letting nova to handle this part.
         """
-        _networks = (self._manager.compute_networks_client.
-                     list_networks()["networks"])
+        _networks = self._manager.networks_client.list_networks()
+        try:
+            _networks = _networks["networks"]
+        except KeyError:
+            raise exceptions.ArgusError('Networks not found.')
         # Skip external/private networks.
         networks = [net["id"] for net in _networks
                     if not net["router:external"]]
@@ -94,7 +97,8 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
             "allocation_pools"]
         allocation_pools[0]["start"] = util.next_ip(
             allocation_pools[0]["start"], step=2)
-        subnets_client.update_subnet(subnet_id, allocation_pools)
+        subnets_client.update_subnet(subnet_id,
+                                     allocation_pools=allocation_pools)
 
         # Create and attach an IPv6 subnet for this network. Also, register
         # it for later cleanup.
