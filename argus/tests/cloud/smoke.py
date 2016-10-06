@@ -325,8 +325,23 @@ class TestsBaseSmoke(TestCreatedUser,
             self._conf.cloudbaseinit.group)
         self.assertIn(self._conf.cloudbaseinit.created_user, members)
 
+    # pylint: disable=protected-access
+    def _is_serial_port_set(self):
+        """Check if the option for serial port is set.
+
+        We look in both config objects to see if `logging_serial_port_settings`
+        is set.
+        :rtype: bool
+        """
+        args = ("DEFAULT", "logging_serial_port_settings")
+        return (self._recipe._cbinit_conf.conf.has_option(*args) or
+                self._recipe._cbinit_unattend_conf.conf.has_option(*args))
+
     def test_get_console_output(self):
         # Verify that the product emits messages to the console output.
+        if not self._is_serial_port_set():
+            raise unittest.SkipTest(
+                "No `logging_serial_port_settings` was set for this Recipe.")
         output = self._backend.instance_output()
         self.assertTrue(output, "Console output was empty.")
 
