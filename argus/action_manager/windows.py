@@ -54,16 +54,15 @@ class WindowsActionManager(base.BaseActionManager):
     def __init__(self, client, os_type=util.WINDOWS):
         super(WindowsActionManager, self).__init__(client, os_type)
 
-
     def download(self, uri, location):
-        """Download the resource locatet at a specific uri in the location.
+        """Download the resource located at a specific URI in the location.
 
         :param uri:
-            Remote url where the data is found.
+            Remote URL where the data is found.
 
         :param location:
             Path from the instance in which we should download the
-            remote resouce.
+            remote resource.
         """
         LOG.debug("Downloading from %s to %s ", uri, location)
         cmd = ('Invoke-WebRequest -Uri {} '
@@ -113,8 +112,8 @@ class WindowsActionManager(base.BaseActionManager):
             script_type=util.POWERSHELL_SCRIPT_BYPASS)
 
     def get_installation_script(self):
-        """Get instalation script for CloudbaseInit."""
-        LOG.info("Retrieve an installation script for CloudbaseInit.")
+        """Get installation script for Cloudbase-Init."""
+        LOG.info("Retrieve an installation script for Cloudbase-Init.")
         self.download_resource("windows/installCBinit.ps1",
                                r"C:\installCBinit.ps1")
 
@@ -210,8 +209,8 @@ class WindowsActionManager(base.BaseActionManager):
                 winrm_exceptions.InvalidCredentialsError,
                 requests.ConnectionError, requests.Timeout):
             # After executing sysprep.ps1 the instance will reboot and
-            # it is normal to have conectivity issues during that time.
-            # Knowing this we have to except this kind of errors.
+            # it is normal to have connectivity issues during that time.
+            # Knowing these we have to except this kind of errors.
             # This fixes errors that stops scenarios from getting
             # created on different windows images.
             LOG.debug("Currently rebooting...")
@@ -222,7 +221,7 @@ class WindowsActionManager(base.BaseActionManager):
                   delay=util.RETRY_DELAY):
         """Clone from a remote repository to a specified location.
 
-        :param repo_url: The remote repository url.
+        :param repo_url: The remote repository URL.
         :param location: The target location for where to clone the repository.
         :param count:
             The number of tries that should be attempted in case it fails.
@@ -256,7 +255,7 @@ class WindowsActionManager(base.BaseActionManager):
             return False
 
     def wait_cbinit_service(self):
-        """Wait if the CloudBase Init Service to stop."""
+        """Wait if the Cloudbase-Init Service to stop."""
         wait_cmd = ('(Get-Service | where -Property Name '
                     '-match cloudbase-init).Status')
 
@@ -267,11 +266,11 @@ class WindowsActionManager(base.BaseActionManager):
             command_type=util.POWERSHELL)
 
     def check_cbinit_service(self, searched_paths=None):
-        """Check if the CloudBase Init service started.
+        """Check if the Cloudbase-Init service started.
 
         :param searched_paths:
-            Paths to files that should exist if the hearbeat patch is
-            aplied.
+            Paths to files that should exist if the heartbeat patch is
+            applied.
         """
         test_cmd = 'Test-Path "{}"'
         check_cmds = [test_cmd.format(path) for path in searched_paths or []]
@@ -283,14 +282,14 @@ class WindowsActionManager(base.BaseActionManager):
                 command_type=util.POWERSHELL)
 
     def wait_boot_completion(self):
-        """Wait for a resonable amount of time the instance to boot."""
+        """Wait for a reasonable amount of time the instance to boot."""
         LOG.info("Waiting for boot completion...")
         username = CONFIG.openstack.image_username
         wait_boot_completion(self._client, username)
 
     def specific_prepare(self):
         """Prepare some OS specific resources."""
-        # We don't have anythong specific for the base
+        # We don't have anything specific for the base
         LOG.debug("Prepare something specific for OS Type %s", self._os_type)
 
     def remove(self, path):
@@ -448,6 +447,7 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
     _RESOURCE_DIRECTORY = r"C:\nano_server"
 
     WINDOWS_MANAGEMENT_CMDLET = "Get-CimInstance"
+
     def __init__(self, client, os_type=util.WINDOWS_NANO):
         super(WindowsNanoActionManager, self).__init__(client, os_type)
 
@@ -471,7 +471,7 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
             resource_path, ntpath.join(self._RESOURCE_DIRECTORY,
                                        self._COMMON))
 
-        LOG.info("Copy Download script for Windows Nanoserver.")
+        LOG.info("Copy Download script for Windows NanoServer.")
         resource_path = self._get_resource_path(self._DOWNLOAD_SCRIPT)
         self._client.copy_file(
             resource_path, ntpath.join(self._RESOURCE_DIRECTORY,
@@ -513,7 +513,7 @@ WindowsActionManagers = {
 
 
 def _is_nanoserver(client):
-    """Returns True if the client is connected to a nanoserver machine.
+    """Returns True if the client is connected to a NanoServer machine.
 
        Using the powershell code from here: https://goo.gl/UD27SK
     """
@@ -580,7 +580,7 @@ def get_windows_action_manager(client):
     username = CONFIG.openstack.image_username
     wait_boot_completion(client, username)
 
-    # get os type
+    # get OS type
     major_version = _get_major_version(client)
     product_type = _get_product_type(client, major_version)
     windows_type = util.WINDOWS_VERSION.get((major_version, product_type),

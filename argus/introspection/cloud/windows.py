@@ -126,7 +126,7 @@ def _get_nic_details(details):
 
 
 def get_cbinit_dir(execute_function):
-    """Get the location of cloudbase-init from the instance."""
+    """Get the location of Cloudbase-Init from the instance."""
     stdout = execute_function(
         '(Get-CimInstance Win32_OperatingSystem).'
         'OSArchitecture', command_type=util.POWERSHELL)
@@ -154,7 +154,8 @@ def get_cbinit_dir(execute_function):
                 "Cloudbase-Init"
             )
 
-    raise exceptions.ArgusError('cloudbase-init installation dir not found')
+    raise exceptions.ArgusError('Cloudbase-Init installation directory'
+                                ' not found')
 
 
 def set_config_option(option, value, execute_function):
@@ -170,7 +171,7 @@ def set_config_option(option, value, execute_function):
 
 
 def get_python_dir(execute_function):
-    """Find python directory from the cb-init installation."""
+    """Find python directory from the Cloudbase-Init installation."""
     cbinit_dir = get_cbinit_dir(execute_function)
     command = 'dir "{}" /b'.format(cbinit_dir)
     stdout = execute_function(command,
@@ -182,7 +183,7 @@ def get_python_dir(execute_function):
 
 
 def get_cbinit_key(execute_function):
-    """Get the proper registry key for Cloudbase-init."""
+    """Get the proper registry key for Cloudbase-Init."""
     key = ("HKLM:SOFTWARE\\Cloudbase` Solutions\\"
            "Cloudbase-init")
     key_x64 = ("HKLM:SOFTWARE\\Wow6432Node\\Cloudbase` Solutions\\"

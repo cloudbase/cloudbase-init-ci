@@ -37,7 +37,7 @@ class BaseBackend(object):
     :param name:
         The name of the instance that will be created.
     :param userdata:
-        If any, the userdata which will be available in the
+        If any, the user-data which will be available in the
         instance to the corresponding cloud initialization
         service.
     :param metadata:
@@ -62,7 +62,7 @@ class BaseBackend(object):
         """Destroy and cleanup the relevant resources.
 
          Cleanup the resources created by :meth:`setup_instance`,
-         such as the keypairs, floating ips and credentials.
+         such as the key-pairs, floating IPs and credentials.
          """
 
     @abc.abstractmethod
@@ -71,11 +71,11 @@ class BaseBackend(object):
 
     @abc.abstractproperty
     def remote_client(self):
-        """An astract property which should return the default client."""
+        """An abstract property which should return the default client."""
 
 
 class CloudBackend(BaseBackend):
-    """Base backend for cloud related tasks."""
+    """Base back-end for cloud related tasks."""
 
     @abc.abstractmethod
     def get_remote_client(self, username=None, password=None, **kwargs):
@@ -116,7 +116,7 @@ class CloudBackend(BaseBackend):
 
     @abc.abstractmethod
     def instance_output(self, limit=None):
-        """Get the underlying's instance output, if any.
+        """Get the underlying instance output, if any.
 
         :param limit:
             Number of lines to fetch from the end of console log.
@@ -124,9 +124,9 @@ class CloudBackend(BaseBackend):
 
     @abc.abstractmethod
     def internal_instance_id(self):
-        """Get the underlying's instance id.
+        """Get the underlying instance ID.
 
-        Gets the id depending on the internals of the backend.
+        Gets the ID depending on the internals of the back-end.
         """
 
     @abc.abstractmethod
@@ -147,4 +147,4 @@ class CloudBackend(BaseBackend):
 
     @abc.abstractmethod
     def floating_ip(self):
-        """Get the floating ip that was attached to the underlying instance."""
+        """Get the floating IP that was attached to the underlying instance."""

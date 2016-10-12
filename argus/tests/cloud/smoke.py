@@ -86,7 +86,7 @@ class TestPasswordPostedSmoke(BaseTestPassword):
 
     This will attempt a WinRM login on the instance, which will use the
     password which was correctly set by the underlying cloud
-    initialisation software.
+    initialization software.
     """
 
     @property
@@ -122,7 +122,7 @@ class TestPasswordPostedRescueSmoke(TestPasswordPostedSmoke):
 class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
     """Tests that the service can update passwords.
 
-    Test that the cloud initialisation service can update passwords when
+    Test that the cloud initialization service can update passwords when
     using the Cloudstack metadata service.
     """
 
@@ -212,7 +212,7 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
 class TestCreatedUser(base.BaseTestCase):
     """Test that the user was created.
 
-    Test that the user created by the cloud initialisation service
+    Test that the user created by the cloud initialization service
     was actually created.
     """
 
@@ -268,7 +268,7 @@ class TestNoError(base.BaseTestCase):
 
     def test_any_exception_occurred(self):
         # Verify that any exception occurred in the instance
-        # for cloudbaseinit.
+        # for Cloudbase-Init.
         instance_traceback = self._introspection.get_cloudbaseinit_traceback()
         self.assertEqual('', instance_traceback)
 
@@ -287,7 +287,7 @@ class TestsBaseSmoke(TestCreatedUser,
                      TestPasswordMetadataSmoke,
                      TestNoError,
                      base.BaseTestCase):
-    """Various smoke tests for testing cloudbaseinit."""
+    """Various smoke tests for testing Cloudbase-Init."""
 
     def test_disk_expanded(self):
         # Test the disk expanded properly.
@@ -381,8 +381,8 @@ class TestStaticNetwork(base.BaseTestCase):
             for nic in nics:
                 nic["dns6"] = None
 
-        # If os version < 6.2 then ip v6 configuration is not available
-        # so we need to remove all ip v6 related keys from the dicts
+        # If OS version < 6.2 then IPv6 configuration is not available
+        # so we need to remove all IPv6 related keys from the dictionaries
         version = self._introspection.get_instance_os_version()
         if version < (6, 2):
             for nic in guest_nics:

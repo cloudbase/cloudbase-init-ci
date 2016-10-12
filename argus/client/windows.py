@@ -51,11 +51,11 @@ def _base64_read_file(filepath, size=8192):
 class WinRemoteClient(base.BaseClient):
     """Get a remote client to a Windows instance.
 
-    :param hostname: The ip where the client should be connected.
+    :param hostname: The IP where the client should be connected.
     :param username: The username of the client.
     :param password: The password of the remote client.
     :param transport_protocol:
-        The transport for the WinRM protocol. Only http and https makes
+        The transport for the WinRM protocol. Only HTTP and HTTPS makes
         sense.
     :param cert_pem:
         Client authentication certificate file path in PEM format.
@@ -131,10 +131,10 @@ class WinRemoteClient(base.BaseClient):
         return self._run_commands([cmd], command_type)[0]
 
     def copy_file(self, filepath, remote_destination):
-        """Copy the given filepath in the remote destination.
+        """Copy the given file-path in the remote destination.
 
         The remote destination is the file name where the content
-        of filepath will be written.
+        of file-path will be written.
         """
 
         # TODO(cpopa): This powershell dance is a little complicated,
@@ -158,7 +158,7 @@ class WinRemoteClient(base.BaseClient):
         """Copy the given data in the remote destination.
 
         The remote destination is the file name where the content
-        of filepath will be written.
+        of file-path will be written.
         """
         # TODO(mmicu): This powershell dance is a little complicated,
         # find a simpler way to send a file over a remote server,

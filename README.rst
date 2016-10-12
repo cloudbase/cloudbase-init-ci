@@ -1,7 +1,7 @@
 argus-ci
 ========
 
-.. image:: https://travis-ci.org/cloudbase/cloudbase-init-ci/.svg?branch=develop
+.. image:: https://travis-ci.org/cloudbase/cloudbase-init-ci.svg?branch=master
     :target: https://travis-ci.org/cloudbase/cloudbase-init-ci/
 
 .. image:: https://readthedocs.org/projects/argus-ci/badge/?style=flat

@@ -29,7 +29,7 @@ DNSES6 = ["::ffff:808:808", "::ffff:808:404"]
 
 
 class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
-    """Backend for providing static network configuration.
+    """Back-end for providing static network configuration.
 
     Creates an additional internal network which will be
     bound explicitly with the new created instance.
@@ -69,7 +69,7 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
         """Create an extra private network to be attached.
 
         This network is the one with disabled DHCP and
-        ready for static configuration by cb-init.
+        ready for static configuration by Cloudbase-Init.
         """
         tenant_id = self._manager.primary_credentials().tenant_id
         # pylint: disable=protected-access
@@ -183,7 +183,7 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
 
 
 class RescueWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
-    """Instance rescue Windows-based backend."""
+    """Instance rescue Windows-based back-end."""
 
     def rescue_server(self):
         """Rescue the underlying instance."""

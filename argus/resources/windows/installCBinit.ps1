@@ -8,11 +8,11 @@ $ErrorActionPreference = "Stop"
 
 
 function Set-CloudbaseInitServiceStartupPolicy {
-    #Cloudbase Init service must start only after the sysprep has rebooted the
-    #the Windows machine.
-    #In order to achieve this, the service is first disabled and reenabled
-    #using SetupComplete.cmd script.
-    #https://technet.microsoft.com/en-us/library/cc766314%28v=ws.10%29.aspx
+    # Cloudbase-Init service must start only after the sysprep has rebooted the
+    # the Windows machine.
+    # In order to achieve this, the service is first disabled and reenabled
+    # using SetupComplete.cmd script.
+    # https://technet.microsoft.com/en-us/library/cc766314%28v=ws.10%29.aspx
     
     mkdir "${ENV:SystemRoot}\Setup\Scripts" -ErrorAction ignore
     cmd /c 'sc config cloudbase-init start= demand'

@@ -39,13 +39,13 @@ OUTPUT_SIZE = 128
 # pylint: disable=abstract-method
 @six.add_metaclass(abc.ABCMeta)
 class BaseTempestBackend(base_backend.CloudBackend):
-    """Base class for backends built on top of Tempest.
+    """Base class for back-ends built on top of Tempest.
 
     :param name:
         The name will be used for creating instances with this
         backend.
     :param userdata:
-        The userdata which will be available in the instance
+        The user-data which will be available in the instance
         to the corresponding cloud initialization service.
     :param metadata:
         The metadata which will be available in the instance
@@ -115,21 +115,21 @@ class BaseTempestBackend(base_backend.CloudBackend):
         _client = self._manager.security_group_rules_client
         rulesets = [
             {
-                # http RDP
+                # HTTP RDP
                 'ip_protocol': 'tcp',
                 'from_port': 3389,
                 'to_port': 3389,
                 'cidr': '0.0.0.0/0',
             },
             {
-                # http winrm
+                # HTTP WINRM
                 'ip_protocol': 'tcp',
                 'from_port': 5985,
                 'to_port': 5985,
                 'cidr': '0.0.0.0/0',
             },
             {
-                # https winrm
+                # HTTPS WINRM
                 'ip_protocol': 'tcp',
                 'from_port': 5986,
                 'to_port': 5986,
@@ -172,7 +172,7 @@ class BaseTempestBackend(base_backend.CloudBackend):
     def cleanup(self):
         """Cleanup the underlying instance.
 
-        In order for the backend to be useful again,
+        In order for the back-end to be useful again,
         call :meth:`setup_instance` method for preparing another
         underlying instance.
         """
@@ -264,7 +264,7 @@ class BaseTempestBackend(base_backend.CloudBackend):
 
 class BaseWindowsTempestBackend(windows.WindowsBackendMixin,
                                 BaseTempestBackend):
-    """Base Tempest backend for testing Windows."""
+    """Base Tempest back-end for testing Windows."""
 
     def _get_log_template(self, suffix):
         template = super(BaseWindowsTempestBackend,

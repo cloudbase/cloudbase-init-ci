@@ -43,7 +43,7 @@ RETRY_DELAY = 10
 # pylint: disable=abstract-method
 @six.add_metaclass(abc.ABCMeta)
 class BaseHeatBackend(base.CloudBackend):
-    """A backend which uses Heat as the driving core."""
+    """A back-end which uses Heat as the driving core."""
 
     def __init__(self, name=None, userdata=None, metadata=None,
                  availability_zone=None):
@@ -180,7 +180,7 @@ class BaseHeatBackend(base.CloudBackend):
 
     def _wait_stacks(self, retry_count=RETRY_COUNT,
                      retry_delay=RETRY_DELAY):
-        """We are going to wait untill all stacks are deleted."""
+        """We are going to wait until all stacks are deleted."""
         stacks = self._get_stacks()
         retry_count = stacks * retry_count
         retry_delay = stacks * retry_delay
@@ -197,7 +197,7 @@ class BaseHeatBackend(base.CloudBackend):
         # The floating IP in the new version is deleted when the
         # stack is deleted
         # In the new scenarios this code is not called but I keep
-        # it to preserve the logic if more complicated backends are
+        # it to preserve the logic if more complicated back-ends are
         # needed
         self._manager.floating_ips_client.delete_floating_ip(
             self._floating_ip_resource['id'])
@@ -241,9 +241,9 @@ class BaseHeatBackend(base.CloudBackend):
         return self._search_resource_until_status(OS_NOVA_RESOURCE)
 
     def internal_instance_id(self):
-        """Get the underlying's instance id.
+        """Get the underlying instance ID.
 
-        Gets the instance id depending on the internals of the backend.
+        Gets the instance ID depending on the internals of the back-end.
         """
         return self._internal_id
 
@@ -255,7 +255,7 @@ class BaseHeatBackend(base.CloudBackend):
         return floating_ip['floating_ip']
 
     def floating_ip(self):
-        """Get the underlying floating ip."""
+        """Get the underlying floating IP."""
         return self._floating_ip_resource['ip']
 
     def instance_output(self, limit=api_manager.OUTPUT_SIZE):
@@ -296,4 +296,4 @@ class BaseHeatBackend(base.CloudBackend):
 
 
 class WindowsHeatBackend(windows.WindowsBackendMixin, BaseHeatBackend):
-    """Heat backend tailored to work with Windows platforms."""
+    """Heat back-end tailored to work with Windows platforms."""

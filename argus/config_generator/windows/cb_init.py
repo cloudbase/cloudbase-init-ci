@@ -22,15 +22,15 @@ from argus import util
 
 
 class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
-    """An object that holds the cloudbaseinit config."""
+    """An object that holds the Cloudbase-Init config."""
 
     SERVICES = {
-        util.HTTP_SERVICE:         "httpservice.HttpService",
+        util.HTTP_SERVICE: "httpservice.HttpService",
         util.CONFIG_DRIVE_SERVICE: "configdrive.ConfigDriveService",
-        util.EC2_SERVICE:          "ec2service.EC2Service",
-        util.OPEN_NEBULA_SERVICE:  "opennebulaservice.OpenNebulaService",
-        util.CLOUD_STACK_SERVICE:  "cloudstack.CloudStack",
-        util.MAAS_SERVICE:         "maasservice.MaaSHttpService"
+        util.EC2_SERVICE: "ec2service.EC2Service",
+        util.OPEN_NEBULA_SERVICE: "opennebulaservice.OpenNebulaService",
+        util.CLOUD_STACK_SERVICE: "cloudstack.CloudStack",
+        util.MAAS_SERVICE: "maasservice.MaaSHttpService"
     }
 
     def __init__(self, client):
@@ -68,11 +68,11 @@ class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
                             ntpath.join(cbinit_dir, "bin\\"))
 
     def _get_service(self, service_type):
-        """Returns the Cloudbase-init config value.
+        """Returns the Cloudbase-Init config value.
 
         :param service_type:
-            This can be http, configdrive, ec2, opennebula,
-            cloudstack or maas.
+            This can be HTTP, ConfigDrive, EC2, OpenNebula,
+            CloudStack or MAAS.
         """
         return '.'.join([util.SERVICES_PREFIX, self.SERVICES[service_type]])
 
@@ -80,14 +80,14 @@ class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
         """Set the service type config.
 
         :param service_type:
-            This can be a string like http, configdrive, ec2, opennebula,
-            cloudstack, MAAS or it can be a list with the required service
+            This can be a string like HTTP, ConfigDrive, EC2, OpenNebula,
+            CloudStack, MAAS or it can be a list with the required service
             types. The order is important.!
 
         ::
         Example:
         ::
-            [uti.MAAS_SERVICE, util.EC2_SERVICE]
+            [util.MAAS_SERVICE, util.EC2_SERVICE]
         """
         service_type = service_type or util.HTTP_SERVICE
         if isinstance(service_type, six.string_types):
@@ -100,7 +100,7 @@ class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
     def apply_config(self, path):
         """Write the configuration values in the right place.
 
-            Take the curent state of the `self.conf` object and
+            Take the current state of the `self.conf` object and
             write it to the specific path.The name of the file
             will be `config_name`.
 

@@ -99,11 +99,11 @@ class APIManager(object):
         return self.isolated_creds.get_primary_creds()
 
     def create_keypair(self, name):
-        """Create a new keypair with the given name
+        """Create a new key-pair with the given name
 
         This will return a new :class:`Keypair` object,
         which provides access to the public, private key pair,
-        as well as a method for destroying the keypair if needed.
+        as well as a method for destroying the key-pair if needed.
         """
 
         keypair = self.keypairs_client.create_keypair(
@@ -128,7 +128,7 @@ class APIManager(object):
             The id of the instance for which the password will
             be returned.
         :param keypair:
-            A keypair whose private key can be used to decrypt
+            A key-pair whose private key can be used to decrypt
             the password.
         """
         encoded_password = self.servers_client.show_password(
@@ -165,7 +165,7 @@ class APIManager(object):
         return self.servers_client.show_server(instance_id)['server']
 
     def get_mtu(self):
-        """Get the MTU value, from the backend."""
+        """Get the MTU value, from the back-end."""
         try:
             return self.primary_credentials().network["mtu"]
         except Exception as exc:
@@ -174,7 +174,7 @@ class APIManager(object):
 
 
 class Keypair(object):
-    """A keypair container."""
+    """A key-pair container."""
 
     def __init__(self, name, public_key, private_key, manager):
         self.name = name
@@ -183,5 +183,5 @@ class Keypair(object):
         self._manager = manager
 
     def destroy(self):
-        """Destroy the current keypair."""
+        """Destroy the current key-pair."""
         self._manager.keypairs_client.delete_keypair(self.name)

@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Config options available for the openstack setup."""
+"""Config options available for the OpenStack setup."""
 
 from oslo_config import cfg
 
@@ -21,7 +21,7 @@ from argus.config import base as conf_base
 
 class OpenStackOptions(conf_base.Options):
 
-    """Config options available for the openstack setup."""
+    """Config options available for the OpenStack setup."""
 
     def __init__(self, config):
         super(OpenStackOptions, self).__init__(config, group="openstack")

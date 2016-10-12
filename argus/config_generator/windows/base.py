@@ -70,7 +70,7 @@ class BaseWindowsConfig(base.BaseConfig):
     def apply_config(self, path):
         """Write the configuration values in the right place.
 
-            Take the curent state of the `self.conf` object and
+            Take the current state of the `self.conf` object and
             write it to the specific path.The name of the file
             will be `config_name`.
 

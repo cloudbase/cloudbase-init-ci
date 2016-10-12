@@ -18,7 +18,7 @@ from argus.scenarios import base
 
 
 class CloudScenario(base.BaseScenario):
-    """Base scenario class for testing cloudbaseinit."""
+    """Base scenario class for testing Cloudbase-Init."""
 
     service_type = 'http'
 
@@ -26,6 +26,6 @@ class CloudScenario(base.BaseScenario):
     def prepare_recipe(cls):
         """Prepare the underlying recipe.
 
-        Prepare the recipe using custom behavior tailored to cloudbaseinit.
+        Prepare the recipe using custom behavior tailored to Cloudbase-Init.
         """
         return cls.recipe.prepare(service_type=cls.service_type)

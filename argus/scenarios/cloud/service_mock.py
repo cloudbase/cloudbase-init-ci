@@ -151,7 +151,7 @@ class EC2MetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
 
 
 class CloudstackMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
-    """Metadata app for CloudStack service."""
+    """Metadata application for CloudStack service."""
 
     @cherrypy.expose
     def latest(self, data_type, operation=None):
@@ -184,7 +184,7 @@ class CloudstackMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
 
 
 class CloudstackPasswordManagerApp(BaseServiceApp):
-    """Metadata app for CloudStack password manager."""
+    """Metadata application for CloudStack password manager."""
 
     def __init__(self, backend):
         super(CloudstackPasswordManagerApp, self).__init__(backend)
@@ -215,7 +215,7 @@ class CloudstackPasswordManagerApp(BaseServiceApp):
 
 
 class MaasMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
-    """Metadata app for MaaS service."""
+    """Metadata application for MaaS service."""
 
     @staticmethod
     def _verify_headers():

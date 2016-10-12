@@ -94,7 +94,7 @@ def next_ip(ip, step=1):
     number = struct.unpack(data_type, socket.inet_aton(ip))[0]
     # Get the next one.
     number += step
-    # Convert it back and return the ascii value.
+    # Convert it back and return the ASCII value.
     return socket.inet_ntoa(struct.pack(data_type, number))
 
 
@@ -108,7 +108,7 @@ def cidr2netmask(cidr):
 
 
 def decrypt_password(private_key, password):
-    """Decode password and unencrypts it with private key.
+    """Decode password and decrypts it with private key.
 
     Requires openssl binary available in the path.
     """
@@ -229,7 +229,7 @@ def get_namedtuple(name, members, values):
 def get_public_keys():
     """Get the *public_keys* resource.
 
-    Used by the cloudbaseinit's tests.
+    Used by the Cloudbase-Init tests.
     """
     return get_resource("public_keys").splitlines()
 
@@ -237,7 +237,7 @@ def get_public_keys():
 def get_certificate():
     """Get the *certificate* resource.
 
-    Used by the cloudbaseinit's tests.
+    Used by the Cloudbase-Init tests.
     """
     return get_resource("certificate")
 
@@ -278,11 +278,11 @@ COMMAND_MODIFIERS = {
     POWERSHELL_SCRIPT_UNRESTRICTED: _get_cmd_with_privileges("Unrestricted"),
     POWERSHELL_SCRIPT_BYPASS: _get_cmd_with_privileges("Bypass"),
     POWERSHELL_SCRIPT_UNDEFINED: _get_cmd_with_privileges("Undefined"),
-    }
+}
 
 
 def get_command(command, command_type=None):
-    """Returns the command decorated acording to the command_type """
+    """Returns the command decorated according to the command_type """
     modifier = COMMAND_MODIFIERS.get(command_type, lambda command: command)
     return modifier(command)
 
@@ -304,9 +304,9 @@ WINDOWS_SERVER_2016 = "windows_server_2016"
 WINDOWS_NANO = "windows_nano"
 
 # The key has this format (Version number, Product Type)
-# Version number acording to this page :
+# Version number according to this page :
 # https://msdn.microsoft.com/en-us/library/windows/desktop/ms724833%28v=vs.85%29.aspx
-# Product Type acording to this :
+# Product Type according to this :
 # https://msdn.microsoft.com/en-us/library/aa394239(v=vs.85).aspx
 # For the Version 10 Server edition we have two possibilities:
 # 1. is Windows Nano Server

@@ -22,7 +22,7 @@ from argus.introspection import base
 
 @six.add_metaclass(abc.ABCMeta)
 class CloudInstanceIntrospection(base.BaseInstanceIntrospection):
-    """Introspection class for testing cloudbase-init."""
+    """Introspection class for testing Cloudbase-Init."""
 
     @abc.abstractmethod
     def get_disk_size(self):
@@ -50,15 +50,15 @@ class CloudInstanceIntrospection(base.BaseInstanceIntrospection):
 
     @abc.abstractmethod
     def get_userdata_executed_plugins(self):
-        """Get the count of userdata executed plugins."""
+        """Get the count of user-data executed plugins."""
 
     @abc.abstractmethod
     def get_instance_mtu(self):
-        """Get the mtu value from the instance."""
+        """Get the MTU value from the instance."""
 
     @abc.abstractmethod
     def get_cloudbaseinit_traceback(self):
-        """Return the traceback, if any, from the cloudbaseinit's logs."""
+        """Return the traceback, if any, from the Cloudbase-Init logs."""
 
     @abc.abstractmethod
     def get_group_members(self, group):

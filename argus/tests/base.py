@@ -17,7 +17,7 @@ import unittest
 
 
 class BaseTestCase(unittest.TestCase):
-    """Test case parametrized with a backend and an introspection object."""
+    """Test case parametrized with a back-end and an introspection object."""
 
     def __init__(self, backend, recipe, introspection, *args, **kwargs):
         super(BaseTestCase, self).__init__(*args, **kwargs)

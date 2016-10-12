@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Windows cloudbaseinit recipes."""
+"""Windows Cloudbase-Init recipes."""
 
 import ntpath
 import os
@@ -66,19 +66,20 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             resource_location=resource_location, location=r'C:\common.psm1')
 
     def get_installation_script(self):
-        """Get instalation script for CloudbaseInit."""
+        """Get installation script for CloudbaseInit."""
         self._backend.remote_client.manager.get_installation_script()
 
     def install_cbinit(self):
-        """Proceed on checking if cloudbase-init should be installed."""
+        """Proceed on checking if Cloudbase-Init should be installed."""
         try:
             introspection.get_cbinit_dir(self._execute)
         except exceptions.ArgusError:
             self._backend.remote_client.manager.install_cbinit()
             self._grab_cbinit_installation_log()
         else:
-            # If the directory already exists, we won't be installing Cb-init.
-            LOG.info("Cloudbase-init is already installed, "
+            # If the directory already exists,
+            # we won't be installing Cloudbase-Init.
+            LOG.info("Cloudbase-Init is already installed, "
                      "skipping installation.")
 
     def _grab_cbinit_installation_log(self):
@@ -98,7 +99,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             stream.write(content)
 
     def replace_install(self):
-        """Replace the cb-init installed files with the downloaded ones.
+        """Replace the Cloudbase-Init installed files with the downloaded ones.
 
         For the same file names, there will be a replace. The new ones
         will just be added and the other files will be left there.
@@ -108,7 +109,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         if not link:
             return
 
-        LOG.info("Replacing cloudbaseinit's files...")
+        LOG.info("Replacing Cloudbase-Init's files...")
 
         LOG.debug("Download and extract installation bundle.")
         if link.startswith("\\\\"):
@@ -137,18 +138,18 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             resource_location=resource_location)
 
     def replace_code(self):
-        """Replace the code of cloudbaseinit."""
+        """Replace the code of Cloudbase-Init."""
         if not CONFIG.argus.git_command:
             # Nothing to replace.
             return
 
-        LOG.info("Replacing cloudbaseinit's code...")
+        LOG.info("Replacing Cloudbase-Init's code...")
 
-        LOG.debug("Getting cloudbase-init location...")
-        # Get cb-init python location.
+        LOG.debug("Getting Cloudbase-Init location...")
+        # Get Cloudbase-Init python location.
         python_dir = introspection.get_python_dir(self._execute)
 
-        # Remove everything from the cloudbaseinit installation.
+        # Remove everything from the Cloudbase-Init installation.
         LOG.debug("Recursively removing Cloudbase-Init...")
         cloudbaseinit = ntpath.join(
             python_dir,
@@ -158,7 +159,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         self._execute('rmdir "{}" /S /q'.format(cloudbaseinit),
                       command_type=util.CMD)
 
-        # Clone the repo
+        # Clone the repository
         clone_res = self._backend.remote_client.manager.git_clone(
             repo_url=_CBINIT_REPO, location=_CBINIT_TARGET_LOCATION)
         if not clone_res:
@@ -170,7 +171,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             location=_CBINIT_TARGET_LOCATION,
             command=CONFIG.argus.git_command), command_type=util.CMD)
 
-        # Replace the code, by moving the code from cloudbaseinit
+        # Replace the code, by moving the code from Cloudbase-Init
         # to the installed location.
         LOG.debug("Replacing code...")
         self._execute('Copy-Item {location}\\cloudbaseinit \'{folder}\''
@@ -178,7 +179,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                                         folder=cloudbaseinit),
                       command_type=util.POWERSHELL)
 
-        # Autoinstall packages from the new requirements.txt
+        # Auto-install packages from the new requirements.txt
         python = ntpath.join(python_dir, "python.exe")
         command = '"{folder}" -m pip install -r {location}\\requirements.txt'
         self._execute(command.format(folder=python,
@@ -186,7 +187,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                       command_type=util.CMD)
 
     def pre_sysprep(self):
-        # Patch the installation of cloudbaseinit in order to create
+        # Patch the installation of Cloudbase-Init in order to create
         # a file when the execution ends. We're doing this instead of
         # monitoring the service, because on some OSes, just checking
         # if the service is stopped leads to errors, due to the
@@ -216,11 +217,11 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         self._backend.remote_client.manager.check_cbinit_service(
             searched_paths=paths)
 
-        LOG.debug("Wait for the CloudBase Initit service to stop ...")
+        LOG.debug("Wait for the Cloudbase-Init service to stop ...")
         self._backend.remote_client.manager.wait_cbinit_service()
 
     def prepare_cbinit_config(self, service_type):
-        """Prepare the cloudbase-init config."""
+        """Prepare the Cloudbase-Init config."""
         self._cbinit_conf = cbinit_config.CBInitConfig(
             client=self._backend.remote_client)
 
@@ -258,7 +259,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             self._backend.remote_client.run_remote_cmd(cmd, util.POWERSHELL)
 
     def inject_cbinit_config(self):
-        """Inject the cloudbase-init config in the right place."""
+        """Inject the Cloudbase-Init config in the right place."""
         cbinit_dir = introspection.get_cbinit_dir(self._execute)
 
         conf_dir = ntpath.join(cbinit_dir, "conf")
@@ -288,9 +289,9 @@ class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):
 
 
 class CloudbaseinitCreateUserRecipe(CloudbaseinitRecipe):
-    """A recipe for creating the user created by cloudbaseinit.
+    """A recipe for creating the user created by Cloudbase-Init.
 
-    The purpose is to use this recipe for testing that cloudbaseinit
+    The purpose is to use this recipe for testing that Cloudbase-Init
     works, even when the user which should be created already exists.
     """
 
@@ -330,7 +331,7 @@ class ClearPasswordLogonRecipe(BaseNextLogonRecipe):
 
 
 class CloudbaseinitMockServiceRecipe(CloudbaseinitRecipe):
-    """A recipe for patching the cloudbaseinit's conf with a custom server.
+    """A recipe for patching the Cloudbase-Init conf with a custom server.
 
     Attributes:
         config_group: The group name specific to the metadata provider.
@@ -465,7 +466,7 @@ class CloudbaseinitLocalScriptsRecipe(CloudbaseinitRecipe):
 
 
 class CloudbaseinitImageRecipe(CloudbaseinitRecipe):
-    """Calibrate already sys-prepared cloudbase-init images."""
+    """Calibrate already sys-prepared Cloudbase-Init images."""
 
     def wait_cbinit_finalization(self):
         cbdir = introspection.get_cbinit_dir(self._execute)
@@ -477,11 +478,11 @@ class CloudbaseinitImageRecipe(CloudbaseinitRecipe):
         self._backend.remote_client.manager.check_cbinit_service(
             searched_paths=paths)
 
-        LOG.debug("Wait for the CloudBase Initit service to stop ...")
+        LOG.debug("Wait for the Cloudbase-Init service to stop ...")
         self._backend.remote_client.manager.wait_cbinit_service()
 
     def prepare(self, service_type=None, **kwargs):
-        LOG.info("Preparing already syspreped instance...")
+        LOG.info("Preparing already sysprepped instance...")
         self.execution_prologue()
 
         if CONFIG.argus.pause:
