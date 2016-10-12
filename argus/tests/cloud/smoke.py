@@ -22,12 +22,14 @@ import unittest
 # pylint: disable=import-error
 from six.moves import urllib
 
+from argus import config as argus_config
 from argus.tests import base
 from argus.tests.cloud import util as test_util
 from argus import util
 
 DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
 
+CONFIG = argus_config.CONFIG
 LOG = util.get_logger()
 
 
@@ -52,7 +54,7 @@ class BaseTestPassword(base.BaseTestCase):
     def _run_remote_command(self, cmd, password):
         # Test that the proper password was set.
         remote_client = self._backend.get_remote_client(
-            self._conf.cloudbaseinit.created_user, password)
+            CONFIG.cloudbaseinit.created_user, password)
 
         stdout = remote_client.run_command_verbose(
             cmd, command_type=util.CMD)
@@ -169,7 +171,7 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
 
     def _wait_for_completion(self, password):
         remote_client = self._backend.get_remote_client(
-            self._conf.cloudbaseinit.created_user, password)
+            CONFIG.cloudbaseinit.created_user, password)
         remote_client.manager.wait_cbinit_service()
 
     def _test_password(self, password, expected):
@@ -216,7 +218,7 @@ class TestCreatedUser(base.BaseTestCase):
     def test_username_created(self):
         # Verify that the expected created user exists.
         exists = self._introspection.username_exists(
-            self._conf.cloudbaseinit.created_user)
+            CONFIG.cloudbaseinit.created_user)
         self.assertTrue(exists)
 
 
@@ -331,8 +333,8 @@ class TestsBaseSmoke(TestCreatedUser,
     def test_user_belongs_to_group(self):
         # Check that the created user belongs to the specified local groups
         members = self._introspection.get_group_members(
-            self._conf.cloudbaseinit.group)
-        self.assertIn(self._conf.cloudbaseinit.created_user, members)
+            CONFIG.cloudbaseinit.group)
+        self.assertIn(CONFIG.cloudbaseinit.created_user, members)
 
     # pylint: disable=protected-access
     def _is_serial_port_set(self):

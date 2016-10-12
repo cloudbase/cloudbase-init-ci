@@ -19,6 +19,7 @@ from argus.backends.heat import heat_backend
 from argus.backends.tempest import manager
 from argus.backends.tempest import cloud as tempest_cloud_backend
 from argus.backends.tempest import tempest_backend
+from argus import config as argus_config
 from argus.introspection.cloud import windows as introspection
 from argus.recipes.cloud import windows as recipe
 from argus.scenarios.cloud import base as scenarios
@@ -37,8 +38,8 @@ def _availability_zones():
     finally:
         api_manager.cleanup_credentials()
 
+CONFIG = argus_config.CONFIG
 AVAILABILITY_ZONES = _availability_zones()
-CONFIG = util.get_config()
 
 
 class BaseWindowsScenario(scenarios.CloudScenario):

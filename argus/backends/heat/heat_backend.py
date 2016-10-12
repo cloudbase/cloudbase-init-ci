@@ -23,9 +23,11 @@ from argus.backends import base
 from argus.backends.heat import client
 from argus.backends.tempest import manager as api_manager
 from argus.backends import windows
+from argus import config as argus_config
 from argus import exceptions
 from argus import util
 
+CONFIG = argus_config.CONFIG
 
 OS_NOVA_RESOURCE = 'OS::Nova::Server'
 OS_NEUTRON_FLOATING_IP = "OS::Neutron::FloatingIP"
@@ -43,10 +45,10 @@ RETRY_DELAY = 10
 class BaseHeatBackend(base.CloudBackend):
     """A backend which uses Heat as the driving core."""
 
-    def __init__(self, conf, name=None, userdata=None, metadata=None,
+    def __init__(self, name=None, userdata=None, metadata=None,
                  availability_zone=None):
         super(BaseHeatBackend, self).__init__(
-            conf, name=name, userdata=userdata, metadata=metadata,
+            name=name, userdata=userdata, metadata=metadata,
             availability_zone=availability_zone)
 
         self._manager = api_manager.APIManager()
@@ -122,16 +124,16 @@ class BaseHeatBackend(base.CloudBackend):
         subnet_id = credentials.subnet["id"]
         self._manager.subnets_client.update_subnet(
             subnet_id,
-            dns_nameservers=self._conf.argus.dns_nameservers)
+            dns_nameservers=CONFIG.argus.dns_nameservers)
 
     def setup_instance(self):
         super(BaseHeatBackend, self).setup_instance()
 
         # Get the image and the flavor name
         image_name = self._manager.image_client.get_image_meta(
-            self._conf.openstack.image_ref)['name']
+            CONFIG.openstack.image_ref)['name']
         flavor_name = self._manager.flavors_client.show_flavor(
-            self._conf.openstack.flavor_ref)['flavor']['name']
+            CONFIG.openstack.flavor_ref)['flavor']['name']
         self._keypair = self._manager.create_keypair(
             name=self.__class__.__name__)
 
@@ -287,7 +289,7 @@ class BaseHeatBackend(base.CloudBackend):
     def get_image_by_ref(self):
         """Get the image object by its reference id."""
         return self._manager.compute_images_client.show_image(
-            self._conf.openstack.image_ref)
+            CONFIG.openstack.image_ref)
 
     def get_mtu(self):
         return self._manager.get_mtu()

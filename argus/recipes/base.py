@@ -44,8 +44,7 @@ class BaseRecipe(object):
     some easy steps.
     """
 
-    def __init__(self, conf, backend):
-        self._conf = conf
+    def __init__(self, backend):
         self._backend = backend
 
     def _execute(self, cmd, count=RETRY_COUNT, delay=RETRY_DELAY,
