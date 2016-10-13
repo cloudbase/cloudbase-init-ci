@@ -397,3 +397,15 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
                 "{0} {1}".format(remote_script, user),
                 command_type=util.POWERSHELL_SCRIPT_BYPASS)
             return stdout.strip()
+
+    def get_swap_status(self):
+        """Get whether the swap memory is enabled or not.
+
+        :returns: True if swap memory is enabled, False if not.
+        :rtype: bool
+        """
+        swap_query = (r"HKLM:\SYSTEM\CurrentControlSet\Control\Session"
+                      r" Manager\Memory Management")
+        cmd = r"(Get-ItemProperty '{}').PagingFiles".format(swap_query)
+        stdout = self.remote_client.run_command_verbose(cmd)
+        return stdout.strip() == '?:\pagefile.sys'
