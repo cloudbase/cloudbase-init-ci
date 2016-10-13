@@ -77,13 +77,18 @@ class BaseActionManager(object):
         pass
 
     @abc.abstractmethod
-    def git_clone(self, repo_url, location):
-        """Clone from an remote repo to a specific location on the instance.
+    def git_clone(self, repo_url, location, count, delay):
+        """Clone from a remote repository to a specified location.
 
-        :param repo_url:
-            The remote repo url.
-        :param location:
-            Specific location on the instance.
+        :param repo_url: The remote repository url.
+        :param location: The target location for where to clone the repository.
+        :param count:
+            The number of tries that should be attempted in case it fails.
+        :param delay: The time delay before retrying.
+
+        :returns: True if the clone was successful, False if not.
+        :raises: ArgusCLIError if the path is not valid.
+        :rtype: bool
         """
         pass
 
