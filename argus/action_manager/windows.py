@@ -347,7 +347,8 @@ class Windows8ActionManager(WindowsActionManager):
 
 class WindowsSever2012ActionManager(Windows8ActionManager):
     def __init__(self, client, config, os_type=util.WINDOWS_SERVER_2012):
-        super(WindowsSever2012ActionManager, self).__init__(client, config)
+        super(WindowsSever2012ActionManager, self).__init__(client, config,
+                                                            os_type)
 
 
 class Windows10ActionManager(WindowsActionManager):
