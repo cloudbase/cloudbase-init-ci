@@ -336,7 +336,7 @@ class WindowsActionManager(base.BaseActionManager):
         """
         if self.is_file(path):
             LOG.warning("File '{}' already exists. LastWriteTime and"
-                        " LastAccessTime will be updated.").format(path)
+                        " LastAccessTime will be updated.".format(path))
             self._client.run_command_with_retry(
                 "echo $null >> '{}'".format(path),
                 command_type=util.POWERSHELL)
