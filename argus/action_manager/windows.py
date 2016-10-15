@@ -32,9 +32,7 @@ CONFIG = argus_config.CONFIG
 
 
 def wait_boot_completion(client, username):
-    wait_cmd = ('(Get-CimInstance Win32_Account | '
-                'where -Property Name -contains {0}).Name'
-                .format(username))
+    wait_cmd = ("echo '{}'".format(username))
     client.run_command_until_condition(
         wait_cmd,
         lambda stdout: stdout.strip() == username,
@@ -50,8 +48,11 @@ class WindowsActionManager(base.BaseActionManager):
     _DIRECTORY = "Directory"
     _FILE = "File"
 
+    WINDOWS_MANAGEMENT_CMDLET = "Get-WmiObject"
+
     def __init__(self, client, os_type=util.WINDOWS):
         super(WindowsActionManager, self).__init__(client, os_type)
+
 
     def download(self, uri, location):
         """Download the resource locatet at a specific uri in the location.
@@ -403,6 +404,7 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
     _COMMON = "common.psm1"
     _RESOURCE_DIRECTORY = r"C:\nano_server"
 
+    WINDOWS_MANAGEMENT_CMDLET = "Get-CimInstance"
     def __init__(self, client, os_type=util.WINDOWS_NANO):
         super(WindowsNanoActionManager, self).__init__(client, os_type)
 
@@ -504,13 +506,23 @@ def _get_major_version(client):
     return int(major_version.strip())
 
 
-def _get_product_type(client):
+def _get_product_type(client, major_version):
     """Return the minor version of the OS.
 
     :param client:
         A Windows Client.
+    :param  major_version:
+        Windows Major version according to
+        https://msdn.microsoft.com/en-us/library/aa394239(v=vs.85).aspx
     """
-    cmd = r"(Get-CimInstance -Class Win32_OperatingSystem).producttype"
+    # NOTE(mmicu): For Windows 10, Windows Server 2016 and Windows Nano
+    # we use Common Information Model (Cim) and for the others we use
+    # Windows Management Instrumentation (Wmi)
+    cmdlet = Windows8ActionManager.WINDOWS_MANAGEMENT_CMDLET
+    if major_version == 10:
+        cmdlet = Windows10ActionManager.WINDOWS_MANAGEMENT_CMDLET
+    cmd = r"({} -Class Win32_OperatingSystem).producttype".format(cmdlet)
+
     product_type, _, _ = client.run_command_with_retry(
         cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
         command_type=util.POWERSHELL)
@@ -526,8 +538,8 @@ def get_windows_action_manager(client):
     wait_boot_completion(client, username)
 
     # get os type
-    product_type = _get_product_type(client)
     major_version = _get_major_version(client)
+    product_type = _get_product_type(client, major_version)
     windows_type = util.WINDOWS_VERSION.get((major_version, product_type),
                                             util.WINDOWS)
     is_nanoserver = _is_nanoserver(client)

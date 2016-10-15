@@ -50,6 +50,15 @@ def _parse_licenses(output):
 class TestSmoke(smoke.TestsBaseSmoke):
     """Test additional Windows specific behaviour."""
 
+    def __init__(self, conf, backend, recipe, introspection, *args, **kwargs):
+        super(TestSmoke, self).__init__(conf, backend, recipe, introspection,
+                                        *args, **kwargs)
+        # TODO(mmicu): We have to go through a lot of layers
+        # to accomplish our goal, we need to find a way to structure
+        # our resources better
+        self._cmdlet = (self._backend.remote_client.manager
+                        .WINDOWS_MANAGEMENT_CMDLET)
+
     def test_service_display_name(self):
         cmd = ('(Get-Service | where -Property Name '
                '-match cloudbase-init).DisplayName')
@@ -72,8 +81,8 @@ class TestSmoke(smoke.TestsBaseSmoke):
                          'Needs Windows activation')
     def test_licensing(self):
         # Check that the instance OS was licensed properly.
-        command = ('Get-WmiObject SoftwareLicensingProduct | '
-                   'where PartialProductKey | Select Name, LicenseStatus')
+        command = ('{} SoftwareLicensingProduct | where PartialProductKey '
+                   '| Select Name, LicenseStatus').format(self._cmdlet)
         stdout = self._backend.remote_client.run_command_verbose(
             command, command_type=util.POWERSHELL)
         licenses = _parse_licenses(stdout)
