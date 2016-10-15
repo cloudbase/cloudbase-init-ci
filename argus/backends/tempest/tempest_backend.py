@@ -22,12 +22,14 @@ import six
 from argus.backends import base as base_backend
 from argus.backends.tempest import manager as api_manager
 from argus.backends import windows
+from argus import config as argus_config
 from argus import util
 
 with util.restore_excepthook():
     from tempest.common import waiters
 
 
+CONFIG = argus_config.CONFIG
 LOG = util.get_logger()
 
 # Starting size as number of lines and tolerance.
@@ -39,8 +41,6 @@ OUTPUT_SIZE = 128
 class BaseTempestBackend(base_backend.CloudBackend):
     """Base class for backends built on top of Tempest.
 
-    :param conf:
-        The config object used for controlling argus's behaviour.
     :param name:
         The name will be used for creating instances with this
         backend.
@@ -56,10 +56,10 @@ class BaseTempestBackend(base_backend.CloudBackend):
         The availability zone in which the underlying instance
         will be available.
     """
-    def __init__(self, conf, name, userdata, metadata, availability_zone):
+    def __init__(self, name, userdata, metadata, availability_zone):
         if userdata:
             userdata = base64.encodestring(userdata)
-        super(BaseTempestBackend, self).__init__(conf, name, userdata,
+        super(BaseTempestBackend, self).__init__(name, userdata,
                                                  metadata, availability_zone)
         self._server = None
         self._keypair = None
@@ -71,15 +71,15 @@ class BaseTempestBackend(base_backend.CloudBackend):
         self._networks = None    # list with UUIDs for future attached NICs
 
         # set some members from the configuration file needed by recipes
-        self.image_ref = self._conf.openstack.image_ref
-        self.flavor_ref = self._conf.openstack.flavor_ref
+        self.image_ref = CONFIG.openstack.image_ref
+        self.flavor_ref = CONFIG.openstack.flavor_ref
         self._manager = api_manager.APIManager()
 
     def _configure_networking(self):
         subnet_id = self._manager.primary_credentials().subnet["id"]
         self._manager.subnets_client.update_subnet(
             subnet_id,
-            dns_nameservers=self._conf.argus.dns_nameservers)
+            dns_nameservers=CONFIG.argus.dns_nameservers)
 
     def _create_server(self, wait_until='ACTIVE', **kwargs):
         for key, value in list(kwargs.items()):
@@ -255,7 +255,7 @@ class BaseTempestBackend(base_backend.CloudBackend):
 
     def get_image_by_ref(self):
         image = self._manager.compute_images_client.show_image(
-            self._conf.openstack.image_ref)
+            CONFIG.openstack.image_ref)
         return image['image']
 
     def floating_ip(self):
@@ -269,9 +269,9 @@ class BaseWindowsTempestBackend(windows.WindowsBackendMixin,
     def _get_log_template(self, suffix):
         template = super(BaseWindowsTempestBackend,
                          self)._get_log_template(suffix)
-        if self._conf.argus.build and self._conf.argus.arch:
+        if CONFIG.argus.build and CONFIG.argus.arch:
             # Prepend the log with the installer information (cloud).
-            template = "{}-{}-{}".format(self._conf.argus.build,
-                                         self._conf.argus.arch,
+            template = "{}-{}-{}".format(CONFIG.argus.build,
+                                         CONFIG.argus.arch,
                                          template)
         return template

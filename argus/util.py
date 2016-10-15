@@ -17,7 +17,6 @@ import base64
 import collections
 import contextlib
 import logging
-import os
 import pkgutil
 import random
 import socket
@@ -26,9 +25,6 @@ import subprocess
 import sys
 
 import six
-
-from argus import config
-
 
 RETRY_COUNT = 15
 RETRY_DELAY = 10
@@ -54,7 +50,6 @@ MAAS_SERVICE = 'maas'
 
 __all__ = (
     'decrypt_password',
-    'get_config',
     'get_logger',
     'get_resource',
     'cached_property',
@@ -168,20 +163,6 @@ class cached_property(object):  # pylint: disable=invalid-name
             return self
         instance.__dict__[self.name] = result = self.func(instance)
         return result
-
-
-@run_once
-def get_config():
-    """Get the argus config object.
-
-    Looks for a file called argus.conf in the working directory.
-    If the file is not found it looks for it in /etc/argus/
-    """
-    if os.path.isfile('argus.conf'):
-        config_file = 'argus.conf'
-    else:
-        config_file = '/etc/argus/argus.conf'
-    return config.ConfigurationParser(config_file).conf
 
 
 def get_logger(name="argus",

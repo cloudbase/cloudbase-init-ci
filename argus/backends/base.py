@@ -18,9 +18,11 @@ import os
 
 import six
 
+from argus import config as argus_config
 from argus import util
 
 
+CONFIG = argus_config.CONFIG
 LOG = util.get_logger()
 
 
@@ -32,8 +34,6 @@ class BaseBackend(object):
     instance, being it an OpenStack instance, OpenNebula instance
     or a containerized OS.
 
-    :param conf:
-        A configuration object, which holds argus related info.
     :param name:
         The name of the instance that will be created.
     :param userdata:
@@ -45,10 +45,9 @@ class BaseBackend(object):
         instance to the corresponding cloud initialization
         service.
     """
-    def __init__(self, conf, name=None, userdata=None, metadata=None,
+    def __init__(self, name=None, userdata=None, metadata=None,
                  availability_zone=None):
         self._name = name
-        self._conf = conf
         self._availability_zone = availability_zone
 
         self.userdata = userdata
@@ -100,11 +99,11 @@ class CloudBackend(BaseBackend):
 
         If a `suffix` is provided, then the log name is preceded by it.
         """
-        if not self._conf.argus.output_directory:
+        if not CONFIG.argus.output_directory:
             return
 
         template = self._get_log_template(suffix)
-        path = os.path.join(self._conf.argus.output_directory,
+        path = os.path.join(CONFIG.argus.output_directory,
                             template.format(self.internal_instance_id()))
         content = self.instance_output()
         if not content.strip():

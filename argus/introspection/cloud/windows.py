@@ -22,10 +22,12 @@ import re
 import shutil
 import tempfile
 
+from argus import config as argus_config
 from argus import exceptions
 from argus.introspection.cloud import base
 from argus import util
 
+CONFIG = argus_config.CONFIG
 
 # escaped characters for powershell paths
 ESC = "( )"
@@ -222,7 +224,7 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
                                                         command_type=util.CMD)
         homedir, _, _ = stdout.rpartition(ntpath.sep)
         return ntpath.join(
-            homedir, self._conf.cloudbaseinit.created_user,
+            homedir, CONFIG.cloudbaseinit.created_user,
             ".ssh", "authorized_keys")
 
     def get_instance_file_content(self, filepath):

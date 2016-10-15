@@ -28,10 +28,9 @@ class BaseActionManager(object):
         Argus config options.
     """
 
-    def __init__(self, client, conf, os_type):
+    def __init__(self, client, os_type):
         self._client = client
         self._os_type = os_type
-        self._conf = conf
 
     @abc.abstractmethod
     def download(self, uri, location):

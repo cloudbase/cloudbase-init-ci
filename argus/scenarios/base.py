@@ -19,10 +19,12 @@ import unittest
 
 import six
 
+from argus import config as argus_config
 from argus import util
 
 
 LOG = util.get_logger()
+CONFIG = argus_config.CONFIG
 
 
 def _build_new_function(func, name):
@@ -45,7 +47,6 @@ class ScenarioMeta(type):
             LOG.warning("Class %s is not a final class", cls)
             return cls
 
-        cls.conf = util.get_config()
         for test_class in cls.test_classes:
             test_names = test_loader.getTestCaseNames(test_class)
             for test_name in test_names:
@@ -59,7 +60,7 @@ class ScenarioMeta(type):
 
                 def delegator(self, class_name=test_class,
                               test_name=test_name):
-                    getattr(class_name(cls.conf, self.backend, self.recipe,
+                    getattr(class_name(self.backend, self.recipe,
                                        self.introspection, test_name),
                             test_name)()
 
@@ -116,7 +117,6 @@ class BaseScenario(unittest.TestCase):
     backend = None
     introspection = None
     recipe = None
-    conf = None
 
     @classmethod
     def setUpClass(cls):
@@ -133,14 +133,14 @@ class BaseScenario(unittest.TestCase):
 
         LOG.info("Running scenario %s", cls.__name__)
         # Create output_directory when given
-        if cls.conf.argus.output_directory:
+        if CONFIG.argus.output_directory:
             try:
-                os.mkdir(cls.conf.argus.output_directory)
+                os.mkdir(CONFIG.argus.output_directory)
             except OSError:
                 LOG.warning("Could not create the output directory.")
 
         try:
-            cls.backend = cls.backend_type(cls.conf, cls.__name__,
+            cls.backend = cls.backend_type(cls.__name__,
                                            cls.userdata, cls.metadata,
                                            cls.availability_zone)
             cls.backend.setup_instance()
@@ -148,7 +148,7 @@ class BaseScenario(unittest.TestCase):
             cls.prepare_instance()
 
             cls.introspection = cls.introspection_type(
-                cls.conf, cls.backend.remote_client)
+                cls.backend.remote_client)
         except Exception as exc:
             LOG.exception("Building scenario %r failed with %s",
                           cls.__name__, exc)
@@ -161,7 +161,7 @@ class BaseScenario(unittest.TestCase):
         # pylint: disable=not-callable
         # Pylint is not aware that the attrs are reassigned in other modules,
         # so we're just disabling the errors for now.
-        cls.recipe = cls.recipe_type(cls.conf, cls.backend)
+        cls.recipe = cls.recipe_type(cls.backend)
         cls.prepare_recipe()
         cls.backend.save_instance_output()
 

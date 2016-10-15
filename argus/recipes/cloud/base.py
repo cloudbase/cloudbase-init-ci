@@ -19,13 +19,14 @@ import abc
 
 import six
 
+from argus import config as argus_config
 from argus.recipes import base
 from argus import util
 
 
 __all__ = ('BaseCloudbaseinitRecipe', )
 
-
+CONFIG = argus_config.CONFIG
 LOG = util.get_logger()
 
 
@@ -42,8 +43,8 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     * waits for the finalization of the installation.
     """
 
-    def __init__(self, conf, backend):
-        super(BaseCloudbaseinitRecipe, self).__init__(conf, backend)
+    def __init__(self, backend):
+        super(BaseCloudbaseinitRecipe, self).__init__(backend)
         self._cbinit_conf = None
         self._cbinit_unattend_conf = None
 
@@ -135,7 +136,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         self.prepare_cbinit_config(service_type)
         self.inject_cbinit_config()
         self.pre_sysprep()
-        if self._conf.argus.pause:
+        if CONFIG.argus.pause:
             six.moves.input("Press Enter to continue...")
 
         self.sysprep()

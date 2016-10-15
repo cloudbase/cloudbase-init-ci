@@ -1,5 +1,4 @@
-# Copyright 2015 Cloudbase Solutions Srl
-# All Rights Reserved.
+# Copyright 2016 Cloudbase Solutions Srl
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -13,22 +12,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import abc
+_OPT_PATHS = (
+    'argus.config.ci.ArgusOptions',
+    'argus.config.cloudbaseinit.CloudbaseInitOptions',
+    'argus.config.openstack.OpenStackOptions',
+)
 
-import six
+
+def _load_class(class_path):
+    """Load the module and return the required class."""
+    parts = class_path.rsplit('.', 1)
+    module = __import__(parts[0], fromlist=parts[1])
+    return getattr(module, parts[1])
 
 
-@six.add_metaclass(abc.ABCMeta)
-class BaseInstanceIntrospection(object):
-    """Generic utility class for introspecting an instance.
-
-    :param conf:
-        The configuration object used by argus.
-    :param remote_client:
-        A client which can be used by argus.
-        This needs to be an instance of
-        :class:`argus.remote_client.BaseClient`.
-    """
-
-    def __init__(self, remote_client):
-        self.remote_client = remote_client
+def get_options():
+    """Return a list of all the available `Options` subclasses."""
+    return [_load_class(class_path) for class_path in _OPT_PATHS]

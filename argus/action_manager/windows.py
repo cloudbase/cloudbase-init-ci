@@ -21,12 +21,14 @@ import urlparse
 
 
 from argus.action_manager import base
+from argus import config as argus_config
 from argus import exceptions
 from argus import util
 import requests
 from winrm import exceptions as winrm_exceptions
 
 LOG = util.LOG
+CONFIG = argus_config.CONFIG
 
 
 def wait_boot_completion(client, username):
@@ -48,8 +50,8 @@ class WindowsActionManager(base.BaseActionManager):
     _DIRECTORY = "Directory"
     _FILE = "File"
 
-    def __init__(self, client, config, os_type=util.WINDOWS):
-        super(WindowsActionManager, self).__init__(client, config, os_type)
+    def __init__(self, client, os_type=util.WINDOWS):
+        super(WindowsActionManager, self).__init__(client, os_type)
 
     def download(self, uri, location):
         """Download the resource locatet at a specific uri in the location.
@@ -77,9 +79,9 @@ class WindowsActionManager(base.BaseActionManager):
         :param location:
             The location on the instance.
         """
-        base_resource = self._conf.argus.resources
+        base_resource = CONFIG.argus.resources
         if not base_resource.endswith("/"):
-            base_resource = urlparse.urljoin(self._conf.argus.resources,
+            base_resource = urlparse.urljoin(CONFIG.argus.resources,
                                              "resources/")
         uri = urlparse.urljoin(base_resource, resource_location)
         self.download(uri, location)
@@ -126,8 +128,8 @@ class WindowsActionManager(base.BaseActionManager):
         LOG.debug("Installing Cloudbase-Init ...")
 
         installer = "CloudbaseInitSetup_{build}_{arch}.msi".format(
-            build=self._conf.argus.build,
-            arch=self._conf.argus.arch
+            build=CONFIG.argus.build,
+            arch=CONFIG.argus.arch
         )
         LOG.info("Run the downloaded installation script "
                  "using the installer %r.", installer)
@@ -239,7 +241,7 @@ class WindowsActionManager(base.BaseActionManager):
     def wait_boot_completion(self):
         """Wait for a resonable amount of time the instance to boot."""
         LOG.info("Waiting for boot completion...")
-        username = self._conf.openstack.image_username
+        username = CONFIG.openstack.image_username
         wait_boot_completion(self._client, username)
 
     def specific_prepare(self):
@@ -364,24 +366,24 @@ class WindowsActionManager(base.BaseActionManager):
 
 
 class Windows8ActionManager(WindowsActionManager):
-    def __init__(self, client, config, os_type=util.WINDOWS8):
-        super(Windows8ActionManager, self).__init__(client, config, os_type)
+    def __init__(self, client, os_type=util.WINDOWS8):
+        super(Windows8ActionManager, self).__init__(client, os_type)
 
 
 class WindowsSever2012ActionManager(Windows8ActionManager):
-    def __init__(self, client, config, os_type=util.WINDOWS_SERVER_2012):
-        super(WindowsSever2012ActionManager, self).__init__(client, config,
+    def __init__(self, client, os_type=util.WINDOWS_SERVER_2012):
+        super(WindowsSever2012ActionManager, self).__init__(client,
                                                             os_type)
 
 
 class Windows10ActionManager(WindowsActionManager):
-    def __init__(self, client, config, os_type=util.WINDOWS10):
-        super(Windows10ActionManager, self).__init__(client, config, os_type)
+    def __init__(self, client, os_type=util.WINDOWS10):
+        super(Windows10ActionManager, self).__init__(client, os_type)
 
 
 class WindowsSever2016ActionManager(Windows10ActionManager):
-    def __init__(self, client, config, os_type=util.WINDOWS_SERVER_2016):
-        super(WindowsSever2016ActionManager, self).__init__(client, config,
+    def __init__(self, client, os_type=util.WINDOWS_SERVER_2016):
+        super(WindowsSever2016ActionManager, self).__init__(client,
                                                             os_type)
 
 
@@ -390,8 +392,8 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
     _COMMON = "common.psm1"
     _RESOURCE_DIRECTORY = r"C:\nano_server"
 
-    def __init__(self, client, config, os_type=util.WINDOWS_NANO):
-        super(WindowsNanoActionManager, self).__init__(client, config, os_type)
+    def __init__(self, client, os_type=util.WINDOWS_NANO):
+        super(WindowsNanoActionManager, self).__init__(client, os_type)
 
     @staticmethod
     def _get_resource_path(resource):
@@ -493,8 +495,7 @@ def get_windows_action_manager(client):
     LOG.info("Waiting for boot completion in order to select an "
              "Action Manager ...")
 
-    conf = util.get_config()
-    username = conf.openstack.image_username
+    username = CONFIG.openstack.image_username
     wait_boot_completion(client, username)
 
     # get os type
@@ -512,5 +513,4 @@ def get_windows_action_manager(client):
               major_version, product_type, is_nanoserver)
 
     action_manager = WindowsActionManagers[windows_type]
-    conf = util.get_config()
-    return action_manager(client=client, config=conf)
+    return action_manager(client=client)

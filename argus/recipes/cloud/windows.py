@@ -20,12 +20,14 @@ import os
 
 import six
 
+from argus import config as argus_config
 from argus.config_generator.windows import cb_init as cbinit_config
 from argus import exceptions
 from argus.introspection.cloud import windows as introspection
 from argus.recipes.cloud import base
 from argus import util
 
+CONFIG = argus_config.CONFIG
 LOG = util.get_logger()
 
 # Default values for an instance under booting step.
@@ -82,7 +84,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     def _grab_cbinit_installation_log(self):
         """Obtain the installation logs."""
         LOG.info("Obtaining the installation logs.")
-        if not self._conf.argus.output_directory:
+        if not CONFIG.argus.output_directory:
             LOG.warning("The output directory wasn't given, "
                         "the log will not be grabbed.")
             return
@@ -91,7 +93,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         log_template = "installation-{}.log".format(
             self._backend.instance_server()['id'])
 
-        path = os.path.join(self._conf.argus.output_directory, log_template)
+        path = os.path.join(CONFIG.argus.output_directory, log_template)
         with open(path, 'w') as stream:
             stream.write(content)
 
@@ -102,7 +104,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         will just be added and the other files will be left there.
         So it's more like an update.
         """
-        link = self._conf.argus.patch_install
+        link = CONFIG.argus.patch_install
         if not link:
             return
 
@@ -131,7 +133,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
     def replace_code(self):
         """Replace the code of cloudbaseinit."""
-        if not self._conf.argus.git_command:
+        if not CONFIG.argus.git_command:
             # Nothing to replace.
             return
 
@@ -161,7 +163,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         LOG.debug("Applying cli patch...")
         self._execute("cd {location} && {command}".format(
             location=_CBINIT_TARGET_LOCATION,
-            command=self._conf.argus.git_command), command_type=util.CMD)
+            command=CONFIG.argus.git_command), command_type=util.CMD)
 
         # Replace the code, by moving the code from cloudbaseinit
         # to the installed location.
@@ -231,7 +233,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                                          value="no")
         self._cbinit_conf.set_conf_value(
             name="activate_windows",
-            value=self._conf.cloudbaseinit.activate_windows)
+            value=CONFIG.cloudbaseinit.activate_windows)
         scripts_path = "C:\\Scripts"
         self._make_dir_if_needed(scripts_path)
         self._cbinit_conf.set_conf_value(name="local_scripts_path",
@@ -239,7 +241,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         self._cbinit_conf.set_conf_value(
             name="activate_windows",
-            value=self._conf.cloudbaseinit.activate_windows)
+            value=CONFIG.cloudbaseinit.activate_windows)
 
     def _make_dir_if_needed(self, path):
         """Check if the directory exists, if it doesn't create it."""
@@ -287,10 +289,10 @@ class CloudbaseinitCreateUserRecipe(CloudbaseinitRecipe):
     def pre_sysprep(self):
         super(CloudbaseinitCreateUserRecipe, self).pre_sysprep()
         LOG.info("Creating the user %s...",
-                 self._conf.cloudbaseinit.created_user)
+                 CONFIG.cloudbaseinit.created_user)
 
         resource_location = "windows/create_user.ps1"
-        params = r" -user {}".format(self._conf.cloudbaseinit.created_user)
+        params = r" -user {}".format(CONFIG.cloudbaseinit.created_user)
         self._backend.remote_client.manager.execute_powershell_resource_script(
             resource_location=resource_location, parameters=params)
 
@@ -439,10 +441,10 @@ class CloudbaseinitLongHostname(CloudbaseinitRecipe):
 
     def prepare_cbinit_config(self, service_type):
         super(CloudbaseinitLongHostname, self).prepare_cbinit_config(
-               service_type)
+            service_type)
         LOG.info("Injecting netbios option in conf file.")
-        self._cbinit_conf.set_conf_value(name='netbios_host_name_compatibility',
-                                         value='False')
+        self._cbinit_conf.set_conf_value(
+            name='netbios_host_name_compatibility', value='False')
 
 
 class CloudbaseinitLocalScriptsRecipe(CloudbaseinitRecipe):
@@ -478,7 +480,7 @@ class CloudbaseinitImageRecipe(CloudbaseinitRecipe):
         LOG.info("Preparing already syspreped instance...")
         self.execution_prologue()
 
-        if self._conf.argus.pause:
+        if CONFIG.argus.pause:
             six.moves.input("Press Enter to continue...")
 
         self.wait_cbinit_finalization()

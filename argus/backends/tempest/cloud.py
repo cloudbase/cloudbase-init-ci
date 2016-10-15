@@ -14,6 +14,7 @@
 #    under the License.
 
 from argus.backends.tempest import tempest_backend
+from argus import config as argus_config
 from argus import exceptions
 from argus import util
 
@@ -21,6 +22,7 @@ with util.restore_excepthook():
     from tempest.common import dynamic_creds
     from tempest.common import waiters
 
+CONFIG = argus_config.CONFIG
 
 SUBNET6_CIDR = "::ffff:a00:0/120"
 DNSES6 = ["::ffff:808:808", "::ffff:808:404"]
@@ -89,7 +91,7 @@ class NetworkWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
         subnets_client = self._manager.subnets_client
         subnets_client.update_subnet(
             subnet_id, enable_dhcp=False,
-            dns_nameservers=self._conf.argus.dns_nameservers)
+            dns_nameservers=CONFIG.argus.dns_nameservers)
 
         # Change the allocation pool to configure any IP,
         # other the one used already with dynamic settings.
@@ -185,7 +187,7 @@ class RescueWindowsBackend(tempest_backend.BaseWindowsTempestBackend):
 
     def rescue_server(self):
         """Rescue the underlying instance."""
-        admin_pass = self._conf.openstack.image_password
+        admin_pass = CONFIG.openstack.image_password
         self._manager.servers_client.rescue_server(
             self.internal_instance_id(),
             adminPass=admin_pass)
