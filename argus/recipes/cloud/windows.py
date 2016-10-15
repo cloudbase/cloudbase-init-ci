@@ -243,6 +243,9 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             name="activate_windows",
             value=CONFIG.cloudbaseinit.activate_windows)
 
+        self._backend.remote_client.manager.prepare_config(
+            self._cbinit_conf, self._cbinit_unattend_conf)
+
     def _make_dir_if_needed(self, path):
         """Check if the directory exists, if it doesn't create it."""
         if not self._backend.remote_client.manager.is_dir(path):
