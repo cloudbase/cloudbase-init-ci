@@ -36,9 +36,11 @@ class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
     def __init__(self, client):
         super(BasePopulatedCBInitConfig, self).__init__(client)
 
-    def set_conf_value(self, name, value=""):
-        """Set a config value in default section."""
-        self.conf.set("DEFAULT", name, value)
+    def set_conf_value(self, name, value="", section="DEFAULT"):
+        """Set a config value in the specified section."""
+        if not self.conf.has_section(section) and section != "DEFAULT":
+            self.conf.add_section(section)
+        self.conf.set(section, name, value)
 
     def _execute(self, cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
                  command_type=None):

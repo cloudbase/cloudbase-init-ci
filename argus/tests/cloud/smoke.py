@@ -128,8 +128,9 @@ class TestCloudstackUpdatePasswordSmoke(base.BaseTestCase):
 
     @property
     def service_url(self):
+        port = CONFIG.cloudstack_mock.password_server_port
         return "http://%(host)s:%(port)s/" % {"host": "0.0.0.0",
-                                              "port": 8888}
+                                              "port": port}
 
     @property
     def password(self):

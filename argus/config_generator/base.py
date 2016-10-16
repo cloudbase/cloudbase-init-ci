@@ -30,8 +30,8 @@ class BaseConfig(object):
         self._client = client
 
     @abc.abstractmethod
-    def set_conf_value(self, name, value):
-        """Set a config value."""
+    def set_conf_value(self, name, value, section):
+        """Set a config value in the specified section."""
         pass
 
     @abc.abstractmethod
