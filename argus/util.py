@@ -91,7 +91,7 @@ def sanitize_command_output(content):
     any other junk/strange characters will be ignore, and will
     also strip down the content of unrequired spaces and newlines.
     """
-    return unicode(content, errors='ignore').strip()
+    return six.text_type(content, errors='ignore').strip()
 
 
 def get_local_ip():

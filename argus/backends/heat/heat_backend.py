@@ -164,7 +164,8 @@ class BaseHeatBackend(base.CloudBackend):
             self._keypair.destroy()
 
         # if no stack was created
-        if not reduce(lambda a, b: a + 1, self._heat_client.stacks.list(), 0):
+        if not six.functools.reduce(lambda a, b: a + 1,
+                                    self._heat_client.stacks.list(), 0):
             return
         try:
             self._delete_floating_ip()
@@ -176,7 +177,7 @@ class BaseHeatBackend(base.CloudBackend):
     def _get_stacks(self):
         """Return the number of heat stacks."""
         iterator = self._heat_client.stacks.list()
-        return reduce(lambda acc, e: acc + 1, iterator, 0)
+        return six.functools.reduce(lambda acc, e: acc + 1, iterator, 0)
 
     def _wait_stacks(self, retry_count=RETRY_COUNT,
                      retry_delay=RETRY_DELAY):

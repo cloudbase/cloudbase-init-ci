@@ -17,7 +17,12 @@
 
 import base64
 import functools
-import StringIO
+
+try:
+    import StringIO
+except ImportError:
+    import io as StringIO
+
 import time
 
 import six

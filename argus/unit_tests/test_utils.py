@@ -13,9 +13,13 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import functools
 import logging as base_logging
 
+from argus import config as argus_config
 from argus import util
+
+CONFIG = argus_config.CONFIG
 
 
 URI = "fake/uri"
@@ -32,6 +36,13 @@ USERNAME = "fake_username"
 PATH = r"fake\path"
 PATH_TYPE = "FakeType"
 ITEM_TYPE = "FakeType"
+CMD = "fake-command"
+STDOUT = "fake-stdout"
+STDERR = "fake-stderr"
+EXIT_CODE = 0
+PYTHON_DIR = r"fake\python\dir"
+CBINIT_DIR = r"fake\cbinit\dir"
+INSTALLER = "fake_installer"
 
 
 # This is similar with unittest.TestCase.assertLogs from Python 3.4.
@@ -79,3 +90,36 @@ class LogSnatcher(object):
     def __exit__(self, *args):
         self._logger.handlers.remove(self._snatch_handler)
         self._logger.setLevel(self._previous_level)
+
+
+class ConfPatcher(object):
+    """Override the configuration for the given key, with the given value.
+
+    This class can be used both as a context manager and as a decorator.
+    """
+    def __init__(self, key, value, group=None, conf=CONFIG):
+        if group:
+            self._original_value = conf.get(group).get(key)
+        else:
+            self._original_value = conf.get(key)
+        self._key = key
+        self._value = value
+        self._group = group
+        self._conf = conf
+
+    def __call__(self, func, *args, **kwargs):
+        def _wrapped_f(*args, **kwargs):
+            with self:
+                return func(*args, **kwargs)
+
+        functools.update_wrapper(_wrapped_f, func)
+        return _wrapped_f
+
+    def __enter__(self):
+        self._conf.set_override(self._key, self._value,
+                                group=self._group)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._conf.set_override(self._key, self._original_value,
+                                group=self._group)

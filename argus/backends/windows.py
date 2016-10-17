@@ -13,8 +13,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from argus import config as argus_config
 from argus.client import windows
+from argus import config as argus_config
 from argus import util
 
 CONFIG = argus_config.CONFIG

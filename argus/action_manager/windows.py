@@ -17,16 +17,17 @@ import ntpath
 import os
 import socket
 import time
-import urlparse
 
+import requests
+
+from six.moves import urllib_parse as urlparse
+from winrm import exceptions as winrm_exceptions
 
 from argus.action_manager import base
 from argus import config as argus_config
 from argus import exceptions
 from argus.introspection.cloud import windows as introspection
 from argus import util
-import requests
-from winrm import exceptions as winrm_exceptions
 
 LOG = util.LOG
 CONFIG = argus_config.CONFIG
@@ -236,6 +237,7 @@ class WindowsActionManager(base.BaseActionManager):
         LOG.info("Cloning from %s to %s", repo_url, location)
         cmd = "git clone '{repo}' '{location}'".format(repo=repo_url,
                                                        location=location)
+
         while count > 0:
             try:
                 self._client.run_command(cmd)
@@ -250,9 +252,9 @@ class WindowsActionManager(base.BaseActionManager):
                     time.sleep(delay)
             else:
                 return True
-        else:
-            LOG.debug('Could not clone %s', repo_url)
-            return False
+
+        LOG.debug('Could not clone %s', repo_url)
+        return False
 
     def wait_cbinit_service(self):
         """Wait if the Cloudbase-Init Service to stop."""
@@ -379,8 +381,8 @@ class WindowsActionManager(base.BaseActionManager):
             Remote path where the new file should be created.
         """
         if self.is_file(path):
-            LOG.warning("File '{}' already exists. LastWriteTime and"
-                        " LastAccessTime will be updated.".format(path))
+            LOG.warning("File '%s' already exists. LastWriteTime and"
+                        " LastAccessTime will be updated.", path)
             self._client.run_command_with_retry(
                 "echo $null >> '{}'".format(path),
                 command_type=util.POWERSHELL)
@@ -607,7 +609,7 @@ def get_windows_action_manager(client):
     minor_version = introspection.get_os_version(client, 'Minor')
     product_type = _get_product_type(client, major_version)
     windows_type = util.WINDOWS_VERSION.get((major_version, minor_version,
-                                            product_type), util.WINDOWS)
+                                             product_type), util.WINDOWS)
     is_nanoserver = _is_nanoserver(client)
 
     if isinstance(windows_type, dict):

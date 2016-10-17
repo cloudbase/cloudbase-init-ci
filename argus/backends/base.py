@@ -107,7 +107,7 @@ class CloudBackend(BaseBackend):
                             template.format(self.internal_instance_id()))
         content = self.instance_output()
         if not content.strip():
-            LOG.warn("Empty console output; nothing to save.")
+            LOG.warning("Empty console output; nothing to save.")
             return
 
         LOG.info("Saving instance console output to: %s", path)

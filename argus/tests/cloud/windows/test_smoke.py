@@ -16,15 +16,14 @@
 """Smoke tests for the Cloudbase-Init."""
 
 import unittest
-import pkg_resources
 
+import pkg_resources
 
 from argus import config as argus_config
 from argus.tests import base
 from argus.tests.cloud import smoke
 from argus.tests.cloud import util as test_util
 from argus import util
-
 
 CONFIG = argus_config.CONFIG
 

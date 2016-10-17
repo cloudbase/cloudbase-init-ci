@@ -22,6 +22,8 @@ import re
 import shutil
 import tempfile
 
+import six
+
 from argus import config as argus_config
 from argus import exceptions
 from argus.introspection.cloud import base
@@ -66,7 +68,8 @@ def _get_ntp_peers(output):
             continue
         _, _, entry_peers = line.partition(":")
         peers.extend(entry_peers.split(","))
-    return list(filter(None, map(unicode.strip, peers)))
+
+    return list(filter(None, map(six.text_type.strip, peers)))
 
 
 def escape_path(path):
@@ -425,4 +428,4 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
                       r" Manager\Memory Management")
         cmd = r"(Get-ItemProperty '{}').PagingFiles".format(swap_query)
         stdout = self.remote_client.run_command_verbose(cmd)
-        return stdout.strip() == '?:\pagefile.sys'
+        return stdout.strip() == r'?:\pagefile.sys'
