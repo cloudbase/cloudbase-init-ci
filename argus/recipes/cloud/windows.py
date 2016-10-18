@@ -128,8 +128,13 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         LOG.debug("Replace old files with the new ones.")
         cbdir = introspection.get_cbinit_dir(self._execute)
-        self._execute('xcopy /y /e /q "C:\\install\\Cloudbase-Init"'
+        self._execute('xcopy /y /e /q "C:\\install"'
                       ' "{}"'.format(cbdir), command_type=util.CMD)
+
+        # Update the new changes
+        resource_location = "windows/updateCbinit.ps1"
+        self._backend.remote_client.manager.execute_powershell_resource_script(
+            resource_location=resource_location)
 
     def replace_code(self):
         """Replace the code of cloudbaseinit."""
