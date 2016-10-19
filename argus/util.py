@@ -76,6 +76,24 @@ NETWORK_KEYS = [
 ]
 
 
+def get_int_from_str(content):
+    """Returns only the digits from a given string.
+
+    :type content: str
+    """
+    return int(''.join(element for element in content if element.isdigit()))
+
+
+def sanitize_command_output(content):
+    """Sanitizes the output got from underlying instances.
+
+    Sanitizes the output by only returning unicode characters,
+    any other junk/strange characters will be ignore, and will
+    also strip down the content of unrequired spaces and newlines.
+    """
+    return unicode(content, errors='ignore').strip()
+
+
 def get_local_ip():
     """Get the current machine's IP."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -299,7 +317,12 @@ WINDOWS = "windows"
 WINDOWS8 = "windows_8"
 WINDOWS10 = "windows_10"
 
+WINDOWS_SERVER_2008 = "windows_server_2008"
+WINDOWS_SERVER_2008_R2 = "windows_server_2008r2"
+
 WINDOWS_SERVER_2012 = "windows_sever_2012"
+WINDOWS_SERVER_2012_R2 = "windows_server_2012r2"
+
 WINDOWS_SERVER_2016 = "windows_server_2016"
 WINDOWS_NANO = "windows_nano"
 
@@ -314,9 +337,12 @@ WINDOWS_NANO = "windows_nano"
 # IsNanoserver False/True based on this code : https://goo.gl/UD27SK
 
 WINDOWS_VERSION = {
-    (6, 1): WINDOWS8,
-    (10, 1): WINDOWS10,
-    (6, 3): WINDOWS_SERVER_2012,
+    (6, 2, 1): WINDOWS8,
+    (10, 0, 1): WINDOWS10,
+    (6, 0, 3): WINDOWS_SERVER_2008,
+    (6, 1, 3): WINDOWS_SERVER_2008_R2,
+    (6, 2, 3): WINDOWS_SERVER_2012,
+    (6, 3, 3): WINDOWS_SERVER_2012_R2,
     (10, 3): {
         False: WINDOWS_SERVER_2016,
         True: WINDOWS_NANO

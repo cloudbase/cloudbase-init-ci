@@ -65,8 +65,8 @@ class WindowsActionManager(base.BaseActionManager):
             remote resource.
         """
         LOG.debug("Downloading from %s to %s ", uri, location)
-        cmd = ('Invoke-WebRequest -Uri {} '
-               '-OutFile "{}"'.format(uri, location))
+        cmd = ('(New-Object System.Net.WebClient).DownloadFile('
+               '"{uri}","{location}")'.format(uri=uri, location=location))
         self._client.run_command_with_retry(cmd,
                                             count=util.RETRY_COUNT,
                                             delay=util.RETRY_DELAY,
@@ -256,9 +256,8 @@ class WindowsActionManager(base.BaseActionManager):
 
     def wait_cbinit_service(self):
         """Wait if the Cloudbase-Init Service to stop."""
-        wait_cmd = ('(Get-Service | where -Property Name '
-                    '-match cloudbase-init).Status')
-
+        wait_cmd = ('(Get-Service | where {$_.Name '
+                    '-match "cloudbase-init"}).Status')
         self._client.run_command_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'Stopped',
@@ -424,10 +423,43 @@ class Windows8ActionManager(WindowsActionManager):
         super(Windows8ActionManager, self).__init__(client, os_type)
 
 
+class WindowsServer2008ActionManager(WindowsActionManager):
+    def __init__(self, client, os_type=util.WINDOWS_SERVER_2008):
+        super(WindowsServer2008ActionManager, self).__init__(client, os_type)
+
+    def _run_installation_script(self, installer):
+        """Run the installation script for Cloudbase-Init."""
+        LOG.info("Running the installation script for Cloudbase-Init.")
+
+        parameters = '-installer {}'.format(installer)
+        self.execute_powershell_resource_script(
+            resource_location='windows/2008R2/installCBinit.ps1',
+            parameters=parameters)
+
+    def prepare_config(self, cbinit_conf, cbinit_unattend_conf):
+        """Prepare Cloudbase-Init config for every OS.
+
+        :param cbinit_config:
+            Cloudbase-Init config file.
+        :param cbinit_unattend_conf:
+            Cloudbase-Init Unattend config file.
+        """
+        super(WindowsServer2008ActionManager, self).prepare_config(
+            cbinit_conf, cbinit_unattend_conf)
+        cbinit_conf.set_conf_value("reset_service_password", False)
+        cbinit_unattend_conf.set_conf_value("reset_service_password", False)
+
+
 class WindowsSever2012ActionManager(Windows8ActionManager):
     def __init__(self, client, os_type=util.WINDOWS_SERVER_2012):
         super(WindowsSever2012ActionManager, self).__init__(client,
                                                             os_type)
+
+
+class WindowsSever2012R2ActionManager(Windows8ActionManager):
+    def __init__(self, client, os_type=util.WINDOWS_SERVER_2012_R2):
+        super(WindowsSever2012R2ActionManager, self).__init__(client,
+                                                              os_type)
 
 
 class Windows10ActionManager(WindowsActionManager):
@@ -506,7 +538,10 @@ WindowsActionManagers = {
     util.WINDOWS: WindowsNanoActionManager,
     util.WINDOWS8: Windows8ActionManager,
     util.WINDOWS10: Windows10ActionManager,
+    util.WINDOWS_SERVER_2008: WindowsServer2008ActionManager,
+    util.WINDOWS_SERVER_2008_R2: WindowsServer2008ActionManager,
     util.WINDOWS_SERVER_2012: WindowsSever2012ActionManager,
+    util.WINDOWS_SERVER_2012_R2: WindowsSever2012R2ActionManager,
     util.WINDOWS_SERVER_2016: WindowsSever2016ActionManager,
     util.WINDOWS_NANO: WindowsNanoActionManager
 }
@@ -536,19 +571,6 @@ def _is_nanoserver(client):
     return len(nanoserver_property) > 0 and nanoserver_property[0] == "1"
 
 
-def _get_major_version(client):
-    """Return the major version of the OS.
-
-    :param client:
-        A Windows Client.
-    """
-    cmd = r"[System.Environment]::OSVersion.Version.Major"
-    major_version, _, _ = client.run_command_with_retry(
-        cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
-        command_type=util.POWERSHELL)
-    return int(major_version.strip())
-
-
 def _get_product_type(client, major_version):
     """Return the minor version of the OS.
 
@@ -569,7 +591,7 @@ def _get_product_type(client, major_version):
     product_type, _, _ = client.run_command_with_retry(
         cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
         command_type=util.POWERSHELL)
-    return int(product_type.strip())
+    return util.get_int_from_str(product_type.strip())
 
 
 def get_windows_action_manager(client):
@@ -581,10 +603,11 @@ def get_windows_action_manager(client):
     wait_boot_completion(client, username)
 
     # get OS type
-    major_version = _get_major_version(client)
+    major_version = introspection.get_os_version(client, 'Major')
+    minor_version = introspection.get_os_version(client, 'Minor')
     product_type = _get_product_type(client, major_version)
-    windows_type = util.WINDOWS_VERSION.get((major_version, product_type),
-                                            util.WINDOWS)
+    windows_type = util.WINDOWS_VERSION.get((major_version, minor_version,
+                                            product_type), util.WINDOWS)
     is_nanoserver = _is_nanoserver(client)
 
     if isinstance(windows_type, dict):

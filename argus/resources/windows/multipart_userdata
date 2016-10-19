@@ -58,7 +58,7 @@ Content-Disposition: attachment; filename="cfn-userdata"
 
 function Create-File ($path) {
     $file_path = $path + "\heat_file.txt"
-    New-Item $file_path -type file -ErrorAction Ignore
+    New-Item $file_path -type file -ErrorAction SilentlyContinue
 }
 
 Create-File -path $env:SystemDrive
@@ -70,7 +70,7 @@ Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment; filename="create_file.ps1"
 
 #ps1_sysnative
-New-Item $env:SystemDrive\powershell_multipart.txt -type file -ErrorAction Ignore
+New-Item $env:SystemDrive\powershell_multipart.txt -type file -ErrorAction SilentlyContinue
 
 --===============1598784645116016685==
 Content-Type: text/x-shellscript; charset="us-ascii"
@@ -79,7 +79,7 @@ Content-Transfer-Encoding: 7bit
 Content-Disposition: attachment; filename="create_file_x86.ps1"
 
 #ps1_x86
-New-Item $env:SystemDrive\powershell_multipart_x86.txt -type file -ErrorAction Ignore
+New-Item $env:SystemDrive\powershell_multipart_x86.txt -type file -ErrorAction SilentlyContinue
 
 --===============1598784645116016685==
 Content-Type: text/x-shellscript; charset="us-ascii"

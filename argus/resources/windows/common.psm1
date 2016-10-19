@@ -1,4 +1,4 @@
-function Get-ProgramDir() {
+function Get-ProgramDir([string]$dirname="Cloudbase Solutions") {
     $osArch = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
     $programDirs = @($ENV:ProgramFiles)
 
@@ -11,14 +11,14 @@ function Get-ProgramDir() {
     $ProgramFilesDir = 0
     foreach ($programDir in $programDirs)
     {
-        if (Test-Path "$programDir\Cloudbase Solutions")
+        if (Test-Path "$programDir\$dirname")
         {
             $ProgramFilesDir = $programDir
         }
     }
     if (!$ProgramFilesDir)
     {
-        throw "Cloudbase-init installed files not found in $programDirs"
+        throw "$dirname not found."
     }
 
     return $ProgramFilesDir

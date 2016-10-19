@@ -12,7 +12,7 @@ try {
     $Task = Get-Content -Path $ExistingTasks | Select-String $TaskName -quiet -casesensitive
     if ($Task)
     {
-        schtasks /DELETE /TN $TaskName /F >nul
+        schtasks /DELETE /TN $TaskName /F
     }
 
     schtasks /CREATE /TN $TaskName /SC ONCE /SD 01/01/2020 /ST 00:00:00 /RL HIGHEST /RU CiAdmin /RP Passw0rd /TR "powershell C:\\installCBinit.ps1 -installer $installer" /F

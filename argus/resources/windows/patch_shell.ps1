@@ -25,6 +25,6 @@ if __name__ == '__main__':
     main()
 '@
 
-mv $cloudbaseinitdir\shell.py $cloudbaseinitdir\original_shell.py -ErrorAction ignore
-rm $cloudbaseinitdir\shell.pyc -ErrorAction ignore
+mv $cloudbaseinitdir\shell.py $cloudbaseinitdir\original_shell.py -ErrorAction SilentlyContinue
+rm $cloudbaseinitdir\shell.pyc -ErrorAction SilentlyContinue
 echo $patch_code | Out-File -Encoding utf8 $cloudbaseinitdir\shell.py
