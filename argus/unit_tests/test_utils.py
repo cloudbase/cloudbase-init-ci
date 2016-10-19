@@ -33,7 +33,7 @@ CBINIT_LOCATION = r"C:\installCBinit.ps1"
 SYSPREP_RESOURCE_LOCATION = "windows/sysprep.ps1"
 SEARCHED_PATHS = [r"first\fake\path", r"second\fake\path", r"third\fake\path"]
 USERNAME = "fake_username"
-PATH = r"fake\path"
+PATH = r"fake\long\path"
 PATH_TYPE = "FakeType"
 ITEM_TYPE = "FakeType"
 CMD = "fake-command"
@@ -43,6 +43,7 @@ EXIT_CODE = 0
 PYTHON_DIR = r"fake\python\dir"
 CBINIT_DIR = r"fake\cbinit\dir"
 INSTALLER = "fake_installer"
+RESOURCE = "fake.resource"
 
 
 # This is similar with unittest.TestCase.assertLogs from Python 3.4.

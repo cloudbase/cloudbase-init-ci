@@ -18,14 +18,15 @@
 # pylint: disable=no-value-for-parameter, too-many-lines, protected-access
 # pylint: disable=too-many-public-methods
 
+import ntpath
+import os
+import requests
 import unittest
 
 try:
     import unittest.mock as mock
 except ImportError:
     import mock
-
-import requests
 
 from six.moves import urllib_parse as urlparse
 
@@ -1088,3 +1089,195 @@ class WindowsActionManagerTest(unittest.TestCase):
             self.assertEqual(snatcher.output,
                              ["Config Cloudbase-Init"
                               " for {}".format(self._os_type)])
+
+
+class WindowsNanoActionManagerTest(unittest.TestCase):
+    """Tests for windows nano action manager class."""
+
+    def setUp(self):
+        self._client = mock.MagicMock()
+        self._os_type = mock.sentinel.os_type
+
+        self._action_manager = action_manager.WindowsNanoActionManager(
+            client=self._client, os_type=self._os_type)
+
+    def test_get_resource_path(self):
+        os.path.abspath = mock.Mock(return_value=test_utils.PATH)
+        resource_path = os.path.normpath(os.path.join(
+            test_utils.PATH, "..", "resources", "windows", "nano_server",
+            test_utils.RESOURCE))
+
+        self.assertEqual(self._action_manager._get_resource_path(
+            test_utils.RESOURCE), resource_path)
+
+    @mock.patch('argus.action_manager.windows.WindowsActionManager'
+                '.specific_prepare')
+    @mock.patch('argus.action_manager.windows.WindowsActionManager.is_dir')
+    @mock.patch('argus.action_manager.windows.WindowsActionManager.mkdir')
+    @mock.patch('argus.action_manager.windows.WindowsNanoActionManager'
+                '._get_resource_path')
+    def _test_specific_prepare(self, mock_get_path, mock_mkdir, mock_is_dir,
+                               mock_spec_prep, mkdir_exc=None, is_dir_exc=None,
+                               spec_prep_exc=None, copy_file_exc=[None, None]):
+        if spec_prep_exc:
+            mock_spec_prep.side_effect = spec_prep_exc
+            with self.assertRaises(spec_prep_exc):
+                self._action_manager.specific_prepare()
+            return
+
+        if is_dir_exc:
+            mock_is_dir.side_effect = is_dir_exc
+            with self.assertRaises(is_dir_exc):
+                self._action_manager.specific_prepare()
+            return
+
+        mock_is_dir.return_value = False
+
+        if mkdir_exc:
+            mock_mkdir.side_effect = mkdir_exc
+            with self.assertRaises(mkdir_exc):
+                self._action_manager.specific_prepare()
+            return
+
+        mock_get_path.return_value = test_utils.PATH
+        self._client.copy_file.side_effect = copy_file_exc
+
+        if copy_file_exc[0]:
+            with self.assertRaises(copy_file_exc[0]):
+                self._action_manager.specific_prepare()
+            return
+
+        if copy_file_exc[1]:
+            with self.assertRaises(copy_file_exc[1]):
+                self._action_manager.specific_prepare()
+            return
+
+        self._action_manager.specific_prepare()
+
+        self.assertEqual(mock_get_path.call_count, 2)
+        mock_get_path.assert_has_calls(
+            [mock.call(self._action_manager._COMMON),
+             mock.call(self._action_manager._DOWNLOAD_SCRIPT)])
+
+        calls = [
+            mock.call(test_utils.PATH, ntpath.join(
+                self._action_manager._RESOURCE_DIRECTORY,
+                self._action_manager._COMMON)),
+            mock.call(test_utils.PATH, ntpath.join(
+                self._action_manager._RESOURCE_DIRECTORY,
+                self._action_manager._DOWNLOAD_SCRIPT))
+        ]
+
+        self.assertEqual(self._client.copy_file.call_count, 2)
+        self._client.copy_file.assert_has_calls(calls)
+
+    def test_specific_prepare_successful(self):
+        self._test_specific_prepare()
+
+    def test_specific_prepare_spec_prep_exc(self):
+        self._test_specific_prepare(spec_prep_exc=exceptions.ArgusError)
+
+    def test_specific_prepare_is_dir_exc(self):
+        self._test_specific_prepare(is_dir_exc=exceptions.ArgusTimeoutError)
+
+    def test_specific_prepare_mkdir_exc(self):
+        self._test_specific_prepare(mkdir_exc=exceptions.ArgusTimeoutError)
+
+    def test_specific_prepare_copy_file_exc_first_call(self):
+        self._test_specific_prepare(
+            copy_file_exc=[exceptions.ArgusError, None])
+
+    def test_specific_prepare_copy_file_exc_second_call(self):
+        self._test_specific_prepare(
+            copy_file_exc=[None, exceptions.ArgusError])
+
+    def _test_download(self, run_command_exc=None):
+        if run_command_exc:
+            self._client.run_command_with_retry = mock.Mock(
+                side_effect=run_command_exc)
+            with self.assertRaises(run_command_exc):
+                self._action_manager.download(
+                    test_utils.URI, test_utils.LOCATION)
+        else:
+            self._client.run_command_with_retry = mock.Mock()
+
+            resource_path = ntpath.join(
+                self._action_manager._RESOURCE_DIRECTORY,
+                self._action_manager._DOWNLOAD_SCRIPT)
+            cmd = r"{script_path} -Uri {uri} -OutFile '{outfile}'".format(
+                script_path=resource_path, uri=test_utils.URI,
+                outfile=test_utils.LOCATION)
+
+            self._action_manager.download(test_utils.URI, test_utils.LOCATION)
+
+            self._client.run_command_with_retry.assert_called_once_with(
+                cmd, command_type=util.POWERSHELL)
+
+    def test_download_successful(self):
+        self._test_download()
+
+    def test_download_exception(self):
+        self._test_download(run_command_exc=exceptions.ArgusTimeoutError)
+
+    @mock.patch('argus.action_manager.windows.WindowsActionManager'
+                '.prepare_config')
+    def _test_prepare_config(self, mock_prep_config, prep_config_exc=None,
+                             cbi_conf_set_exc=None, cbi_conf_remove_exc=None,
+                             cbi_unatt_conf_remove_exc=None):
+        cbinit_conf = mock.MagicMock()
+        cbinit_unattend_conf = mock.MagicMock()
+
+        if prep_config_exc:
+            mock_prep_config.side_effect = prep_config_exc
+            with self.assertRaises(prep_config_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        if cbi_conf_set_exc:
+            cbinit_conf.set_conf_value.side_effect = cbi_conf_set_exc
+            with self.assertRaises(cbi_conf_set_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        if cbi_conf_remove_exc:
+            cbinit_conf.conf.remove_option.side_effect = cbi_conf_remove_exc
+            with self.assertRaises(cbi_conf_remove_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        if cbi_unatt_conf_remove_exc:
+            (cbinit_unattend_conf.conf.remove_option
+             .side_effect) = cbi_unatt_conf_remove_exc
+            with self.assertRaises(cbi_unatt_conf_remove_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        self._action_manager.prepare_config(cbinit_conf, cbinit_unattend_conf)
+
+        cbinit_conf.set_conf_value.assert_called_once_with(
+            "stop_service_on_exit", False)
+        cbinit_conf.conf.remove_option.assert_called_once_with(
+            "DEFAULT", "logging_serial_port_settings")
+        cbinit_unattend_conf.conf.remove_option.assert_called_once_with(
+            "DEFAULT", "logging_serial_port_settings")
+
+    def test_prepare_config_successful(self):
+        self._test_prepare_config()
+
+    def test_prepare_config_prep_config_exc(self):
+        self._test_prepare_config(prep_config_exc=exceptions.ArgusError)
+
+    def test_prepare_config_cbi_conf_set_exc(self):
+        self._test_prepare_config(cbi_conf_set_exc=exceptions.ArgusError)
+
+    def test_prepare_config_cbi_conf_remove_exc(self):
+        self._test_prepare_config(
+            cbi_conf_remove_exc=exceptions.ArgusError)
+
+    def test_prepare_config_cbi_unatt_conf_remove_exc(self):
+        self._test_prepare_config(
+            cbi_unatt_conf_remove_exc=exceptions.ArgusError)
