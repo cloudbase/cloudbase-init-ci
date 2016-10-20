@@ -44,6 +44,12 @@ PYTHON_DIR = r"fake\python\dir"
 CBINIT_DIR = r"fake\cbinit\dir"
 INSTALLER = "fake_installer"
 RESOURCE = "fake.resource"
+MAJOR_VERSION_10 = "10"
+MAJOR_VERSION_6 = "6"
+MINOR_VERSION_0 = "0"
+PRODUCT_TYPE_1 = "1"
+PRODUCT_TYPE_3 = "3"
+IMAGE_USERNAME = "fake_username"
 
 
 # This is similar with unittest.TestCase.assertLogs from Python 3.4.
