@@ -46,7 +46,7 @@ def _encode(data):
     return encoded
 
 
-def _base64_read_file(filepath, size=8192):
+def _base64_read_file(filepath, size=2048):
     with open(filepath, 'rb') as stream:
         reader = functools.partial(stream.read, size)
         for data in iter(reader, b''):
@@ -151,14 +151,12 @@ class WinRemoteClient(base.BaseClient):
         commands = []
         for command in _base64_read_file(filepath):
             remote_command = (
-                r'powershell "{content}" >> "{remote_destination}"'
+                "{content} >> '{remote_destination}'"
                 .format(content=get_string_cmd.format(command),
                         remote_destination=remote_destination))
 
             commands.append(remote_command)
-        # NOTE(mmicu): If the command would be POWERSHELL type
-        #              it will get over the 8191 char limit.
-        self._run_commands(commands, commands_type=util.CMD)
+        self._run_commands(commands, commands_type=util.POWERSHELL)
 
     def write_file(self, data, remote_destination):
         """Copy the given data in the remote destination.
