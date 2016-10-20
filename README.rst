@@ -1,8 +1,8 @@
 argus-ci
 ========
 
-.. image:: https://travis-ci.org/PCManticore/argus-ci.svg?branch=develop
-    :target: https://travis-ci.org/PCManticore/argus-ci
+.. image:: https://travis-ci.org/cloudbase/cloudbase-init-ci/.svg?branch=develop
+    :target: https://travis-ci.org/cloudbase/cloudbase-init-ci/
 
 .. image:: https://readthedocs.org/projects/argus-ci/badge/?style=flat
     :target: http://argus-ci.readthedocs.org/en/latest/?badge=latest
