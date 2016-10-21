@@ -666,6 +666,25 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
         LOG.info("Wait for the machine to finish rebooting ...")
         self.wait_boot_completion()
 
+    def _execute_resource_script(self, resource_location, parameters,
+                                 script_type):
+        """Run a resource script with the specific parameters."""
+        LOG.debug("Executing resource script %s with this parameters %s",
+                  resource_location, parameters)
+
+        # TODO(mmicu): refactor this or find an OS agnostic way
+        if script_type == util.BAT_SCRIPT:
+            super(WindowsNanoActionManager, self)._execute_resource_script(
+                resource_location, parameters, script_type)
+        else:
+            instance_location = r"C:\{}".format(
+                resource_location.split('/')[-1])
+            self.download_resource(resource_location, instance_location)
+            cmd = '& "{}" {}'.format(instance_location, parameters)
+            self._client.run_command_with_retry(cmd,
+                                                count=util.RETRY_COUNT,
+                                                delay=util.RETRY_DELAY,
+                                                command_type=util.POWERSHELL)
 
 
 WindowsActionManagers = {
