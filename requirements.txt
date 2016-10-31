@@ -1,8 +1,10 @@
 pbr
-oslo.config
 six>=1.7.0
+pycparser==2.13
+tempest==11.0.0
 pywinrm
 beautifulsoup4
+oslo.config
 python-keystoneclient
 python-heatclient
 cherrypy
