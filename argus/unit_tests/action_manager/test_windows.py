@@ -161,7 +161,8 @@ class WindowsActionManagerTest(unittest.TestCase):
             test_utils.RESOURCE_LOCATION, instance_location)
         self._client.run_command_with_retry.assert_called_once_with(
             cmd, count=util.RETRY_COUNT,
-            delay=util.RETRY_DELAY, command_type=script_type)
+            delay=util.RETRY_DELAY, command_type=script_type,
+            upper_timeout=CONFIG.argus.upper_timeout)
 
     def test_execute_resource_script_bat_script(self):
         self._test_execute_resource_script(script_type=util.BAT_SCRIPT)
@@ -196,7 +197,8 @@ class WindowsActionManagerTest(unittest.TestCase):
         mock_execute_script.assert_called_once_with(
             resource_location=test_utils.RESOURCE_LOCATION,
             parameters=test_utils.PARAMETERS,
-            script_type=script_type)
+            script_type=script_type,
+            upper_timeout=CONFIG.argus.upper_timeout)
 
     def test_execute_powershell_resource_script_successful(self):
         test_method = self._action_manager.execute_powershell_resource_script
@@ -855,7 +857,8 @@ class WindowsActionManagerTest(unittest.TestCase):
                 command_type=util.CMD), test_utils.STDOUT)
             self._client.run_command_with_retry.assert_called_once_with(
                 test_utils.CMD, count=util.RETRY_COUNT,
-                delay=util.RETRY_DELAY, command_type=util.CMD)
+                delay=util.RETRY_DELAY, command_type=util.CMD,
+                upper_timeout=CONFIG.argus.upper_timeout)
 
     def test_execute(self):
         self._test_execute()

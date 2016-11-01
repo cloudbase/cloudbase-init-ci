@@ -36,7 +36,8 @@ class BaseClient(object):
         self._cert_key = cert_key
 
     @abc.abstractmethod
-    def run_remote_cmd(self, command, command_type=None):
+    def run_remote_cmd(self, command, command_type=None,
+                       upper_timeout=None):
         """Run the given remote command.
 
         The command will be executed on the remote underlying server.

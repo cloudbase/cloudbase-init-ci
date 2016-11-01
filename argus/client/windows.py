@@ -23,6 +23,8 @@ try:
 except ImportError:
     import io as StringIO
 
+import multiprocessing
+from multiprocessing import pool
 import time
 
 import six
@@ -30,13 +32,16 @@ from winrm import protocol
 
 from argus.action_manager.windows import get_windows_action_manager
 from argus.client import base
+from argus import config as argus_config
 from argus import exceptions
 from argus import log as argus_log
 from argus import util
 
 
 LOG = argus_log.get_logger()
+CONFIG = argus_config.CONFIG
 CODEPAGE_UTF8 = 65001
+THREADS = 1
 
 
 def _encode(data):
@@ -81,16 +86,22 @@ class WinRemoteClient(base.BaseClient):
 
     @staticmethod
     def _run_command(protocol_client, shell_id, command,
-                     command_type=util.POWERSHELL):
+                     command_type=util.POWERSHELL,
+                     upper_timeout=CONFIG.argus.upper_timeout):
         command_id = None
         bare_command = command
+        thread_pool = pool.ThreadPool(processes=THREADS)
 
         command = util.get_command(command, command_type)
 
         try:
             command_id = protocol_client.run_command(shell_id, command)
-            stdout, stderr, exit_code = protocol_client.get_command_output(
-                shell_id, command_id)
+
+            result = thread_pool.apply_async(
+                protocol_client.get_command_output,
+                args=(shell_id, command_id))
+            stdout, stderr, exit_code = result.get(
+                timeout=upper_timeout)
             if exit_code:
                 output = "\n\n".join([out for out in (stdout, stderr) if out])
                 raise exceptions.ArgusError(
@@ -103,15 +114,20 @@ class WinRemoteClient(base.BaseClient):
                             output=output))
 
             return util.sanitize_command_output(stdout), stderr, exit_code
+        except multiprocessing.TimeoutError:
+            raise exceptions.ArgusTimeoutError(
+                "The upper Timeout what reached!")
         finally:
+            thread_pool.terminate()
             protocol_client.cleanup_command(shell_id, command_id)
 
-    def _run_commands(self, commands, commands_type=util.POWERSHELL):
+    def _run_commands(self, commands, commands_type=util.POWERSHELL,
+                      upper_timeout=CONFIG.argus.upper_timeout):
         protocol_client = self._get_protocol()
         shell_id = protocol_client.open_shell(codepage=CODEPAGE_UTF8)
         try:
             results = [self._run_command(protocol_client, shell_id, command,
-                                         command_type=commands_type)
+                                         commands_type, upper_timeout)
                        for command in commands]
         finally:
             protocol_client.close_shell(shell_id)
@@ -127,14 +143,16 @@ class WinRemoteClient(base.BaseClient):
                                  cert_pem=self._cert_pem,
                                  cert_key_pem=self._cert_key)
 
-    def run_remote_cmd(self, cmd, command_type=util.POWERSHELL):
+    def run_remote_cmd(self, cmd, command_type=util.POWERSHELL,
+                       upper_timeout=CONFIG.argus.upper_timeout):
         """Run the given remote command.
 
         The command will be executed on the remote underlying server.
         It will return a tuple of three elements, stdout, stderr
         and the return code of the command.
         """
-        return self._run_commands([cmd], command_type)[0]
+        return self._run_commands([cmd], command_type,
+                                  upper_timeout=upper_timeout)[0]
 
     def copy_file(self, filepath, remote_destination):
         """Copy the given file-path in the remote destination.
@@ -181,22 +199,26 @@ class WinRemoteClient(base.BaseClient):
 
             commands.append(remote_command)
             content = data.read(1024)
-        self._run_commands(commands, commands_type=util.POWERSHELL)
+        self._run_commands(commands, commands_type=util.POWERSHELL,
+                           upper_timeout=CONFIG.argus.io_upper_timeout)
 
     def read_file(self, filepath):
         """Get the content of the given file."""
         cmd = 'Get-Content "{}"'.format(filepath)
         return (self.run_command_with_retry(
-            cmd, command_type=util.POWERSHELL)[0])
+            cmd, command_type=util.POWERSHELL,
+            upper_timeout=CONFIG.argus.io_upper_timeout)[0])
 
-    def run_command(self, cmd, command_type=util.POWERSHELL):
+    def run_command(self, cmd, command_type=util.POWERSHELL,
+                    upper_timeout=CONFIG.argus.upper_timeout):
         """Run the given command and return execution details.
 
         :rtype: tuple
         :returns: stdout, stderr, exit_code
         """
 
-        return self.run_remote_cmd(cmd, command_type=command_type)
+        return self.run_remote_cmd(cmd, command_type=command_type,
+                                   upper_timeout=upper_timeout)
 
     def run_command_verbose(self, cmd, command_type=util.POWERSHELL):
         """Run the given command and log anything it returns.
@@ -215,7 +237,8 @@ class WinRemoteClient(base.BaseClient):
 
     def run_command_with_retry(self, cmd, count=util.RETRY_COUNT,
                                delay=util.RETRY_DELAY,
-                               command_type=util.POWERSHELL):
+                               command_type=util.POWERSHELL,
+                               upper_timeout=CONFIG.argus.upper_timeout):
         """Run the given `cmd` until succeeds.
 
         :param cmd:
@@ -237,7 +260,8 @@ class WinRemoteClient(base.BaseClient):
 
         while True:
             try:
-                return self.run_command(cmd, command_type=command_type)
+                return self.run_command(cmd, command_type=command_type,
+                                        upper_timeout=upper_timeout)
             except Exception as exc:  # pylint: disable=broad-except
                 LOG.debug("Command failed with %r.", exc)
                 # A negative `count` means no count at all.
@@ -253,7 +277,8 @@ class WinRemoteClient(base.BaseClient):
     def run_command_until_condition(self, cmd, cond,
                                     retry_count=util.RETRY_COUNT,
                                     delay=util.RETRY_DELAY,
-                                    command_type=util.POWERSHELL):
+                                    command_type=util.POWERSHELL,
+                                    upper_timeout=CONFIG.argus.upper_timeout):
         """Run the given `cmd` until a condition `cond` occurs.
 
         :param cond:
@@ -274,7 +299,8 @@ class WinRemoteClient(base.BaseClient):
         while True:
             try:
                 stdout, stderr, exit_code = self.run_command(
-                    cmd, command_type=command_type)
+                    cmd, command_type=command_type,
+                    upper_timeout=upper_timeout)
             except Exception as exc:  # pylint: disable=broad-except
                 LOG.debug("Command failed with %r.", exc)
             else:
