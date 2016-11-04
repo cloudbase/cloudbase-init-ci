@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Base recipe for preparing instances for cloudbaseinit testing."""
+"""Base recipe for preparing instances for Cloudbase-Init testing."""
 
 import abc
 
@@ -32,7 +32,7 @@ LOG = util.get_logger()
 
 @six.add_metaclass(abc.ABCMeta)
 class BaseCloudbaseinitRecipe(base.BaseRecipe):
-    """Base recipe for testing an instance with Cloudbaseinit.
+    """Base recipe for testing an instance with Cloudbase-Init.
 
     The method :meth:`~prepare` does all the necessary work for
     preparing a new instance. The executed steps are:
@@ -71,22 +71,22 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
 
     @abc.abstractmethod
     def get_installation_script(self):
-        """Get the installation script for cloudbaseinit."""
+        """Get the installation script for Cloudbase-Init."""
 
     @abc.abstractmethod
     def install_cbinit(self):
-        """Install the cloudbaseinit code."""
+        """Install the Cloudbase-Init code."""
 
     @abc.abstractmethod
     def wait_cbinit_finalization(self):
-        """Wait for the finalization of cloudbaseinit."""
+        """Wait for the finalization of Cloudbase-Init."""
 
     def pre_sysprep(self):
         """Run finalization code before sysprepping."""
 
     @abc.abstractmethod
     def sysprep(self):
-        """Do the final steps after installing cloudbaseinit.
+        """Do the final steps after installing Cloudbase-Init.
 
         This requires running sysprep on Windows, but on other
         platforms there might be no need for calling it.
@@ -98,7 +98,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
 
     @abc.abstractmethod
     def replace_code(self):
-        """Do whatever is necessary to replace the code for cloudbaseinit."""
+        """Do whatever is necessary to replace the code for Cloudbase-Init."""
 
     @abc.abstractmethod
     def prepare_cbinit_config(self, service_type):
@@ -112,7 +112,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
 
     @abc.abstractmethod
     def inject_cbinit_config(self):
-        """Inject the conf in the instance."""
+        """Inject the config in the instance."""
         pass
 
     def prepare(self, service_type=None, **kwargs):

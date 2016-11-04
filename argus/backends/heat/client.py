@@ -80,7 +80,7 @@ def _get_keystone_v2_auth(v2_auth_url, **kwargs):
 
 
 def _get_keystone_auth(session, auth_url, **kwargs):
-    # discover the supported keystone versions using the given url
+    # discover the supported keystone versions using the given URL
     (v2_auth_url, v3_auth_url) = _discover_auth_versions(
         session=session,
         auth_url=auth_url)

@@ -24,7 +24,7 @@ class BaseClient(object):
 
     :param hostname:
         A hostname where the client should connect. This can be
-        anything that the client needs (an ip, a fully qualified domain
+        anything that the client needs (an IP, a fully qualified domain
         name etc.).
     """
 

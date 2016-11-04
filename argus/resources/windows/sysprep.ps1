@@ -9,8 +9,8 @@ try
     $unattendedXmlPath = "$programFilesDir\Cloudbase Solutions\Cloudbase-Init\conf\Unattend.xml"
 
     if (-Not (Test-Path -LiteralPath $unattendedXmlPath -PathType Leaf)){
-    # if there is no Unnatended.xml the command will halt and we will never
-    # ge to the last exit or reboot
+    # if there is no Unattend.xml the command will halt and we will never
+    # get to the last exit or reboot
         exit 1
     }
 
@@ -19,7 +19,7 @@ try
     # the CI will wait for the service to be stopped, in order to consider
     # the instance prepared. But there could be a small delay window, where
     # the system is preparing to reboot and the CI will see that the
-    # cloudbaseinit service was stopped (it wasn't in fact started).
+    # Cloudbase-Init service was stopped (it wasn't in fact started).
     # Since a restart will be called soon, block this until
     # the OS is ready to do the actual restart.
     # If sysprep doesn't finish within 10 minutes it means that it hang and

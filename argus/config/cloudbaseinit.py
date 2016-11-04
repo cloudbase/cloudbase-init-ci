@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Config options available for the cloudbase-init setup."""
+"""Config options available for the Cloudbase-Init setup."""
 
 from oslo_config import cfg
 
@@ -21,7 +21,7 @@ from argus.config import base as conf_base
 
 class CloudbaseInitOptions(conf_base.Options):
 
-    """Config options available for the cloudbase-init setup."""
+    """Config options available for the Cloudbase-Init setup."""
 
     def __init__(self, config):
         super(CloudbaseInitOptions, self).__init__(config,

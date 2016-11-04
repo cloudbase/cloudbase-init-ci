@@ -34,20 +34,20 @@ class BaseActionManager(object):
 
     @abc.abstractmethod
     def download(self, uri, location):
-        """Download the resource locatet at a specific uri in the location.
+        """Download the resource located at a specific URI in the location.
 
         :param uri:
-            Remote url where the data is found.
+            Remote URL where the data is found.
 
         :param location:
             Path from the instance in which we should download the
-            remote resouce.
+            remote resource.
         """
         pass
 
     @abc.abstractmethod
     def get_installation_script(self):
-        """Get instalation script for CloudbaseInit."""
+        """Get installation script for CloudbaseInit."""
         pass
 
     @abc.abstractmethod
@@ -62,16 +62,16 @@ class BaseActionManager(object):
 
     @abc.abstractmethod
     def wait_cbinit_service(self):
-        """Wait if the CloudBase Init Service to stop."""
+        """Wait if the Cloudbase-Init Service to stop."""
         pass
 
     @abc.abstractmethod
     def check_cbinit_service(self, searched_paths=None):
-        """Check if the CloudBase Init service started.
+        """Check if the Cloudbase-Init service started.
 
         :param searched_paths:
-            Paths to files that should exist if the hearbeat patch is
-            aplied.
+            Paths to files that should exist if the heartbeat patch is
+            applied.
         """
         pass
 
@@ -79,7 +79,7 @@ class BaseActionManager(object):
     def git_clone(self, repo_url, location, count, delay):
         """Clone from a remote repository to a specified location.
 
-        :param repo_url: The remote repository url.
+        :param repo_url: The remote repository URL.
         :param location: The target location for where to clone the repository.
         :param count:
             The number of tries that should be attempted in case it fails.
@@ -93,7 +93,7 @@ class BaseActionManager(object):
 
     @abc.abstractmethod
     def wait_boot_completion(self):
-        """Wait for the instance to be booted a resonable period."""
+        """Wait for the instance to be booted a reasonable period."""
         pass
 
     @abc.abstractmethod

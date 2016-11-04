@@ -21,7 +21,7 @@ CONFIG = argus_config.CONFIG
 
 
 class WindowsBackendMixin(object):
-    """Mixin backend tailored for interacting with Windows."""
+    """Mixin back-end tailored for interacting with Windows."""
 
     # pylint: disable=unused-argument
     def get_remote_client(self, username=None, password=None,

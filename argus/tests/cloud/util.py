@@ -50,7 +50,7 @@ def _dnsmasq_configured():
                 if dnsmasq_file.strip() == DNSMASQ_NEUTRON:
                     return True
     except IOError:
-        raise exceptions.ArgusPermissionDenied("Add read premission for %s." %
+        raise exceptions.ArgusPermissionDenied("Add read permission for %s." %
                                                DHCP_AGENT)
     return False
 

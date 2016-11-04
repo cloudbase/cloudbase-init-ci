@@ -13,7 +13,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Smoke tests for the cloudbaseinit."""
+"""Smoke tests for the Cloudbase-Init."""
 
 import unittest
 import pkg_resources
@@ -114,7 +114,7 @@ class TestSmoke(smoke.TestsBaseSmoke):
 
 
 class TestScriptsUserdataSmoke(TestSmoke):
-    """This test is tied up to a particular userdata:
+    """This test is tied up to a particular user-data:
 
        resources/windows/multipart_userdata
 
@@ -136,7 +136,7 @@ class TestScriptsUserdataSmoke(TestSmoke):
 
         # The content of the cloudconfig files is '42', encoded
         # in various forms. This is known in advance, so the
-        # multipart is tied with this test.
+        # multi-part is tied with this test.
         self.assertEqual(set(files.values()), {'42'})
 
     def test_userdata(self):
@@ -151,7 +151,7 @@ class TestScriptsUserdataSmoke(TestSmoke):
 
 
 class TestEC2Userdata(base.BaseTestCase):
-    "Test the EC2 config userdata."
+    "Test the EC2 config user-data."
 
     def test_ec2_script(self):
         file_name = "ec2file.txt"
