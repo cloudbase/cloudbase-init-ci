@@ -14,7 +14,7 @@ function Set-CloudbaseInitServiceStartupPolicy {
     # using SetupComplete.cmd script.
     # https://technet.microsoft.com/en-us/library/cc766314%28v=ws.10%29.aspx
     
-    mkdir "${ENV:SystemRoot}\Setup\Scripts" -ErrorAction ignore
+    mkdir "${ENV:SystemRoot}\Setup\Scripts" -ErrorAction SilentlyContinue
     cmd /c 'sc config cloudbase-init start= demand'
     Set-Content -Value "sc config cloudbase-init start= auto && net start cloudbase-init" `
                 -Path "${ENV:SystemRoot}\Setup\Scripts\SetupComplete.cmd"

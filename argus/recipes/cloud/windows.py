@@ -46,15 +46,21 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
     def set_mtu(self, interface="ipv4", subinterface_name="Ethernet",
                 mtu_value=1400, store_type='active'):
-        set_mtu_cmd = ('netsh interface {interface_type} set subinterface '
-                       '"{name}" mtu={value} store={type}'
-                       .format(interface_type=interface, value=mtu_value,
-                               name=subinterface_name, type=store_type))
-        LOG.info("Setting the MTU.")
-        try:
-            self._backend.remote_client.run_command_with_retry(set_mtu_cmd)
-        except exceptions.ArgusTimeoutError as exc:
-            LOG.debug('Setting MTU failed with %r.', exc)
+        cmd = 'netsh interface ipv4 show subinterfaces level=verbose'
+        stdout = self._backend.remote_client.run_command_verbose(
+            cmd, command_type=util.CMD)
+        subinterfaces = introspection.parse_netsh_output(stdout)
+        for subinterface in subinterfaces:
+            try:
+                LOG.debug("Setting the MTU for %s" % subinterface.name)
+                set_mtu_cmd = ('netsh interface {interface_type} set '
+                               'subinterface "{name}" mtu={value} store={type}'
+                               .format(interface_type=interface,
+                                       value=mtu_value, type=store_type,
+                                       name=subinterface.name.strip('\r\n')))
+                self._backend.remote_client.run_command_with_retry(set_mtu_cmd)
+            except exceptions.ArgusTimeoutError as exc:
+                LOG.debug('Setting MTU failed with %r.', exc)
 
     def execution_prologue(self):
         # Prepare Something specific for the OS

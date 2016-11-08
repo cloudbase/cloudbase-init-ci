@@ -48,6 +48,13 @@ def _get_dhcp_value(key):
             return value.strip()
 
 
+def _parse_ssh_public_keys(file_content):
+    """Parses ssh-keys, so that the returned output has the right format."""
+    file_content = file_content.replace("\r\n", "")
+    ssh_keys = file_content.replace("ssh-rsa", "\nssh-rsa").strip()
+    return ssh_keys.splitlines()
+
+
 class BaseTestPassword(base.BaseTestCase):
     """Base test class for testing that passwords were set properly."""
 
@@ -321,13 +328,13 @@ class TestsBaseSmoke(TestCreatedUser,
         # Verify that we set the expected ssh keys.
         authorized_keys = self._introspection.get_instance_keys_path()
         public_keys = self._introspection.get_instance_file_content(
-            authorized_keys).splitlines()
+            authorized_keys)
         self.assertEqual(set(self._backend.public_key().splitlines()),
-                         set(public_keys))
+                         set(_parse_ssh_public_keys(public_keys)))
 
     def test_mtu(self):
         # Verify that we have the expected MTU in the instance.
-        mtu = self._introspection.get_instance_mtu()
+        mtu = self._introspection.get_instance_mtu().mtu
         expected_mtu = str(self._backend.get_mtu())
         self.assertEqual(expected_mtu, mtu)
 
@@ -403,6 +410,6 @@ class TestPublicKeys(base.BaseTestCase):
         # Check multiple ssh keys case.
         authorized_keys = self._introspection.get_instance_keys_path()
         public_keys = self._introspection.get_instance_file_content(
-            authorized_keys).splitlines()
+            authorized_keys)
         self.assertEqual(set(util.get_public_keys()),
-                         set(public_keys))
+                         set(_parse_ssh_public_keys(public_keys)))

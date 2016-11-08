@@ -60,29 +60,30 @@ class TestSmoke(smoke.TestsBaseSmoke):
                         .WINDOWS_MANAGEMENT_CMDLET)
 
     def test_service_display_name(self):
-        cmd = ('(Get-Service | where -Property Name '
-               '-match cloudbase-init).DisplayName')
+        cmd = ('(Get-Service | where {$_.Name '
+               '-match "cloudbase-init"}).DisplayName')
 
         stdout = self._backend.remote_client.run_command_verbose(
             cmd, command_type=util.POWERSHELL)
-        self.assertEqual("Cloud Initialization Service\r\n", str(stdout))
+        self.assertEqual("Cloud Initialization Service", str(stdout))
 
     @test_util.skip_unless_dnsmasq_configured
     def test_ntp_service_running(self):
         # Test that the NTP service is started.
-        cmd = ('(Get-Service | where -Property Name '
-               '-match W32Time).Status')
+        cmd = ('(Get-Service | where {$_.Name '
+               '-match "W32Time"}).Status')
         stdout = self._backend.remote_client.run_command_verbose(
             cmd, command_type=util.POWERSHELL)
 
-        self.assertEqual("Running\r\n", str(stdout))
+        self.assertEqual("Running", str(stdout))
 
     @unittest.skipUnless(CONFIG.cloudbaseinit.activate_windows,
                          'Needs Windows activation')
     def test_licensing(self):
         # Check that the instance OS was licensed properly.
-        command = ('{} SoftwareLicensingProduct | where PartialProductKey '
-                   '| Select Name, LicenseStatus').format(self._cmdlet)
+        command = ('{} SoftwareLicensingProduct | where {{ '
+                   '$_.PartialProductKey}} | Select Name, '
+                   'LicenseStatus').format(self._cmdlet)
         stdout = self._backend.remote_client.run_command_verbose(
             command, command_type=util.POWERSHELL)
         licenses = _parse_licenses(stdout)

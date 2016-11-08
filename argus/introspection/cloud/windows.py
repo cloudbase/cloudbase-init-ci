@@ -31,11 +31,12 @@ CONFIG = argus_config.CONFIG
 
 # escaped characters for powershell paths
 ESC = "( )"
-SEP = "----\r\n"    # default separator for network details blocks
+SEP = "----"    # default separator for network details blocks
 
 NIC_KEYS = ["mac", "address", "gateway", "netmask", "dns", "dhcp"]
 Address = collections.namedtuple("Address", ["v4", "v6"])
 NICDetails = collections.namedtuple("NICDetails", NIC_KEYS)
+Interface = collections.namedtuple('Interface', ['name', 'mtu'])
 
 
 @contextlib.contextmanager
@@ -65,7 +66,7 @@ def _get_ntp_peers(output):
             continue
         _, _, entry_peers = line.partition(":")
         peers.extend(entry_peers.split(","))
-    return list(filter(None, map(str.strip, peers)))
+    return list(filter(None, map(unicode.strip, peers)))
 
 
 def escape_path(path):
@@ -128,13 +129,12 @@ def _get_nic_details(details):
 def get_cbinit_dir(execute_function):
     """Get the location of Cloudbase-Init from the instance."""
     stdout = execute_function(
-        '(Get-CimInstance Win32_OperatingSystem).'
-        'OSArchitecture', command_type=util.POWERSHELL)
+        '$ENV:PROCESSOR_ARCHITECTURE', command_type=util.POWERSHELL)
     architecture = stdout.strip()
 
     locations = [execute_function('powershell "$ENV:ProgramFiles"',
                                   command_type=util.CMD)]
-    if architecture == '64-bit':
+    if architecture == 'AMD64':
         location = execute_function(
             'powershell "${ENV:ProgramFiles(x86)}"',
             command_type=util.CMD)
@@ -195,6 +195,35 @@ def get_cbinit_key(execute_function):
     return key_x64
 
 
+def get_os_version(client, field):
+    """Gets the specified version from the OS.
+
+    :param client: represents the client object on which to run the command.
+    :param field: the version type.
+    """
+    cmd = "[System.Environment]::OSVersion.Version.{}".format(field)
+    stdout, _, _ = client.run_command_with_retry(cmd,
+                                                 command_type=util.POWERSHELL)
+    return util.get_int_from_str(stdout.strip())
+
+
+def parse_netsh_output(output):
+    output = output.strip()
+    blocks = re.split(r"SubInterface\s+(.*?)-{46}\s+", output,
+                      flags=re.DOTALL)
+    blocks = blocks[1:]  # empty space
+    interfaces = blocks[0::2]
+    content = blocks[1::2]
+    Interfaces = []
+    for interface, block in zip(interfaces, content):
+        interface = interface.strip()
+        mtu = re.search(r"MTU\s*:\s*(\d+)\s+", block)
+        name, _, _ = interface.partition('Parameters')
+        if 'loopback' not in interface.lower():
+            Interfaces.append(Interface(name=name.strip(), mtu=mtu.group(1)))
+    return Interfaces
+
+
 class InstanceIntrospection(base.CloudInstanceIntrospection):
     """Utilities for introspecting a Windows instance."""
 
@@ -203,14 +232,14 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
         self._cmdlet = remote_client.manager.WINDOWS_MANAGEMENT_CMDLET
 
     def get_disk_size(self):
-        cmd = ('({} win32_logicaldisk | where -Property DeviceID '
-               '-Match "C:").Size').format(self._cmdlet)
+        cmd = ('({} win32_logicaldisk | where {{$_.DeviceID '
+               '-Match "C:"}}).Size').format(self._cmdlet)
         return int(self.remote_client.run_command_verbose(
             cmd, command_type=util.POWERSHELL))
 
     def username_exists(self, username):
         cmd = ('{0} Win32_Account | '
-               'where -Property Name -contains {1}'
+               'where {{$_.Name -contains "{1}"}}'
                .format(self._cmdlet, username))
 
         stdout = self.remote_client.run_command_verbose(
@@ -233,7 +262,7 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
             ".ssh", "authorized_keys")
 
     def get_instance_file_content(self, filepath):
-        cmd = 'cat %s' % filepath
+        cmd = '[io.file]::ReadAllText("%s")' % filepath
         return self.remote_client.run_command_verbose(
             cmd, command_type=util.POWERSHELL)
 
@@ -243,28 +272,11 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
             cmd, command_type=util.POWERSHELL)
         return int(stdout)
 
-    @staticmethod
-    def _parse_netsh_output(output):
-        output = output.strip()
-        blocks = re.split(r"SubInterface\s+(.*?)-{46}\s+", output,
-                          flags=re.DOTALL)
-        blocks = blocks[1:]  # empty space
-
-        interfaces = blocks[0::2]
-        content = blocks[1::2]
-        for interface, block in zip(interfaces, content):
-            interface = interface.strip()
-            mtu = re.search(r"MTU\s*:\s*(\d+)\s+", block)
-            if not mtu:
-                continue
-            if 'loopback' not in interface.lower():
-                yield mtu.group(1)
-
     def get_instance_mtu(self):
         cmd = 'netsh interface ipv4 show subinterfaces level=verbose'
         stdout = self.remote_client.run_command_verbose(
             cmd, command_type=util.CMD)
-        return next(self._parse_netsh_output(stdout), None)
+        return parse_netsh_output(stdout)[0]
 
     def get_cloudbaseinit_traceback(self):
         code = util.get_resource('windows/get_traceback.ps1')
@@ -324,11 +336,9 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
          Return a tuple of two elements, the major and the minor
          version.
         """
-        cmd = "(Get-CimInstance Win32_OperatingSystem).Version"
-        stdout = self.remote_client.run_command_verbose(
-            cmd, command_type=util.POWERSHELL)
-        elems = stdout.split(".")
-        return list(map(int, elems))[:2]
+        major_version = get_os_version(self.remote_client, 'Major')
+        minor_version = get_os_version(self.remote_client, 'Minor')
+        return (major_version, minor_version)
 
     def get_cloudconfig_executed_plugins(self):
         expected = {

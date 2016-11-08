@@ -96,7 +96,7 @@ class WinRemoteClient(base.BaseClient):
                             exit_code=exit_code,
                             output=output))
 
-            return stdout, stderr, exit_code
+            return util.sanitize_command_output(stdout), stderr, exit_code
         finally:
             protocol_client.cleanup_command(shell_id, command_id)
 
