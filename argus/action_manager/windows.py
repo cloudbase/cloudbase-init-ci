@@ -765,10 +765,10 @@ def get_windows_action_manager(client):
 
     if isinstance(windows_type, dict):
         windows_type = windows_type[is_nanoserver]
-
     LOG.debug(("We got the OS type %s because we have the major Version : %d,"
-               "The product Type : %d, and IsNanoserver: %d"), windows_type,
-              major_version, product_type, is_nanoserver)
+               " the minor version %d, the product Type : %d, and"
+               " IsNanoserver: %s"), windows_type, major_version,
+              minor_version, product_type, is_nanoserver)
 
     action_manager = WindowsActionManagers[windows_type]
     return action_manager(client=client)

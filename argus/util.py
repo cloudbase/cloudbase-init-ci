@@ -296,12 +296,13 @@ WINDOWS_SERVER_2012_R2 = "windows_server_2012r2"
 WINDOWS_SERVER_2016 = "windows_server_2016"
 WINDOWS_NANO = "windows_nano"
 
-# The key has this format (Version number, Product Type)
+# The key has this format:
+# (Major version number, Minor version number, Product Type)
 # Version number according to this page :
 # https://msdn.microsoft.com/en-us/library/windows/desktop/ms724833%28v=vs.85%29.aspx
 # Product Type according to this :
 # https://msdn.microsoft.com/en-us/library/aa394239(v=vs.85).aspx
-# For the Version 10 Server edition we have two possibilities:
+# For the Major Version 10 Server edition we have two possibilities:
 # 1. is Windows Nano Server
 # 2. is not Windows Nano Server (so it's Windows Server 2016)
 # IsNanoserver False/True based on this code : https://goo.gl/UD27SK
@@ -313,7 +314,7 @@ WINDOWS_VERSION = {
     (6, 1, 3): WINDOWS_SERVER_2008_R2,
     (6, 2, 3): WINDOWS_SERVER_2012,
     (6, 3, 3): WINDOWS_SERVER_2012_R2,
-    (10, 3): {
+    (10, 0, 3): {
         False: WINDOWS_SERVER_2016,
         True: WINDOWS_NANO
     }
