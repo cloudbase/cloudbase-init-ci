@@ -52,7 +52,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         subinterfaces = introspection.parse_netsh_output(stdout)
         for subinterface in subinterfaces:
             try:
-                LOG.debug("Setting the MTU for %s" % subinterface.name)
+                LOG.debug("Setting the MTU for %r", subinterface.name)
                 set_mtu_cmd = ('netsh interface {interface_type} set '
                                'subinterface "{name}" mtu={value} store={type}'
                                .format(interface_type=interface,

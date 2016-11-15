@@ -14,7 +14,7 @@
 #    under the License.
 
 import collections
-from six.moves.urllib import parse
+from six.moves import urllib
 
 from argus import config as argus_config
 from argus.scenarios.cloud import base
@@ -31,7 +31,7 @@ def get_port_number(url):
     :rtype: int
     :returns: The port value from the given url.
     """
-    parsed_url = parse.urlparse(url)
+    parsed_url = urllib.parse.urlparse(url)
     if parsed_url.port is None:
         port_number = 443 if parsed_url.scheme == 'https' else 80
     else:

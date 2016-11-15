@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import abc
 import base64
 
@@ -58,7 +57,13 @@ class BaseTempestBackend(base_backend.CloudBackend):
     """
     def __init__(self, name, userdata, metadata, availability_zone):
         if userdata:
-            userdata = base64.encodestring(userdata)
+            # NOTE(dtoncu): `encodestring` is a deprecated alias in Python 3.*;
+            # `encodebytes` can be used instead.
+            # pylint: disable=deprecated-method, maybe-no-member
+            if six.PY2:
+                userdata = base64.encodestring(userdata)
+            else:
+                userdata = base64.encodebytes(userdata)
         super(BaseTempestBackend, self).__init__(name, userdata,
                                                  metadata, availability_zone)
         self._server = None

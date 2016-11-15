@@ -12,13 +12,18 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
 import abc
 import ntpath
-import StringIO
+import six
+
+try:
+    import StringIO
+except ImportError:
+    import io as StringIO
 
 from argus.config_generator import base
 from argus import util
-import six
 
 LOG = util.get_logger()
 
@@ -59,7 +64,15 @@ class BaseWindowsConfig(base.BaseConfig):
         base_conf = StringIO.StringIO(
             util.get_resource(config_name))
         conf = six.moves.configparser.ConfigParser()
-        conf.readfp(base_conf)
+
+        # NOTE(dtoncu): `readfp` is deprecated since Python 3.2,
+        # but it was replaced with `read_file`.
+        # pylint: disable=deprecated-method, maybe-no-member
+        if six.PY2:
+            conf.readfp(base_conf)
+        else:
+            conf.read_file(base_conf)
+
         return conf
 
     @abc.abstractmethod

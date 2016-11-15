@@ -16,8 +16,8 @@ import os
 
 from oslo_config import cfg
 
-from argus import version
 from argus.config import factory
+from argus import version
 
 CONFIG = cfg.ConfigOpts()
 

@@ -13,8 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from six.moves import urllib_parse as urlparse
-
 from heatclient import client
 from heatclient.common import utils
 from heatclient import exc
@@ -23,6 +21,7 @@ from keystoneclient.auth.identity import v3 as v3_auth
 from keystoneclient import discover
 from keystoneclient import exceptions as ks_exc
 from keystoneclient import session as kssession
+from six.moves import urllib_parse as urlparse
 
 
 def _discover_auth_versions(session, auth_url):
@@ -88,7 +87,7 @@ def _get_keystone_auth(session, auth_url, **kwargs):
     # Determine which authentication plugin to use. First inspect the
     # auth_url to see the supported version. If both v3 and v2 are
     # supported, then use the highest version if possible.
-    auth = None
+
     if v3_auth_url and v2_auth_url:
         user_domain_name = kwargs.get('user_domain_name', None)
         user_domain_id = kwargs.get('user_domain_id', None)
@@ -99,21 +98,19 @@ def _get_keystone_auth(session, auth_url, **kwargs):
         # provided.
         if (user_domain_name or user_domain_id or project_domain_name or
                 project_domain_id):
-            auth = _get_keystone_v3_auth(v3_auth_url, **kwargs)
+            return _get_keystone_v3_auth(v3_auth_url, **kwargs)
         else:
-            auth = _get_keystone_v2_auth(v2_auth_url, **kwargs)
+            return _get_keystone_v2_auth(v2_auth_url, **kwargs)
     elif v3_auth_url:
         # support only v3
-        auth = _get_keystone_v3_auth(v3_auth_url, **kwargs)
+        return _get_keystone_v3_auth(v3_auth_url, **kwargs)
     elif v2_auth_url:
         # support only v2
-        auth = _get_keystone_v2_auth(v2_auth_url, **kwargs)
-    else:
-        raise exc.CommandError('Unable to determine the Keystone version '
-                               'to authenticate with using the given '
-                               'auth_url.')
+        return _get_keystone_v2_auth(v2_auth_url, **kwargs)
 
-    return auth
+    raise exc.CommandError('Unable to determine the Keystone version '
+                           'to authenticate with using the given '
+                           'auth_url.')
 
 
 def heat_client(credentials, api_version=1):
