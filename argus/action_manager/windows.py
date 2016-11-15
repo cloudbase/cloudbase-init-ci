@@ -536,6 +536,7 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
         cbinit_unattend_conf.conf.remove_option(
             "DEFAULT", "logging_serial_port_settings")
 
+
 WindowsActionManagers = {
     util.WINDOWS: WindowsNanoActionManager,
     util.WINDOWS8: Windows8ActionManager,
