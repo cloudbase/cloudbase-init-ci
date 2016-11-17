@@ -357,7 +357,7 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
         return files
 
     def get_timezone(self):
-        command = "[System.TimeZone]::CurrentTimeZone.StandardName"
+        command = "tzutil /g"
         stdout = self.remote_client.run_command_verbose(
             "{}".format(command), command_type=util.POWERSHELL)
         return stdout
