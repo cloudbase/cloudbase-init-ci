@@ -1457,11 +1457,12 @@ class ActionManagerTest(unittest.TestCase):
             windows_type = windows_type[is_nanoserver]
 
         log_message = ("We got the OS type {} because we have the major "
-                       "Version : {},The product Type : {}, "
-                       "and IsNanoserver: {}").format(windows_type,
-                                                      major_version,
-                                                      product_type,
-                                                      int(is_nanoserver))
+                       "Version : {}, the minor version {}, the product Type :"
+                       " {}, and IsNanoserver: {}").format(windows_type,
+                                                           major_version,
+                                                           minor_version,
+                                                           product_type,
+                                                           is_nanoserver)
         with test_utils.LogSnatcher('argus.action_manager.windows'
                                     '.get_windows_action_manager') as snatcher:
             self.assertTrue(isinstance(
@@ -1517,3 +1518,90 @@ class ActionManagerTest(unittest.TestCase):
             minor_version=int(test_utils.MINOR_VERSION_0),
             product_type=int(test_utils.PRODUCT_TYPE_3),
             is_nanoserver=True)
+
+
+class WindowsServer2008ActionManagerTest(unittest.TestCase):
+    """Tests for windows server 2008 action manager class."""
+
+    def setUp(self):
+        self._client = mock.MagicMock()
+        self._os_type = mock.sentinel.os_type
+
+        self._action_manager = action_manager.WindowsServer2008ActionManager(
+            client=self._client, os_type=self._os_type)
+
+    @mock.patch('argus.action_manager.windows.WindowsActionManager'
+                '.execute_powershell_resource_script')
+    def _test_run_installation_script(self, mock_execute_script, exc=None):
+        if exc:
+            mock_execute_script.side_effect = exc
+            with self.assertRaises(exc):
+                self._action_manager._run_installation_script(
+                    test_utils.INSTALLER)
+            return
+
+        parameters = '-installer {}'.format(test_utils.INSTALLER)
+
+        self._action_manager._run_installation_script(test_utils.INSTALLER)
+        mock_execute_script.assert_called_once_with(
+            resource_location='windows/2008R2/installCBinit.ps1',
+            parameters=parameters)
+
+    def test_run_installation_script(self):
+        self._test_run_installation_script()
+
+    def test_run_installation_script_argus_timeout_error(self):
+        self._test_run_installation_script(exc=exceptions.ArgusTimeoutError)
+
+    def test_run_installation_script_argus_error(self):
+        self._test_run_installation_script(exc=exceptions.ArgusError)
+
+    @mock.patch('argus.action_manager.windows.WindowsActionManager'
+                '.prepare_config')
+    def _test_prepare_config(self, mock_prep_config, prep_config_exc=None,
+                             cbi_conf_set_exc=None,
+                             cbi_unatt_conf_set_exc=None):
+        cbinit_conf = mock.MagicMock()
+        cbinit_unattend_conf = mock.MagicMock()
+
+        if prep_config_exc:
+            mock_prep_config.side_effect = prep_config_exc
+            with self.assertRaises(prep_config_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        if cbi_conf_set_exc:
+            cbinit_conf.set_conf_value.side_effect = cbi_conf_set_exc
+            with self.assertRaises(cbi_conf_set_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        if cbi_unatt_conf_set_exc:
+            (cbinit_unattend_conf.set_conf_value
+             .side_effect) = cbi_unatt_conf_set_exc
+            with self.assertRaises(cbi_unatt_conf_set_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        self._action_manager.prepare_config(cbinit_conf, cbinit_unattend_conf)
+
+        cbinit_conf.set_conf_value.assert_called_once_with(
+            "reset_service_password", False)
+        cbinit_unattend_conf.set_conf_value.assert_called_once_with(
+            "reset_service_password", False)
+
+    def test_prepare_config_successful(self):
+        self._test_prepare_config()
+
+    def test_prepare_config_prep_config_exc(self):
+        self._test_prepare_config(prep_config_exc=exceptions.ArgusError)
+
+    def test_prepare_config_cbi_conf_set_exc(self):
+        self._test_prepare_config(cbi_conf_set_exc=exceptions.ArgusError)
+
+    def test_prepare_config_cbi_unatt_conf_set_exc(self):
+        self._test_prepare_config(
+            cbi_unatt_conf_set_exc=exceptions.ArgusError)
