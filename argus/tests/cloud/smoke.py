@@ -23,6 +23,7 @@ import unittest
 from six.moves import urllib
 
 from argus import config as argus_config
+from argus import log as argus_log
 from argus.tests import base
 from argus.tests.cloud import util as test_util
 from argus import util
@@ -30,7 +31,7 @@ from argus import util
 DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
 
 CONFIG = argus_config.CONFIG
-LOG = util.get_logger()
+LOG = argus_log.get_logger()
 
 
 def _get_dhcp_value(key):

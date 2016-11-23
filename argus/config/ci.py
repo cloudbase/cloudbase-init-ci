@@ -30,6 +30,9 @@ class ArgusOptions(conf_base.Options):
         super(ArgusOptions, self).__init__(config, group="argus")
         self._options = [
             cfg.StrOpt(
+                "argus_log_file", default='argus.log', required=True,
+                help="Path to the file where argus will do the logging"),
+            cfg.StrOpt(
                 "resources", default=_RESOURCES_LINK, required=True,
                 help="An url that holds the resources usually from "
                      "/argus/resources available on the web"),

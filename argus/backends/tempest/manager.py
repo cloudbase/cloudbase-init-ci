@@ -18,6 +18,7 @@ import os
 import tempfile
 
 from argus import exceptions
+from argus import log as argus_log
 from argus import util
 
 with util.restore_excepthook():
@@ -29,7 +30,7 @@ with util.restore_excepthook():
 OUTPUT_STATUS_OK = 200
 OUTPUT_SIZE = 128
 OUTPUT_EPSILON = int(OUTPUT_SIZE / 10)
-LOG = util.get_logger()
+LOG = argus_log.get_logger()
 
 
 @contextlib.contextmanager

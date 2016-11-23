@@ -23,10 +23,10 @@ import abc
 
 import six
 
-from argus import util
+from argus import log as argus_log
 
 
-LOG = util.get_logger()
+LOG = argus_log.get_logger()
 RETRY_COUNT = 15
 RETRY_DELAY = 10
 
