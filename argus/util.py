@@ -16,7 +16,6 @@
 import base64
 import collections
 import contextlib
-import logging
 import pkgutil
 import random
 import socket
@@ -25,6 +24,7 @@ import subprocess
 import sys
 
 import six
+
 
 RETRY_COUNT = 15
 RETRY_DELAY = 10
@@ -50,7 +50,6 @@ MAAS_SERVICE = 'maas'
 
 __all__ = (
     'decrypt_password',
-    'get_logger',
     'get_resource',
     'cached_property',
     'run_once',
@@ -59,8 +58,6 @@ __all__ = (
     'get_certificate',
 )
 
-DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-DEFAULT_LOG_FILE = 'argus.log'
 
 NETWORK_KEYS = [
     "mac",
@@ -183,31 +180,6 @@ class cached_property(object):  # pylint: disable=invalid-name
         return result
 
 
-def get_logger(name="argus",
-               format_string=DEFAULT_FORMAT,
-               logging_file=DEFAULT_LOG_FILE):
-    """Obtain a new logger object.
-
-    The `name` parameter will be the name of the logger and `format_string`
-    will be the format it will use for logging. `logging_file` is a file
-    where the messages will be written.
-    """
-    logger = logging.getLogger(name)
-    formatter = logging.Formatter(format_string)
-
-    if not logger.handlers:
-        # If the logger wasn't obtained another time,
-        # then it shouldn't have any loggers
-
-        if logging_file:
-            file_handler = logging.FileHandler(logging_file, delay=True)
-            file_handler.setFormatter(formatter)
-            logger.addHandler(file_handler)
-
-    logger.setLevel(logging.DEBUG)
-    return logger
-
-
 def rand_name(name=''):
     """Generate a random name
 
@@ -304,8 +276,6 @@ def get_command(command, command_type=None):
     modifier = COMMAND_MODIFIERS.get(command_type, lambda command: command)
     return modifier(command)
 
-
-LOG = get_logger()
 
 _BUILDS = ["Beta", "Stable", "test"]
 _ARCHES = ["x64", "x86"]

@@ -23,9 +23,11 @@ except ImportError:
     import io as StringIO
 
 from argus.config_generator import base
+from argus import log as argus_log
 from argus import util
 
-LOG = util.get_logger()
+
+LOG = argus_log.get_logger()
 
 
 class BaseWindowsConfig(base.BaseConfig):

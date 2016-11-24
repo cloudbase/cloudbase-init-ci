@@ -19,11 +19,11 @@ import os
 import six
 
 from argus import config as argus_config
-from argus import util
+from argus import log as argus_log
 
 
 CONFIG = argus_config.CONFIG
-LOG = util.get_logger()
+LOG = argus_log.get_logger()
 
 
 @six.add_metaclass(abc.ABCMeta)

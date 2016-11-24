@@ -24,11 +24,12 @@ from argus import config as argus_config
 from argus.config_generator.windows import cb_init as cbinit_config
 from argus import exceptions
 from argus.introspection.cloud import windows as introspection
+from argus import log as argus_log
 from argus.recipes.cloud import base
 from argus import util
 
 CONFIG = argus_config.CONFIG
-LOG = util.get_logger()
+LOG = argus_log.get_logger()
 
 # Default values for an instance under booting step.
 COUNT = 20

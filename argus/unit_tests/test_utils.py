@@ -17,7 +17,7 @@ import functools
 import logging as base_logging
 
 from argus import config as argus_config
-from argus import util
+from argus import log as argus_log
 
 CONFIG = argus_config.CONFIG
 
@@ -79,7 +79,7 @@ class LogSnatcher(object):
     def __init__(self, logger_name):
         self._logger_name = logger_name
         self._snatch_handler = SnatchHandler()
-        self._logger = util.get_logger()
+        self._logger = argus_log.get_logger()
         self._previous_level = self._logger.getEffectiveLevel()
 
     def __enter__(self):

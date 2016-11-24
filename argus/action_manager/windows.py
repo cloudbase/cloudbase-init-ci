@@ -27,9 +27,10 @@ from argus.action_manager import base
 from argus import config as argus_config
 from argus import exceptions
 from argus.introspection.cloud import windows as introspection
+from argus import log as argus_log
 from argus import util
 
-LOG = util.LOG
+LOG = argus_log.get_logger()
 CONFIG = argus_config.CONFIG
 
 

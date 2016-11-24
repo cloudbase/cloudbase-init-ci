@@ -22,6 +22,7 @@ from argus.backends import base as base_backend
 from argus.backends.tempest import manager as api_manager
 from argus.backends import windows
 from argus import config as argus_config
+from argus import log as argus_log
 from argus import util
 
 with util.restore_excepthook():
@@ -29,7 +30,7 @@ with util.restore_excepthook():
 
 
 CONFIG = argus_config.CONFIG
-LOG = util.get_logger()
+LOG = argus_log.get_logger()
 
 # Starting size as number of lines and tolerance.
 OUTPUT_SIZE = 128

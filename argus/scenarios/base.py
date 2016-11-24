@@ -20,10 +20,9 @@ import unittest
 import six
 
 from argus import config as argus_config
-from argus import util
+from argus import log as argus_log
 
-
-LOG = util.get_logger()
+LOG = argus_log.get_logger()
 CONFIG = argus_config.CONFIG
 
 

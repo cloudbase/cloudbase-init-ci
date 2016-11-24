@@ -31,10 +31,11 @@ from winrm import protocol
 from argus.action_manager.windows import get_windows_action_manager
 from argus.client import base
 from argus import exceptions
+from argus import log as argus_log
 from argus import util
 
 
-LOG = util.get_logger()
+LOG = argus_log.get_logger()
 CODEPAGE_UTF8 = 65001
 
 
