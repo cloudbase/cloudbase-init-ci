@@ -135,12 +135,12 @@ def get_cbinit_dir(execute_function):
         '$ENV:PROCESSOR_ARCHITECTURE', command_type=util.POWERSHELL)
     architecture = stdout.strip()
 
-    locations = [execute_function('powershell "$ENV:ProgramFiles"',
-                                  command_type=util.CMD)]
+    locations = [execute_function('echo "$ENV:ProgramFiles"',
+                                  command_type=util.POWERSHELL)]
     if architecture == 'AMD64':
         location = execute_function(
-            'powershell "${ENV:ProgramFiles(x86)}"',
-            command_type=util.CMD)
+            'echo "${ENV:ProgramFiles(x86)}"',
+            command_type=util.POWERSHELL)
         locations.append(location)
 
     for location in locations:

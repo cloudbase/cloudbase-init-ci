@@ -52,6 +52,7 @@ class WindowsActionManager(base.BaseActionManager):
     _FILE = "File"
 
     WINDOWS_MANAGEMENT_CMDLET = "Get-WmiObject"
+    _INSTALL_SCRIPT = r"C:\installCBinit.ps1"
 
     def __init__(self, client, os_type=util.WINDOWS):
         super(WindowsActionManager, self).__init__(client, os_type)
@@ -117,7 +118,7 @@ class WindowsActionManager(base.BaseActionManager):
         """Get installation script for Cloudbase-Init."""
         LOG.info("Retrieve an installation script for Cloudbase-Init.")
         self.download_resource("windows/installCBinit.ps1",
-                               r"C:\installCBinit.ps1")
+                               self._INSTALL_SCRIPT)
 
     def _execute(self, cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
                  command_type=util.CMD):
@@ -160,14 +161,16 @@ class WindowsActionManager(base.BaseActionManager):
         else:
             return True
 
+    @staticmethod
+    def _get_installer_name():
+        """Get Cloudbase-Init installer name."""
+        return "CloudbaseInitSetup_{build}_{arch}.msi".format(
+            build=CONFIG.argus.build, arch=CONFIG.argus.arch)
+
     def install_cbinit(self):
         """Install Cloudbase-Init on the underlying instance."""
         LOG.info("Trying to install Cloudbase-Init.")
-
-        installer = "CloudbaseInitSetup_{build}_{arch}.msi".format(
-            build=CONFIG.argus.build,
-            arch=CONFIG.argus.arch
-        )
+        installer = self._get_installer_name()
 
         for _ in range(util.RETRY_COUNT):
             for install_method in (self._run_installation_script,
@@ -187,10 +190,9 @@ class WindowsActionManager(base.BaseActionManager):
         """Run the installation script for Cloudbase-Init."""
         LOG.info("Running the installation script for Cloudbase-Init.")
 
-        parameters = '-installer {}'.format(installer)
-        self.execute_powershell_resource_script(
-            resource_location='windows/installCBinit.ps1',
-            parameters=parameters)
+        cmd = r'"{}" -installer {}'.format(self._INSTALL_SCRIPT, installer)
+        self._client.run_command_with_retry(
+            cmd, command_type=util.POWERSHELL_SCRIPT_BYPASS)
 
     def _deploy_using_scheduled_task(self, installer):
         """Deploy Cloudbase-Init using a scheduled task."""
@@ -466,6 +468,9 @@ class WindowsSever2012R2ActionManager(Windows8ActionManager):
 
 
 class Windows10ActionManager(WindowsActionManager):
+
+    WINDOWS_MANAGEMENT_CMDLET = "Get-CimInstance"
+
     def __init__(self, client, os_type=util.WINDOWS10):
         super(Windows10ActionManager, self).__init__(client, os_type)
 
@@ -480,6 +485,9 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
     _DOWNLOAD_SCRIPT = "FastWebRequest.ps1"
     _COMMON = "common.psm1"
     _RESOURCE_DIRECTORY = r"C:\nano_server"
+    _CBINIT_URL = "https://www.cloudbase.it/downloads/"
+    _BASE_DIR = r"C:\Program Files\Cloudbase Solutions\Cloudbase-Init"
+    _INSTALLATION_LOG_FILE = r"C:\installation.log"
 
     WINDOWS_MANAGEMENT_CMDLET = "Get-CimInstance"
 
@@ -530,12 +538,153 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
         """
         super(WindowsNanoActionManager, self).prepare_config(
             cbinit_conf, cbinit_unattend_conf)
-        cbinit_conf.set_conf_value("stop_service_on_exit", False)
+        for conf in (cbinit_conf, cbinit_unattend_conf):
+            conf.conf.remove_option("DEFAULT", "logging_serial_port_settings")
+            conf.set_conf_value("stop_service_on_exit", False)
 
-        cbinit_conf.conf.remove_option(
-            "DEFAULT", "logging_serial_port_settings")
-        cbinit_unattend_conf.conf.remove_option(
-            "DEFAULT", "logging_serial_port_settings")
+    def get_installation_script(self):
+        """Get instalation script for CloudbaseInit."""
+        self.download_resource("windows/nano_server/installCBinit.ps1",
+                               self._INSTALL_SCRIPT)
+
+    def _unzip(self, zip_file, out_file, force=False):
+        """Unzip the file.
+
+        :param zip_file:
+            Path to zip file.
+        :param out_file:
+            Path to output file from unzipping process.
+        :param force:
+            If we should override the output file or not.
+        """
+        exists = self.exists(out_file)
+        if exists and not force:
+            raise exceptions.ArgusCLIError("Output file path already exists.")
+        elif exists:
+            (self.rmdir if self.is_dir(out_file) else self.remove)(out_file)
+
+        cmd = ("[System.IO.Compression.ZipFile]"
+               "::ExtractToDirectory('{}', '{}')").format(zip_file, out_file)
+
+        self._client.run_command_with_retry(
+            cmd, command_type=util.POWERSHELL)
+
+    @staticmethod
+    def _get_installer_name():
+        """Get Cloudbase-Init installer name."""
+        if CONFIG.argus.build == "Beta":
+            # NOTE(mmicu): This is a temporary fix.
+            # There is no Beta url for the Cloudbase-Init zip.
+            return "CloudbaseInitSetup_{arch}.zip".format(
+                arch=CONFIG.argus.arch)
+        else:
+            return "CloudbaseInitSetup_{build}_{arch}.zip".format(
+                build=CONFIG.argus.build, arch=CONFIG.argus.arch)
+
+    def _get_useful_paths(self, installer):
+        """Get useful paths for installing Cloudbase-Init.
+
+        :param installer: Name of the Cloudbase-Init installer.
+        :type installer: str
+
+        :return: A tuple containing the `url` for the Cloudbase-Init
+                 installer and the `zip_path` where we should download
+                 the installer.
+
+        :rtype: tuple
+        """
+        installer = self._get_installer_name()
+        url = urlparse.urljoin(self._CBINIT_URL, installer)
+        zip_path = ntpath.join("C:\\", installer)
+
+        return url, zip_path
+
+    def cbinit_cleanup(self):
+        """Cleans up Cloudbase-Init if the installation failed."""
+        LOG.debug("Cleaning up Cloudbase-Init from the instance.")
+        base_cleanup = super(WindowsNanoActionManager, self).cbinit_cleanup()
+
+        to_be_removed = [self._INSTALL_SCRIPT]
+        _, zip_path = self._get_useful_paths(self._get_installer_name())
+        to_be_removed.extend(zip_path)
+
+        for path in to_be_removed:
+            (self.rmdir if self.is_dir(path) else self.remove)(path)
+
+        return base_cleanup
+
+    def _run_installation_script(self, installer):
+        """Run the installation script for Cloudbase-Init."""
+        LOG.info("Running the installation script for Cloudbase-Init.")
+        LOG.info("Run the downloaded installation script "
+                 "using the installer %r.", installer)
+
+        url, zip_path = self._get_useful_paths(installer)
+        self.download(url, zip_path)
+
+        LOG.info("Unzipping at %s", self._BASE_DIR)
+        self._unzip(zip_path, self._BASE_DIR)
+
+        cmd = "{install_script} *>> {log_file}".format(
+            install_script=self._INSTALL_SCRIPT,
+            log_file=self._INSTALLATION_LOG_FILE)
+
+        self._client.run_command_with_retry(
+            cmd, command_type=util.POWERSHELL)
+
+    def _deploy_using_scheduled_task(self, installer):
+        """Deploy Cloudbase-Init using a scheduled task."""
+        LOG.info("Deploying Cloudbase-Init using a scheduled task is not"
+                 " supported for Windows Nano.")
+
+    def sysprep(self):
+        """Run the Cloudbase-Init."""
+        # TODO(mmicu): Restructure this method to have a more explicit name
+        # that works for Windows Nano too
+        exe_path = ntpath.join(self._BASE_DIR, "Python", "Scripts",
+                               "cloudbase-init.exe")
+        config_unattend_path = ntpath.join(
+            self._BASE_DIR, "conf", "cloudbase-init-unattend.conf")
+        cmd = (r"& '{exe_path}' --config-file '{config_unattend}'").format(
+            exe_path=exe_path, config_unattend=config_unattend_path)
+
+        try:
+            # Unattend phase
+            self._client.run_remote_cmd(cmd, util.POWERSHELL)
+        except exceptions.ArgusError as ex:
+            LOG.debug("Exception in Unattend phase %s", ex)
+
+        try:
+            self._client.run_remote_cmd("Restart-Computer", util.POWERSHELL)
+        except (IOError, winrm_exceptions.WinRMTransportError,
+                winrm_exceptions.InvalidCredentialsError):
+            # NOTE(mmicu): When we reboot the machine it is possible to
+            # have connectivity issues.
+            # This fixes errors that stop scenarios from getting
+            # created on different windows images.
+            LOG.debug("Currently rebooting...")
+        LOG.info("Wait for the machine to finish rebooting ...")
+        self.wait_boot_completion()
+
+    def _execute_resource_script(self, resource_location, parameters,
+                                 script_type):
+        """Run a resource script with the specific parameters."""
+        LOG.debug("Executing resource script %s with this parameters %s",
+                  resource_location, parameters)
+
+        # TODO(mmicu): refactor this or find an OS agnostic way
+        if script_type == util.BAT_SCRIPT:
+            super(WindowsNanoActionManager, self)._execute_resource_script(
+                resource_location, parameters, script_type)
+        else:
+            instance_location = r"C:\{}".format(
+                resource_location.split('/')[-1])
+            self.download_resource(resource_location, instance_location)
+            cmd = '& "{}" {}'.format(instance_location, parameters)
+            self._client.run_command_with_retry(cmd,
+                                                count=util.RETRY_COUNT,
+                                                delay=util.RETRY_DELAY,
+                                                command_type=util.POWERSHELL)
 
 
 WindowsActionManagers = {
@@ -616,10 +765,10 @@ def get_windows_action_manager(client):
 
     if isinstance(windows_type, dict):
         windows_type = windows_type[is_nanoserver]
-
     LOG.debug(("We got the OS type %s because we have the major Version : %d,"
-               "The product Type : %d, and IsNanoserver: %d"), windows_type,
-              major_version, product_type, is_nanoserver)
+               " the minor version %d, the product Type : %d, and"
+               " IsNanoserver: %s"), windows_type, major_version,
+              minor_version, product_type, is_nanoserver)
 
     action_manager = WindowsActionManagers[windows_type]
     return action_manager(client=client)

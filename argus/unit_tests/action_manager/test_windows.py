@@ -1027,19 +1027,20 @@ class WindowsActionManagerTest(unittest.TestCase):
         self.assertEqual(mock_deploy.call_count, util.RETRY_COUNT)
         self.assertEqual(mock_cleanup.call_count, 2 * util.RETRY_COUNT)
 
-    @mock.patch('argus.action_manager.windows.WindowsActionManager'
-                '.execute_powershell_resource_script')
-    def _test_run_installation_script(self, mock_execute_script, exc=None):
+    def _test_run_installation_script(self, exc=None):
+        mock_run_cmd_with_retry = self._client.run_command_with_retry
         if exc:
-            mock_execute_script.side_effect = exc
+            mock_run_cmd_with_retry.side_effect = exc
             with self.assertRaises(exc):
                 self._action_manager._run_installation_script(
                     test_utils.INSTALLER)
         else:
             self._action_manager._run_installation_script(test_utils.INSTALLER)
-            mock_execute_script.assert_called_once_with(
-                resource_location='windows/installCBinit.ps1',
-                parameters='-installer {}'.format(test_utils.INSTALLER))
+            cmd = r'"{}" -installer {}'.format(
+                self._action_manager._INSTALL_SCRIPT,
+                test_utils.INSTALLER)
+            mock_run_cmd_with_retry.assert_called_once_with(
+                cmd, command_type=util.POWERSHELL_SCRIPT_BYPASS)
 
     def test_run_installation_script(self):
         self._test_run_installation_script()
