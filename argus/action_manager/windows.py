@@ -91,7 +91,8 @@ class WindowsActionManager(base.BaseActionManager):
         self.download(uri, location)
 
     def _execute_resource_script(self, resource_location, parameters,
-                                 script_type):
+                                 script_type,
+                                 upper_timeout=CONFIG.argus.upper_timeout):
         """Run a resource script with with the specific parameters."""
         LOG.debug("Executing resource script %s with this parameters %s",
                   resource_location, parameters)
@@ -102,17 +103,18 @@ class WindowsActionManager(base.BaseActionManager):
         instance_location = r"C:\{}".format(resource_location.split('/')[-1])
         self.download_resource(resource_location, instance_location)
         cmd = '"{}" {}'.format(instance_location, parameters)
-        self._client.run_command_with_retry(cmd,
-                                            count=util.RETRY_COUNT,
-                                            delay=util.RETRY_DELAY,
-                                            command_type=script_type)
+        self._client.run_command_with_retry(
+            cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+            command_type=script_type, upper_timeout=upper_timeout)
 
-    def execute_powershell_resource_script(self, resource_location,
-                                           parameters=""):
+    def execute_powershell_resource_script(
+            self, resource_location, parameters="",
+            upper_timeout=CONFIG.argus.upper_timeout):
         """Execute a powershell resource script."""
         self._execute_resource_script(
             resource_location=resource_location, parameters=parameters,
-            script_type=util.POWERSHELL_SCRIPT_BYPASS)
+            script_type=util.POWERSHELL_SCRIPT_BYPASS,
+            upper_timeout=upper_timeout)
 
     def get_installation_script(self):
         """Get installation script for Cloudbase-Init."""
@@ -121,10 +123,12 @@ class WindowsActionManager(base.BaseActionManager):
                                self._INSTALL_SCRIPT)
 
     def _execute(self, cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
-                 command_type=util.CMD):
+                 command_type=util.CMD,
+                 upper_timeout=CONFIG.argus.upper_timeout):
         """Execute until succeeds and return only the standard output."""
         stdout, _, _ = self._client.run_command_with_retry(
-            cmd, count=count, delay=delay, command_type=command_type)
+            cmd, count=count, delay=delay, command_type=command_type,
+            upper_timeout=upper_timeout)
         return stdout
 
     def check_cbinit_installation(self):
@@ -208,7 +212,8 @@ class WindowsActionManager(base.BaseActionManager):
         LOG.debug("Running %s ", cmd)
         try:
             self._client.run_remote_cmd(
-                cmd, command_type=util.POWERSHELL_SCRIPT_BYPASS)
+                cmd, command_type=util.POWERSHELL_SCRIPT_BYPASS,
+                upper_timeout=CONFIG.argus.io_upper_timeout)
         except (socket.error, winrm_exceptions.WinRMTransportError,
                 winrm_exceptions.InvalidCredentialsError,
                 requests.ConnectionError, requests.Timeout):
@@ -667,7 +672,8 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
         self.wait_boot_completion()
 
     def _execute_resource_script(self, resource_location, parameters,
-                                 script_type):
+                                 script_type,
+                                 upper_timeout=CONFIG.argus.upper_timeout):
         """Run a resource script with the specific parameters."""
         LOG.debug("Executing resource script %s with this parameters %s",
                   resource_location, parameters)
@@ -681,10 +687,9 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
                 resource_location.split('/')[-1])
             self.download_resource(resource_location, instance_location)
             cmd = '& "{}" {}'.format(instance_location, parameters)
-            self._client.run_command_with_retry(cmd,
-                                                count=util.RETRY_COUNT,
-                                                delay=util.RETRY_DELAY,
-                                                command_type=util.POWERSHELL)
+            self._client.run_command_with_retry(
+                cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+                command_type=util.POWERSHELL, upper_timeout=upper_timeout)
 
 
 WindowsActionManagers = {

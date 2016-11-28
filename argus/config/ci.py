@@ -21,6 +21,10 @@ from argus.config import base as conf_base
 _RESOURCES_LINK = ('https://raw.githubusercontent.com/cloudbase/'
                    'cloudbase-init-ci/master/argus/resources')
 
+IO_UPPER_TIMEOUT_MULTIPLIER = 3
+DEFAULT_UPPER_TIMEOUT = 60 * 5
+IO_UPPER_TIMEOUT = DEFAULT_UPPER_TIMEOUT * IO_UPPER_TIMEOUT_MULTIPLIER
+
 
 class ArgusOptions(conf_base.Options):
 
@@ -65,6 +69,12 @@ class ArgusOptions(conf_base.Options):
                             "checkout, clone or fetch a modified version of "
                             "Cloudbase-init, for replacing the present code "
                             "used by it."),
+            cfg.IntOpt("upper_timeout", default=DEFAULT_UPPER_TIMEOUT,
+                       help="Upper timeout for each command sent to the "
+                            "remote instance."),
+            cfg.IntOpt("io_upper_timeout", default=IO_UPPER_TIMEOUT,
+                       help="Upper timeout for each command that reads or "
+                            "writes to a file in the remote instance."),
         ]
 
     def register(self):
