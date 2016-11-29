@@ -15,8 +15,10 @@
 
 """Windows Cloudbase-Init recipes."""
 
+import base64
 import ntpath
 import os
+import zipfile
 
 import six
 
@@ -89,6 +91,25 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             LOG.info("Cloudbase-Init is already installed, "
                      "skipping installation.")
 
+    @staticmethod
+    def extract_files_from_archive(archive_path, destination_path):
+        with zipfile.ZipFile(archive_path, "r") as zip_ref:
+            zip_ref.extractall(destination_path)
+        os.remove(archive_path)
+
+    def transfer_encoded_file_b64(self, file_source, destination_path,
+                                  archive=False):
+        """Creates a new file to the path by decoding a base64 string."""
+        encoded_content = (self._backend.remote_client.manager.
+                           encode_file_to_base64_str(
+                               file_path=file_source))
+        file_64_decoded = base64.standard_b64decode(encoded_content[0])
+        with open(destination_path, 'wb') as file_result:
+            file_result.write(file_64_decoded)
+        if archive:
+            self.extract_files_from_archive(destination_path,
+                                            CONFIG.argus.output_directory)
+
     def _grab_cbinit_installation_log(self):
         """Obtain the installation logs."""
         LOG.info("Obtaining the installation logs.")
@@ -96,14 +117,20 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             LOG.warning("The output directory wasn't given, "
                         "the log will not be grabbed.")
             return
-
-        content = self._backend.remote_client.read_file("C:\\installation.log")
-        log_template = "installation-{}.log".format(
+        # Rename the installation log and archive it.
+        installation_log = r"C:\installation.log"
+        renamed_log = (r"C:\installation-{}.log".format(
+            self._backend.instance_server()['id']))
+        self._backend.remote_client.manager.copy_file(installation_log,
+                                                      renamed_log)
+        zip_source = r"C:\installation.zip"
+        self._backend.remote_client.manager.archive_file(
+            file_path=renamed_log,
+            destination_path=zip_source)
+        log_template = "installation-{}.zip".format(
             self._backend.instance_server()['id'])
-
         path = os.path.join(CONFIG.argus.output_directory, log_template)
-        with open(path, 'w') as stream:
-            stream.write(content)
+        self.transfer_encoded_file_b64(zip_source, path, archive=True)
 
     def replace_install(self):
         """Replace the Cloudbase-Init installed files with the downloaded ones.
@@ -280,6 +307,44 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         self._cbinit_conf.apply_config(conf_dir)
         self._cbinit_unattend_conf.apply_config(conf_dir)
+
+    def get_cb_init_logs(self):
+        LOG.info("Obtaining the Cloudbase-init logs.")
+        if not CONFIG.argus.output_directory:
+            LOG.warning("The output directory wasn't given, "
+                        "the log files will not be grabbed.")
+            return
+
+        instance_id = self._backend.instance_server()['id']
+        cbdir = introspection.get_cbinit_dir(self._execute)
+        cb_log_files = ["cloudbase-init.log", "cloudbase-init-unattend.log"]
+        renamed_cb_log_files = []
+        cb_log_files_path = []
+        renamed_cb_log_files_path = []
+        for log_file in cb_log_files:
+            renamed_cb_log_files.append(str(instance_id) + "-" + log_file)
+
+        for log_file in cb_log_files:
+            log_path = os.path.join(cbdir, r"log\{file}".format(file=log_file))
+            renamed_log_path = (os.path.join(cbdir,
+                                             (r"log\{instace_id}"
+                                              "-{file}".
+                                              format(instace_id=instance_id,
+                                                     file=log_file))))
+            cb_log_files_path.append(log_path)
+            renamed_cb_log_files_path.append(renamed_log_path)
+
+        files_to_rename = list(zip(cb_log_files_path,
+                                   renamed_cb_log_files_path))
+        for current_name, renamed in files_to_rename:
+            self._backend.remote_client.manager.copy_file(current_name,
+                                                          renamed)
+
+        source_destination = list(zip(renamed_cb_log_files_path,
+                                      renamed_cb_log_files))
+        for source, destination in source_destination:
+            path = os.path.join(CONFIG.argus.output_directory, destination)
+            self.transfer_encoded_file_b64(source, path)
 
 
 class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):

@@ -114,6 +114,11 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         """Inject the config in the instance."""
         pass
 
+    @abc.abstractmethod
+    def get_cb_init_logs(self):
+        """Get the Cloudbase-init logs from the instance."""
+        pass
+
     def prepare(self, service_type=None, **kwargs):
         """Prepare the underlying instance.
 
@@ -141,3 +146,4 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         self.sysprep()
         self.wait_cbinit_finalization()
         LOG.info("Finished preparing instance.")
+        self.get_cb_init_logs()

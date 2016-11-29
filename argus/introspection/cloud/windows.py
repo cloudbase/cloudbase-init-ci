@@ -288,7 +288,7 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
             self.remote_client.copy_file(tmp, remote_script)
             stdout = self.remote_client.run_command_verbose(
                 remote_script,
-                command_type=util.POWERSHELL)
+                command_type=util.POWERSHELL_SCRIPT_REMOTESIGNED)
             return stdout.strip()
 
     def _file_exist(self, filepath):

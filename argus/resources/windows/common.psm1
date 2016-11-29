@@ -1,8 +1,8 @@
 function Get-ProgramDir([string]$dirname="Cloudbase Solutions") {
-    $osArch = (Get-WmiObject Win32_OperatingSystem).OSArchitecture
+    $osArch = $ENV:PROCESSOR_ARCHITECTURE
     $programDirs = @($ENV:ProgramFiles)
 
-    if($osArch -eq "64-bit")
+    if($osArch -eq "AMD64")
     {
         $programDirs += ${ENV:ProgramFiles(x86)}
     }
