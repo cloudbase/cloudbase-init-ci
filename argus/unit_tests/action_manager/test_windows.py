@@ -18,6 +18,8 @@
 # pylint: disable=no-value-for-parameter, too-many-lines, protected-access
 # pylint: disable=too-many-public-methods
 
+import ntpath
+import os
 import unittest
 
 try:
@@ -49,26 +51,6 @@ class WindowsActionManagerTest(unittest.TestCase):
 
         self._action_manager = action_manager.WindowsActionManager(
             client=self._client, os_type=self._os_type)
-
-    def _test_wait_boot_completion_function(self, run_command_exc=None):
-        if run_command_exc:
-            self._client.run_command_until_condition = mock.Mock(
-                side_effect=run_command_exc)
-            with self.assertRaises(run_command_exc):
-                action_manager.wait_boot_completion(
-                    self._client, test_utils.USERNAME)
-        else:
-            self._client.run_command_until_condition = mock.Mock()
-            self.assertIsNone(
-                action_manager.wait_boot_completion(
-                    self._client, test_utils.USERNAME))
-
-    def test_wait_boot_completion_function_successful(self):
-        self._test_wait_boot_completion_function()
-
-    def test_wait_boot_completion_function_fail(self):
-        self._test_wait_boot_completion_function(
-            run_command_exc=exceptions.ArgusTimeoutError)
 
     def test_download_successful(self):
         self._action_manager.download(test_utils.URI, test_utils.LOCATION)
@@ -1088,3 +1070,538 @@ class WindowsActionManagerTest(unittest.TestCase):
             self.assertEqual(snatcher.output,
                              ["Config Cloudbase-Init"
                               " for {}".format(self._os_type)])
+
+
+class WindowsNanoActionManagerTest(unittest.TestCase):
+    """Tests for windows nano action manager class."""
+
+    def setUp(self):
+        self._client = mock.MagicMock()
+        self._os_type = mock.sentinel.os_type
+
+        self._action_manager = action_manager.WindowsNanoActionManager(
+            client=self._client, os_type=self._os_type)
+
+    def test_get_resource_path(self):
+        os.path.abspath = mock.Mock(return_value=test_utils.PATH)
+        resource_path = os.path.normpath(os.path.join(
+            test_utils.PATH, "..", "resources", "windows", "nano_server",
+            test_utils.RESOURCE))
+
+        self.assertEqual(self._action_manager._get_resource_path(
+            test_utils.RESOURCE), resource_path)
+
+    @mock.patch('argus.action_manager.windows.WindowsActionManager'
+                '.specific_prepare')
+    @mock.patch('argus.action_manager.windows.WindowsActionManager.is_dir')
+    @mock.patch('argus.action_manager.windows.WindowsActionManager.mkdir')
+    @mock.patch('argus.action_manager.windows.WindowsNanoActionManager'
+                '._get_resource_path')
+    def _test_specific_prepare(self, mock_get_path, mock_mkdir, mock_is_dir,
+                               mock_spec_prep, mkdir_exc=None, is_dir_exc=None,
+                               spec_prep_exc=None, copy_file_exc=None):
+        if spec_prep_exc:
+            mock_spec_prep.side_effect = spec_prep_exc
+            with self.assertRaises(spec_prep_exc):
+                self._action_manager.specific_prepare()
+            return
+
+        if is_dir_exc:
+            mock_is_dir.side_effect = is_dir_exc
+            with self.assertRaises(is_dir_exc):
+                self._action_manager.specific_prepare()
+            return
+
+        mock_is_dir.return_value = False
+
+        if mkdir_exc:
+            mock_mkdir.side_effect = mkdir_exc
+            with self.assertRaises(mkdir_exc):
+                self._action_manager.specific_prepare()
+            return
+
+        mock_get_path.return_value = test_utils.PATH
+
+        if copy_file_exc is None:
+            copy_file_exc = [None, None]
+        self._client.copy_file.side_effect = copy_file_exc
+
+        if copy_file_exc[0]:
+            with self.assertRaises(copy_file_exc[0]):
+                self._action_manager.specific_prepare()
+            return
+
+        if copy_file_exc[1]:
+            with self.assertRaises(copy_file_exc[1]):
+                self._action_manager.specific_prepare()
+            return
+
+        self._action_manager.specific_prepare()
+
+        self.assertEqual(mock_get_path.call_count, 2)
+        mock_get_path.assert_has_calls(
+            [mock.call(self._action_manager._COMMON),
+             mock.call(self._action_manager._DOWNLOAD_SCRIPT)])
+
+        calls = [
+            mock.call(test_utils.PATH, ntpath.join(
+                self._action_manager._RESOURCE_DIRECTORY,
+                self._action_manager._COMMON)),
+            mock.call(test_utils.PATH, ntpath.join(
+                self._action_manager._RESOURCE_DIRECTORY,
+                self._action_manager._DOWNLOAD_SCRIPT))
+        ]
+
+        self.assertEqual(self._client.copy_file.call_count, 2)
+        self._client.copy_file.assert_has_calls(calls)
+
+    def test_specific_prepare_successful(self):
+        self._test_specific_prepare()
+
+    def test_specific_prepare_spec_prep_exc(self):
+        self._test_specific_prepare(spec_prep_exc=exceptions.ArgusError)
+
+    def test_specific_prepare_is_dir_exc(self):
+        self._test_specific_prepare(is_dir_exc=exceptions.ArgusTimeoutError)
+
+    def test_specific_prepare_mkdir_exc(self):
+        self._test_specific_prepare(mkdir_exc=exceptions.ArgusTimeoutError)
+
+    def test_specific_prepare_copy_file_exc_first_call(self):
+        self._test_specific_prepare(
+            copy_file_exc=[exceptions.ArgusError, None])
+
+    def test_specific_prepare_copy_file_exc_second_call(self):
+        self._test_specific_prepare(
+            copy_file_exc=[None, exceptions.ArgusError])
+
+    def _test_download(self, run_command_exc=None):
+        if run_command_exc:
+            self._client.run_command_with_retry = mock.Mock(
+                side_effect=run_command_exc)
+            with self.assertRaises(run_command_exc):
+                self._action_manager.download(
+                    test_utils.URI, test_utils.LOCATION)
+        else:
+            self._client.run_command_with_retry = mock.Mock()
+
+            resource_path = ntpath.join(
+                self._action_manager._RESOURCE_DIRECTORY,
+                self._action_manager._DOWNLOAD_SCRIPT)
+            cmd = r"{script_path} -Uri {uri} -OutFile '{outfile}'".format(
+                script_path=resource_path, uri=test_utils.URI,
+                outfile=test_utils.LOCATION)
+
+            self._action_manager.download(test_utils.URI, test_utils.LOCATION)
+
+            self._client.run_command_with_retry.assert_called_once_with(
+                cmd, command_type=util.POWERSHELL)
+
+    def test_download_successful(self):
+        self._test_download()
+
+    def test_download_exception(self):
+        self._test_download(run_command_exc=exceptions.ArgusTimeoutError)
+
+    @mock.patch('argus.action_manager.windows.WindowsActionManager'
+                '.prepare_config')
+    def _test_prepare_config(self, mock_prep_config, prep_config_exc=None,
+                             cbi_conf_set_exc=None, cbi_conf_remove_exc=None,
+                             cbi_unatt_conf_remove_exc=None):
+        cbinit_conf = mock.MagicMock()
+        cbinit_unattend_conf = mock.MagicMock()
+
+        if prep_config_exc:
+            mock_prep_config.side_effect = prep_config_exc
+            with self.assertRaises(prep_config_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        if cbi_conf_set_exc:
+            cbinit_conf.set_conf_value.side_effect = cbi_conf_set_exc
+            with self.assertRaises(cbi_conf_set_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        if cbi_conf_remove_exc:
+            cbinit_conf.conf.remove_option.side_effect = cbi_conf_remove_exc
+            with self.assertRaises(cbi_conf_remove_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        if cbi_unatt_conf_remove_exc:
+            (cbinit_unattend_conf.conf.remove_option
+             .side_effect) = cbi_unatt_conf_remove_exc
+            with self.assertRaises(cbi_unatt_conf_remove_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        self._action_manager.prepare_config(cbinit_conf, cbinit_unattend_conf)
+
+        cbinit_conf.set_conf_value.assert_called_once_with(
+            "stop_service_on_exit", False)
+        cbinit_conf.conf.remove_option.assert_called_once_with(
+            "DEFAULT", "logging_serial_port_settings")
+        cbinit_unattend_conf.conf.remove_option.assert_called_once_with(
+            "DEFAULT", "logging_serial_port_settings")
+
+    def test_prepare_config_successful(self):
+        self._test_prepare_config()
+
+    def test_prepare_config_prep_config_exc(self):
+        self._test_prepare_config(prep_config_exc=exceptions.ArgusError)
+
+    def test_prepare_config_cbi_conf_set_exc(self):
+        self._test_prepare_config(cbi_conf_set_exc=exceptions.ArgusError)
+
+    def test_prepare_config_cbi_conf_remove_exc(self):
+        self._test_prepare_config(
+            cbi_conf_remove_exc=exceptions.ArgusError)
+
+    def test_prepare_config_cbi_unatt_conf_remove_exc(self):
+        self._test_prepare_config(
+            cbi_unatt_conf_remove_exc=exceptions.ArgusError)
+
+
+class ActionManagerTest(unittest.TestCase):
+    """Tests for action manager functions."""
+
+    def setUp(self):
+        self._client = mock.MagicMock()
+
+    def _test_wait_boot_completion(self, run_command_exc=None):
+        if run_command_exc:
+            self._client.run_command_until_condition = mock.Mock(
+                side_effect=run_command_exc)
+            with self.assertRaises(run_command_exc):
+                action_manager.wait_boot_completion(
+                    self._client, test_utils.USERNAME)
+        else:
+            self._client.run_command_until_condition = mock.Mock()
+            self.assertIsNone(
+                action_manager.wait_boot_completion(
+                    self._client, test_utils.USERNAME))
+
+    def test_wait_boot_completion_successful(self):
+        self._test_wait_boot_completion()
+
+    def test_wait_boot_completion_fail(self):
+        self._test_wait_boot_completion(
+            run_command_exc=exceptions.ArgusTimeoutError)
+
+    def _test_is_nanoserver(self, run_command_test_exc=None, path_exists=True,
+                            run_command_get_exc=None, is_nanoserver=True):
+        client = mock.MagicMock()
+
+        if run_command_test_exc:
+            client.run_command_with_retry.side_effect = run_command_test_exc
+            with self.assertRaises(run_command_test_exc):
+                action_manager._is_nanoserver(client)
+            return
+
+        if not path_exists:
+            client.run_command_with_retry.side_effect = [
+                ("False", test_utils.STDERR, test_utils.EXIT_CODE)]
+            self.assertFalse(action_manager._is_nanoserver(client))
+            return
+
+        client.run_command_with_retry.side_effect = [
+            ("True", test_utils.STDERR, test_utils.EXIT_CODE)]
+
+        if run_command_get_exc:
+            client.run_command_with_retry.side_effect = run_command_get_exc
+            with self.assertRaises(run_command_get_exc):
+                action_manager._is_nanoserver(client)
+            return
+
+        if is_nanoserver:
+            client.run_command_with_retry.side_effect = [
+                ("True", test_utils.STDERR, test_utils.EXIT_CODE),
+                ("1", test_utils.STDERR, test_utils.EXIT_CODE)]
+        else:
+            client.run_command_with_retry.side_effect = [
+                ("True", test_utils.STDERR, test_utils.EXIT_CODE),
+                ("0", test_utils.STDERR, test_utils.EXIT_CODE)]
+
+        action_manager._is_nanoserver(client)
+
+        server_level_key = (r'HKLM:\Software\Microsoft\Windows NT'
+                            r'\CurrentVersion\Server\ServerLevels')
+        cmd1 = r'Test-Path "{}"'.format(server_level_key)
+        cmd2 = r'(Get-ItemProperty "{}").NanoServer'.format(server_level_key)
+
+        calls = [
+            mock.call(cmd1, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+                      command_type=util.POWERSHELL),
+            mock.call(cmd2, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+                      command_type=util.POWERSHELL)
+        ]
+
+        client.run_command_with_retry.assert_has_calls(calls)
+
+    def test_is_nanoserver(self):
+        self._test_is_nanoserver()
+
+    def test_is_nanoserver_run_command_test_exc(self):
+        self._test_is_nanoserver(
+            run_command_test_exc=exceptions.ArgusTimeoutError)
+
+    def test_is_nanoserver_path_not_exists(self):
+        self._test_is_nanoserver(path_exists=False)
+
+    def test_is_nanoserver_run_command_get_exc(self):
+        self._test_is_nanoserver(
+            run_command_get_exc=exceptions.ArgusTimeoutError)
+
+    def test_is_not_nanoserver(self):
+        self._test_is_nanoserver(is_nanoserver=False)
+
+    def _test_get_product_type(self, major_version, run_command_exc=None):
+        self._client.run_command_with_retry = mock.Mock()
+
+        if run_command_exc:
+            self._client.run_command_with_retry.side_effect = run_command_exc
+            with self.assertRaises(run_command_exc):
+                action_manager._get_product_type(self._client, major_version)
+            return
+
+        self._client.run_command_with_retry.side_effect = [
+            (test_utils.PRODUCT_TYPE_1, test_utils.STDERR,
+             test_utils.EXIT_CODE)
+        ]
+
+        cmdlet = action_manager.Windows8ActionManager.WINDOWS_MANAGEMENT_CMDLET
+        if major_version == 10:
+            cmdlet = (action_manager.Windows10ActionManager
+                      .WINDOWS_MANAGEMENT_CMDLET)
+        cmd = r"({} -Class Win32_OperatingSystem).producttype".format(cmdlet)
+
+        self.assertEqual(
+            action_manager._get_product_type(self._client, major_version),
+            int(test_utils.PRODUCT_TYPE_1))
+        self._client.run_command_with_retry.assert_called_once_with(
+            cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+            command_type=util.POWERSHELL)
+
+    def test_get_product_type_major_version_6(self):
+        self._test_get_product_type(major_version=test_utils.MAJOR_VERSION_6)
+
+    def test_get_product_type_major_version_10(self):
+        self._test_get_product_type(major_version=test_utils.MAJOR_VERSION_10)
+
+    def test_get_product_type_run_command_exc(self):
+        self._test_get_product_type(
+            major_version=test_utils.MAJOR_VERSION_6,
+            run_command_exc=exceptions.ArgusTimeoutError)
+
+    @test_utils.ConfPatcher('image_username', test_utils.IMAGE_USERNAME,
+                            'openstack')
+    @mock.patch('argus.action_manager.windows.wait_boot_completion')
+    @mock.patch('argus.action_manager.windows._get_product_type')
+    @mock.patch('argus.action_manager.windows._is_nanoserver')
+    def _test_get_windows_action_manager(
+            self, mock_is_nanoserver, mock_get_product_type,
+            mock_wait_boot_completion, major_version, minor_version,
+            product_type, is_nanoserver=False, is_nanoserver_exc=None,
+            get_product_type_exc=None, get_os_version_exc=None,
+            wait_boot_completion_exc=None):
+
+        if wait_boot_completion_exc:
+            mock_wait_boot_completion.side_effect = wait_boot_completion_exc
+            with self.assertRaises(wait_boot_completion_exc):
+                action_manager.get_windows_action_manager(self._client)
+            return
+
+        if get_os_version_exc is None:
+            get_os_version_exc = [None, None]
+        introspection.get_os_version = mock.Mock(
+            side_effect=get_os_version_exc)
+
+        if get_os_version_exc[0]:
+            with self.assertRaises(get_os_version_exc[0]):
+                action_manager.get_windows_action_manager(self._client)
+            return
+
+        if get_os_version_exc[1]:
+            with self.assertRaises(get_os_version_exc[1]):
+                action_manager.get_windows_action_manager(self._client)
+            return
+
+        introspection.get_os_version.side_effect = [major_version,
+                                                    minor_version]
+
+        if get_product_type_exc:
+            mock_get_product_type.side_effect = get_product_type_exc
+            with self.assertRaises(get_product_type_exc):
+                action_manager.get_windows_action_manager(self._client)
+            return
+
+        mock_get_product_type.return_value = product_type
+
+        windows_type = util.WINDOWS_VERSION.get(
+            (major_version, minor_version, product_type), util.WINDOWS)
+
+        if is_nanoserver_exc:
+            mock_is_nanoserver.side_effect = is_nanoserver_exc
+            with self.assertRaises(is_nanoserver_exc):
+                action_manager.get_windows_action_manager(self._client)
+            return
+
+        mock_is_nanoserver.return_value = is_nanoserver
+
+        if isinstance(windows_type, dict):
+            windows_type = windows_type[is_nanoserver]
+
+        log_message = ("We got the OS type {} because we have the major "
+                       "Version : {}, the minor version {}, the product Type :"
+                       " {}, and IsNanoserver: {}").format(windows_type,
+                                                           major_version,
+                                                           minor_version,
+                                                           product_type,
+                                                           is_nanoserver)
+        with test_utils.LogSnatcher('argus.action_manager.windows'
+                                    '.get_windows_action_manager') as snatcher:
+            self.assertTrue(isinstance(
+                action_manager.get_windows_action_manager(self._client),
+                action_manager.WindowsActionManagers[windows_type]))
+
+            self.assertEqual(snatcher.output[-1:], [log_message])
+
+    def test_get_windows_action_manager_wait_boot_completion_exc(self):
+        self._test_get_windows_action_manager(
+            major_version=int(test_utils.MAJOR_VERSION_10),
+            minor_version=int(test_utils.MINOR_VERSION_0),
+            product_type=int(test_utils.PRODUCT_TYPE_1),
+            wait_boot_completion_exc=exceptions.ArgusTimeoutError)
+
+    def test_get_windows_action_manager_get_major_version_exc(self):
+        self._test_get_windows_action_manager(
+            major_version=int(test_utils.MAJOR_VERSION_10),
+            minor_version=int(test_utils.MINOR_VERSION_0),
+            product_type=int(test_utils.PRODUCT_TYPE_1),
+            get_os_version_exc=[exceptions.ArgusTimeoutError, None])
+
+    def test_get_windows_action_manager_get_minor_version_exc(self):
+        self._test_get_windows_action_manager(
+            major_version=int(test_utils.MAJOR_VERSION_10),
+            minor_version=int(test_utils.MINOR_VERSION_0),
+            product_type=int(test_utils.PRODUCT_TYPE_1),
+            get_os_version_exc=[None, exceptions.ArgusTimeoutError])
+
+    def test_get_windows_action_manager_get_product_type_exc(self):
+        self._test_get_windows_action_manager(
+            major_version=int(test_utils.MAJOR_VERSION_10),
+            minor_version=int(test_utils.MINOR_VERSION_0),
+            product_type=int(test_utils.PRODUCT_TYPE_1),
+            get_product_type_exc=exceptions.ArgusTimeoutError)
+
+    def test_get_windows_action_manager_is_nanoserver_exc(self):
+        self._test_get_windows_action_manager(
+            major_version=int(test_utils.MAJOR_VERSION_10),
+            minor_version=int(test_utils.MINOR_VERSION_0),
+            product_type=int(test_utils.PRODUCT_TYPE_1),
+            is_nanoserver_exc=exceptions.ArgusTimeoutError)
+
+    def test_get_windows_10_action_manager(self):
+        self._test_get_windows_action_manager(
+            major_version=int(test_utils.MAJOR_VERSION_10),
+            minor_version=int(test_utils.MINOR_VERSION_0),
+            product_type=int(test_utils.PRODUCT_TYPE_1))
+
+    def test_get_windows_nano_action_manager(self):
+        self._test_get_windows_action_manager(
+            major_version=int(test_utils.MAJOR_VERSION_10),
+            minor_version=int(test_utils.MINOR_VERSION_0),
+            product_type=int(test_utils.PRODUCT_TYPE_3),
+            is_nanoserver=True)
+
+
+class WindowsServer2008ActionManagerTest(unittest.TestCase):
+    """Tests for windows server 2008 action manager class."""
+
+    def setUp(self):
+        self._client = mock.MagicMock()
+        self._os_type = mock.sentinel.os_type
+
+        self._action_manager = action_manager.WindowsServer2008ActionManager(
+            client=self._client, os_type=self._os_type)
+
+    @mock.patch('argus.action_manager.windows.WindowsActionManager'
+                '.execute_powershell_resource_script')
+    def _test_run_installation_script(self, mock_execute_script, exc=None):
+        if exc:
+            mock_execute_script.side_effect = exc
+            with self.assertRaises(exc):
+                self._action_manager._run_installation_script(
+                    test_utils.INSTALLER)
+            return
+
+        parameters = '-installer {}'.format(test_utils.INSTALLER)
+
+        self._action_manager._run_installation_script(test_utils.INSTALLER)
+        mock_execute_script.assert_called_once_with(
+            resource_location='windows/2008R2/installCBinit.ps1',
+            parameters=parameters)
+
+    def test_run_installation_script(self):
+        self._test_run_installation_script()
+
+    def test_run_installation_script_argus_timeout_error(self):
+        self._test_run_installation_script(exc=exceptions.ArgusTimeoutError)
+
+    def test_run_installation_script_argus_error(self):
+        self._test_run_installation_script(exc=exceptions.ArgusError)
+
+    @mock.patch('argus.action_manager.windows.WindowsActionManager'
+                '.prepare_config')
+    def _test_prepare_config(self, mock_prep_config, prep_config_exc=None,
+                             cbi_conf_set_exc=None,
+                             cbi_unatt_conf_set_exc=None):
+        cbinit_conf = mock.MagicMock()
+        cbinit_unattend_conf = mock.MagicMock()
+
+        if prep_config_exc:
+            mock_prep_config.side_effect = prep_config_exc
+            with self.assertRaises(prep_config_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        if cbi_conf_set_exc:
+            cbinit_conf.set_conf_value.side_effect = cbi_conf_set_exc
+            with self.assertRaises(cbi_conf_set_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        if cbi_unatt_conf_set_exc:
+            (cbinit_unattend_conf.set_conf_value
+             .side_effect) = cbi_unatt_conf_set_exc
+            with self.assertRaises(cbi_unatt_conf_set_exc):
+                self._action_manager.prepare_config(
+                    cbinit_conf, cbinit_unattend_conf)
+            return
+
+        self._action_manager.prepare_config(cbinit_conf, cbinit_unattend_conf)
+
+        cbinit_conf.set_conf_value.assert_called_once_with(
+            "reset_service_password", False)
+        cbinit_unattend_conf.set_conf_value.assert_called_once_with(
+            "reset_service_password", False)
+
+    def test_prepare_config_successful(self):
+        self._test_prepare_config()
+
+    def test_prepare_config_prep_config_exc(self):
+        self._test_prepare_config(prep_config_exc=exceptions.ArgusError)
+
+    def test_prepare_config_cbi_conf_set_exc(self):
+        self._test_prepare_config(cbi_conf_set_exc=exceptions.ArgusError)
+
+    def test_prepare_config_cbi_unatt_conf_set_exc(self):
+        self._test_prepare_config(
+            cbi_unatt_conf_set_exc=exceptions.ArgusError)
