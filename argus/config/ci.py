@@ -18,8 +18,8 @@ from oslo_config import cfg
 
 from argus.config import base as conf_base
 
-_RESOURCES_LINK = ('https://raw.githubusercontent.com/cloudbase/'
-                   'cloudbase-init-ci/master/argus/resources')
+RESOURCES_LINK = ('https://raw.githubusercontent.com/cloudbase/'
+                  'cloudbase-init-ci/master/argus/resources')
 
 IO_UPPER_TIMEOUT_MULTIPLIER = 3
 DEFAULT_UPPER_TIMEOUT = 60 * 6
@@ -37,7 +37,7 @@ class ArgusOptions(conf_base.Options):
                 "argus_log_file", default='argus.log', required=True,
                 help="Path to the file where argus will do the logging"),
             cfg.StrOpt(
-                "resources", default=_RESOURCES_LINK, required=True,
+                "resources", default=RESOURCES_LINK, required=True,
                 help="An url that holds the resources usually from "
                      "/argus/resources available on the web"),
             cfg.BoolOpt("pause", default=False,

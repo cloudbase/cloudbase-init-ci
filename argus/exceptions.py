@@ -33,3 +33,8 @@ class ArgusPermissionDenied(ArgusError):
 
 class ArgusHeatTeardown(ArgusError):
     pass
+
+
+class ArgusEnvironmentError(ArgusError):
+    """Base class for errors related to the argus environment."""
+    pass
