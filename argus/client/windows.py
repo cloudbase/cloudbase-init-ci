@@ -116,7 +116,7 @@ class WinRemoteClient(base.BaseClient):
             return util.sanitize_command_output(stdout), stderr, exit_code
         except multiprocessing.TimeoutError:
             raise exceptions.ArgusTimeoutError(
-                "The upper Timeout what reached!")
+                "The command '{cmd}' has timed out.".format(cmd=bare_command))
         finally:
             thread_pool.terminate()
             protocol_client.cleanup_command(shell_id, command_id)
@@ -235,8 +235,8 @@ class WinRemoteClient(base.BaseClient):
         LOG.info("The exit code of the command was: %s", exit_code)
         return stdout
 
-    def run_command_with_retry(self, cmd, count=util.RETRY_COUNT,
-                               delay=util.RETRY_DELAY,
+    def run_command_with_retry(self, cmd, count=CONFIG.argus.retry_count,
+                               delay=CONFIG.argus.retry_delay,
                                command_type=util.POWERSHELL,
                                upper_timeout=CONFIG.argus.upper_timeout):
         """Run the given `cmd` until succeeds.
@@ -275,8 +275,8 @@ class WinRemoteClient(base.BaseClient):
                 time.sleep(delay)
 
     def run_command_until_condition(self, cmd, cond,
-                                    retry_count=util.RETRY_COUNT,
-                                    delay=util.RETRY_DELAY,
+                                    retry_count=CONFIG.argus.retry_count,
+                                    delay=CONFIG.argus.retry_delay,
                                     command_type=util.POWERSHELL,
                                     upper_timeout=CONFIG.argus.upper_timeout):
         """Run the given `cmd` until a condition `cond` occurs.

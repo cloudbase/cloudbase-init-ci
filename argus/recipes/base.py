@@ -23,8 +23,8 @@ import abc
 
 import six
 
-from argus import log as argus_log
 from argus import config as argus_config
+from argus import log as argus_log
 
 
 LOG = argus_log.get_logger()

@@ -26,9 +26,6 @@ import sys
 import six
 
 
-RETRY_COUNT = 15
-RETRY_DELAY = 10
-
 CMD = "cmd"
 BAT_SCRIPT = "bat"
 POWERSHELL = "powershell"
@@ -238,7 +235,7 @@ def _get_command_powershell(command):
     if six.PY3:
         encoded = encoded.decode()
 
-    command = ("powershell -Noninteractive -NoLogo"
+    command = ("powershell -NonInteractive -NoLogo"
                " -EncodedCommand {}").format(encoded)
 
     return command
@@ -246,17 +243,15 @@ def _get_command_powershell(command):
 
 def _get_command_powershell_script(command):
     """Return a valid CMD command that runs a powershell script."""
-    return "powershell -File {}".format(command)
+    return "powershell -NonInteractive -NoLogo -File {}".format(command)
 
 
-def _get_cmd_with_privileges(policy=None):
+def _get_cmd_with_privileges(policy="RemoteSigned"):
     """Factory function that runs powershell scripts with a specific Policy."""
-    if not policy:
-        return _get_command_powershell_script
 
     def _get_cmd(command):
-        return "powershell -ExecutionPolicy {} -File {}".format(policy,
-                                                                command)
+        return ("powershell -NonInteractive -NoLogo -ExecutionPolicy "
+                "{} -File {}".format(policy, command))
     return _get_cmd
 
 

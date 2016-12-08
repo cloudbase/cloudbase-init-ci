@@ -16,9 +16,12 @@ import ntpath
 
 import six
 
+from argus import config as argus_config
 from argus.config_generator.windows import base
 from argus.introspection.cloud import windows as introspect
 from argus import util
+
+CONFIG = argus_config.CONFIG
 
 
 class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
@@ -42,8 +45,8 @@ class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
             self.conf.add_section(section)
         self.conf.set(section, name, value)
 
-    def _execute(self, cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
-                 command_type=None):
+    def _execute(self, cmd, count=CONFIG.argus.retry_count,
+                 delay=CONFIG.argus.retry_delay, command_type=None):
         """Execute until success and return only the standard output
 
         A positive exit code will trigger the failure

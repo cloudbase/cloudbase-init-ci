@@ -39,7 +39,7 @@ def wait_boot_completion(client, username):
     client.run_command_until_condition(
         wait_cmd,
         lambda stdout: stdout.strip() == username,
-        retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+        retry_count=CONFIG.argus.retry_count, delay=CONFIG.argus.retry_delay,
         command_type=util.POWERSHELL)
 
 
@@ -71,8 +71,8 @@ class WindowsActionManager(base.BaseActionManager):
         cmd = ('(New-Object System.Net.WebClient).DownloadFile('
                '"{uri}","{location}")'.format(uri=uri, location=location))
         self._client.run_command_with_retry(cmd,
-                                            count=util.RETRY_COUNT,
-                                            delay=util.RETRY_DELAY,
+                                            count=CONFIG.argus.retry_count,
+                                            delay=CONFIG.argus.retry_delay,
                                             command_type=util.POWERSHELL)
 
     def download_resource(self, resource_location, location):
@@ -104,7 +104,8 @@ class WindowsActionManager(base.BaseActionManager):
         self.download_resource(resource_location, instance_location)
         cmd = '"{}" {}'.format(instance_location, parameters)
         self._client.run_command_with_retry(
-            cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+            cmd, count=CONFIG.argus.retry_count,
+            delay=CONFIG.argus.retry_delay,
             command_type=script_type, upper_timeout=upper_timeout)
 
     def execute_powershell_resource_script(
@@ -122,8 +123,8 @@ class WindowsActionManager(base.BaseActionManager):
         self.download_resource("windows/installCBinit.ps1",
                                self._INSTALL_SCRIPT)
 
-    def _execute(self, cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
-                 command_type=util.CMD,
+    def _execute(self, cmd, count=CONFIG.argus.retry_count,
+                 delay=CONFIG.argus.retry_delay, command_type=util.CMD,
                  upper_timeout=CONFIG.argus.upper_timeout):
         """Execute until succeeds and return only the standard output."""
         stdout, _, _ = self._client.run_command_with_retry(
@@ -176,7 +177,7 @@ class WindowsActionManager(base.BaseActionManager):
         LOG.info("Trying to install Cloudbase-Init.")
         installer = self._get_installer_name()
 
-        for _ in range(util.RETRY_COUNT):
+        for _ in range(CONFIG.argus.retry_count):
             for install_method in (self._run_installation_script,
                                    self._deploy_using_scheduled_task):
                 try:
@@ -226,8 +227,8 @@ class WindowsActionManager(base.BaseActionManager):
         LOG.info("Wait for the machine to finish rebooting ...")
         self.wait_boot_completion()
 
-    def git_clone(self, repo_url, location, count=util.RETRY_COUNT,
-                  delay=util.RETRY_DELAY):
+    def git_clone(self, repo_url, location, count=CONFIG.argus.retry_count,
+                  delay=CONFIG.argus.retry_delay):
         """Clone from a remote repository to a specified location.
 
         :param repo_url: The remote repository URL.
@@ -271,7 +272,8 @@ class WindowsActionManager(base.BaseActionManager):
         self._client.run_command_until_condition(
             wait_cmd,
             lambda out: out.strip() == 'Stopped',
-            retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+            retry_count=CONFIG.argus.retry_count,
+            delay=CONFIG.argus.retry_delay,
             command_type=util.POWERSHELL)
 
     def check_cbinit_service(self, searched_paths=None):
@@ -287,7 +289,8 @@ class WindowsActionManager(base.BaseActionManager):
             self._client.run_command_until_condition(
                 check_cmd,
                 lambda out: out.strip() == 'True',
-                retry_count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+                retry_count=CONFIG.argus.retry_count,
+                delay=CONFIG.argus.retry_delay,
                 command_type=util.POWERSHELL)
 
     def wait_boot_completion(self):
@@ -688,7 +691,8 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
             self.download_resource(resource_location, instance_location)
             cmd = '& "{}" {}'.format(instance_location, parameters)
             self._client.run_command_with_retry(
-                cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+                cmd, count=CONFIG.argus.retry_count,
+                delay=CONFIG.argus.retry_delay,
                 command_type=util.POWERSHELL, upper_timeout=upper_timeout)
 
 
@@ -715,7 +719,7 @@ def _is_nanoserver(client):
 
     cmd = r'Test-Path "{}"'.format(server_level_key)
     path_exists, _, _ = client.run_command_with_retry(
-        cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+        cmd, count=CONFIG.argus.retry_count, delay=CONFIG.argus.retry_delay,
         command_type=util.POWERSHELL)
 
     if path_exists == "False":
@@ -723,7 +727,7 @@ def _is_nanoserver(client):
 
     cmd = r'(Get-ItemProperty "{}").NanoServer'.format(server_level_key)
     nanoserver_property, _, _ = client.run_command_with_retry(
-        cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+        cmd, count=CONFIG.argus.retry_count, delay=CONFIG.argus.retry_delay,
         command_type=util.POWERSHELL)
 
     return len(nanoserver_property) > 0 and nanoserver_property[0] == "1"
@@ -747,7 +751,7 @@ def _get_product_type(client, major_version):
     cmd = r"({} -Class Win32_OperatingSystem).producttype".format(cmdlet)
 
     product_type, _, _ = client.run_command_with_retry(
-        cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+        cmd, count=CONFIG.argus.retry_count, delay=CONFIG.argus.retry_delay,
         command_type=util.POWERSHELL)
     return util.get_int_from_str(product_type.strip())
 
