@@ -376,14 +376,19 @@ class WindowsActionManagerTest(unittest.TestCase):
     def test_wait_boot_completion_fail(self):
         self._test_wait_boot_completion(exc=exceptions.ArgusCLIError)
 
+    @test_utils.ConfPatcher('resources', test_utils.BASE_RESOURCE, 'argus')
     def test_specific_prepare(self):
+        resource = (test_utils.BASE_RESOURCE +
+                    test_utils.ARGUS_AGENT_RESOURCE_LOCATION)
+        agent_location = test_utils.ARGUS_AGENT_LOCATION
+        expected_logging = [
+            "Downloading from {} to {} ".format(resource, agent_location),
+            "Prepare something specific for OS Type {}".format(self._os_type)]
         with test_utils.LogSnatcher('argus.action_manager.windows'
                                     '.WindowsActionManager'
                                     '.specific_prepare') as snatcher:
             self.assertIsNone(self._action_manager.specific_prepare())
-            self.assertEqual(snatcher.output,
-                             ["Prepare something specific"
-                              " for OS Type {}".format(self._os_type)])
+            self.assertEqual(snatcher.output, expected_logging)
 
     @mock.patch('argus.action_manager.windows.WindowsActionManager'
                 '.exists')

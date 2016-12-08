@@ -22,7 +22,7 @@ _RESOURCES_LINK = ('https://raw.githubusercontent.com/cloudbase/'
                    'cloudbase-init-ci/master/argus/resources')
 
 IO_UPPER_TIMEOUT_MULTIPLIER = 3
-DEFAULT_UPPER_TIMEOUT = 60 * 5
+DEFAULT_UPPER_TIMEOUT = 60 * 6
 IO_UPPER_TIMEOUT = DEFAULT_UPPER_TIMEOUT * IO_UPPER_TIMEOUT_MULTIPLIER
 
 

@@ -104,7 +104,8 @@ class CloudBackend(BaseBackend):
 
         template = self._get_log_template(suffix)
         path = os.path.join(CONFIG.argus.output_directory,
-                            template.format(self.internal_instance_id()))
+                            "serial-logging-" + template.format(
+                                self.internal_instance_id()))
         content = self.instance_output()
         if not content.strip():
             LOG.warning("Empty console output; nothing to save.")

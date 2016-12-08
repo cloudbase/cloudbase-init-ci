@@ -53,9 +53,51 @@ class WindowsActionManager(base.BaseActionManager):
 
     WINDOWS_MANAGEMENT_CMDLET = "Get-WmiObject"
     _INSTALL_SCRIPT = r"C:\installCBinit.ps1"
+    _ARGUS_AGENT_SCRIPT = r"C:\argusagent.py"
 
     def __init__(self, client, os_type=util.WINDOWS):
         super(WindowsActionManager, self).__init__(client, os_type)
+
+    def _get_agent_command(self, agent_action,
+                           agent_path=None, **kwargs):
+        """Command builder for the argus utilitary agent.
+
+        Returns a command string formed by the given action and its
+        required arguments.
+        """
+        agent_path = agent_path or self._ARGUS_AGENT_SCRIPT
+        python_dir = introspection.get_python_dir(self._execute)
+        cmd = (r'& "{pydir}\python.exe" {agent_path} --{agent_action} '
+               ' "{source}" "{location}"'.format(
+                   pydir=python_dir, agent_path=agent_path,
+                   agent_action=agent_action,
+                   source=kwargs.get('source', ''),
+                   location=kwargs.get('location', '')))
+        return cmd
+
+    def archive_file(self, file_path, destination_path):
+        """Archives a given file_path to the destination_path."""
+        LOG.info("Archiving %s to %s.", file_path, destination_path)
+        archive_cmd = self._get_agent_command(agent_action="archive",
+                                              source=file_path,
+                                              location=destination_path)
+        try:
+            self._client.run_remote_cmd(cmd=archive_cmd,
+                                        command_type=util.POWERSHELL)
+        except exceptions.ArgusError as exc:
+            LOG.debug("Could not archive %s: %s", file_path, exc)
+            return file_path
+
+    def encode_file_to_base64_str(self, file_path):
+        """Returns a base64 encoded string resulted from the given file."""
+        LOG.debug("Encoding %s to base64.", file_path)
+        encode_cmd = self._get_agent_command(agent_action="encode",
+                                             source=file_path)
+        try:
+            return self._client.run_remote_cmd(cmd=encode_cmd,
+                                               command_type=util.POWERSHELL)
+        except exceptions.ArgusError as exc:
+            LOG.debug("Could not encode %s: %s", file_path, exc)
 
     def download(self, uri, location):
         """Download the resource located at a specific URI in the location.
@@ -301,8 +343,19 @@ class WindowsActionManager(base.BaseActionManager):
 
     def specific_prepare(self):
         """Prepare some OS specific resources."""
-        # We don't have anything specific for the base
+        self.download_resource("windows/argusagent.py",
+                               self._ARGUS_AGENT_SCRIPT)
         LOG.debug("Prepare something specific for OS Type %s", self._os_type)
+
+    def copy_file(self, path, new_file):
+        """Copy a file to the destination"""
+        if not self.exists(path):
+            raise exceptions.ArgusCLIError("Invalid Path '{}'.".format(path))
+
+        LOG.debug("Copy file from %s to %s", path, new_file)
+        cmd = ("Copy-Item -Force -Path '{path}' "
+               "-Destination '{newname}'".format(path=path, newname=new_file))
+        self._client.run_command_with_retry(cmd, command_type=util.POWERSHELL)
 
     def remove(self, path):
         """Remove a file."""
@@ -512,8 +565,6 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
         return os.path.normpath(resource_path)
 
     def specific_prepare(self):
-        super(WindowsNanoActionManager, self).specific_prepare()
-
         if not self.is_dir(self._RESOURCE_DIRECTORY):
             self.mkdir(self._RESOURCE_DIRECTORY)
 
@@ -527,6 +578,8 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
         self._client.copy_file(
             resource_path, ntpath.join(self._RESOURCE_DIRECTORY,
                                        self._DOWNLOAD_SCRIPT))
+
+        super(WindowsNanoActionManager, self).specific_prepare()
 
     def download(self, uri, location):
         resource_path = ntpath.join(self._RESOURCE_DIRECTORY,
