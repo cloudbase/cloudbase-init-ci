@@ -75,6 +75,11 @@ class ArgusOptions(conf_base.Options):
             cfg.IntOpt("io_upper_timeout", default=IO_UPPER_TIMEOUT,
                        help="Upper timeout for each command that reads or "
                             "writes to a file in the remote instance."),
+            cfg.IntOpt("retry_count", default=15,
+                       help="The retry counts for a failing command."),
+            cfg.IntOpt("retry_delay", default=10,
+                       help="The number of seconds between the retries "
+                            " of a failed command."),
         ]
 
     def register(self):

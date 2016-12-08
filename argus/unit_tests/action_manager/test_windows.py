@@ -60,7 +60,8 @@ class WindowsActionManagerTest(unittest.TestCase):
                                               location=test_utils.LOCATION))
 
         self._client.run_command_with_retry.assert_called_with(
-            cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+            cmd, count=CONFIG.argus.retry_count,
+            delay=CONFIG.argus.retry_delay,
             command_type=util.POWERSHELL)
 
     def test_download_exception(self):
@@ -142,8 +143,8 @@ class WindowsActionManagerTest(unittest.TestCase):
         mock_download_resource.assert_called_once_with(
             test_utils.RESOURCE_LOCATION, instance_location)
         self._client.run_command_with_retry.assert_called_once_with(
-            cmd, count=util.RETRY_COUNT,
-            delay=util.RETRY_DELAY, command_type=script_type,
+            cmd, count=CONFIG.argus.retry_count,
+            delay=CONFIG.argus.retry_delay, command_type=script_type,
             upper_timeout=CONFIG.argus.upper_timeout)
 
     def test_execute_resource_script_bat_script(self):
@@ -826,8 +827,8 @@ class WindowsActionManagerTest(unittest.TestCase):
             self._client.run_command_with_retry = mock.Mock(side_effect=exc)
             with self.assertRaises(exc):
                 self._action_manager._execute(
-                    test_utils.CMD, count=util.RETRY_COUNT,
-                    delay=util.RETRY_DELAY, command_type=util.CMD)
+                    test_utils.CMD, count=CONFIG.argus.retry_count,
+                    delay=CONFIG.argus.retry_delay, command_type=util.CMD)
         else:
             mock_cmd_retry = mock.Mock()
             mock_cmd_retry.return_value = (test_utils.STDOUT,
@@ -835,11 +836,12 @@ class WindowsActionManagerTest(unittest.TestCase):
                                            test_utils.EXIT_CODE)
             self._client.run_command_with_retry = mock_cmd_retry
             self.assertEqual(self._action_manager._execute(
-                test_utils.CMD, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+                test_utils.CMD, count=CONFIG.argus.retry_count,
+                delay=CONFIG.argus.retry_delay,
                 command_type=util.CMD), test_utils.STDOUT)
             self._client.run_command_with_retry.assert_called_once_with(
-                test_utils.CMD, count=util.RETRY_COUNT,
-                delay=util.RETRY_DELAY, command_type=util.CMD,
+                test_utils.CMD, count=CONFIG.argus.retry_count,
+                delay=CONFIG.argus.retry_delay, command_type=util.CMD,
                 upper_timeout=CONFIG.argus.upper_timeout)
 
     def test_execute(self):
@@ -978,11 +980,11 @@ class WindowsActionManagerTest(unittest.TestCase):
     def test_install_cbinit_at_last_try(
             self, mock_run, mock_deploy, mock_check, mock_cleanup):
         mock_check.side_effect = [True]
-
+        retry_count = CONFIG.argus.retry_count
         run_fails = [
-            exceptions.ArgusTimeoutError for _ in range(util.RETRY_COUNT)]
+            exceptions.ArgusTimeoutError for _ in range(retry_count)]
         deploy_fails = [
-            exceptions.ArgusTimeoutError for _ in range(util.RETRY_COUNT - 1)]
+            exceptions.ArgusTimeoutError for _ in range(retry_count - 1)]
         deploy_fails.append(None)
 
         mock_run.side_effect = run_fails
@@ -990,9 +992,10 @@ class WindowsActionManagerTest(unittest.TestCase):
 
         self.assertTrue(self._action_manager.install_cbinit())
 
-        self.assertEqual(mock_run.call_count, util.RETRY_COUNT)
-        self.assertEqual(mock_deploy.call_count, util.RETRY_COUNT)
-        self.assertEqual(mock_cleanup.call_count, util.RETRY_COUNT * 2 - 1)
+        self.assertEqual(mock_run.call_count, CONFIG.argus.retry_count)
+        self.assertEqual(mock_deploy.call_count, CONFIG.argus.retry_count)
+        self.assertEqual(mock_cleanup.call_count,
+                         CONFIG.argus.retry_count * 2 - 1)
 
     @mock.patch('argus.action_manager.windows.WindowsActionManager'
                 '.cbinit_cleanup')
@@ -1004,13 +1007,14 @@ class WindowsActionManagerTest(unittest.TestCase):
                 '._run_installation_script')
     def test_install_cbinit_timeout_fail(
             self, mock_run, mock_deploy, mock_check, mock_cleanup):
-        mock_check.side_effect = [False for _ in range(2 * util.RETRY_COUNT)]
+        retry_count = CONFIG.argus.retry_count
+        mock_check.side_effect = [False for _ in range(2 * retry_count)]
 
         self.assertFalse(self._action_manager.install_cbinit())
 
-        self.assertEqual(mock_run.call_count, util.RETRY_COUNT)
-        self.assertEqual(mock_deploy.call_count, util.RETRY_COUNT)
-        self.assertEqual(mock_cleanup.call_count, 2 * util.RETRY_COUNT)
+        self.assertEqual(mock_run.call_count, retry_count)
+        self.assertEqual(mock_deploy.call_count, retry_count)
+        self.assertEqual(mock_cleanup.call_count, 2 * retry_count)
 
     def _test_run_installation_script(self, exc=None):
         mock_run_cmd_with_retry = self._client.run_command_with_retry
@@ -1335,9 +1339,11 @@ class ActionManagerTest(unittest.TestCase):
         cmd2 = r'(Get-ItemProperty "{}").NanoServer'.format(server_level_key)
 
         calls = [
-            mock.call(cmd1, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+            mock.call(cmd1, count=CONFIG.argus.retry_count,
+                      delay=CONFIG.argus.retry_delay,
                       command_type=util.POWERSHELL),
-            mock.call(cmd2, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+            mock.call(cmd2, count=CONFIG.argus.retry_count,
+                      delay=CONFIG.argus.retry_delay,
                       command_type=util.POWERSHELL)
         ]
 
@@ -1384,7 +1390,8 @@ class ActionManagerTest(unittest.TestCase):
             action_manager._get_product_type(self._client, major_version),
             int(test_utils.PRODUCT_TYPE_1))
         self._client.run_command_with_retry.assert_called_once_with(
-            cmd, count=util.RETRY_COUNT, delay=util.RETRY_DELAY,
+            cmd, count=CONFIG.argus.retry_count,
+            delay=CONFIG.argus.retry_delay,
             command_type=util.POWERSHELL)
 
     def test_get_product_type_major_version_6(self):
