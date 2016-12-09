@@ -133,7 +133,7 @@ class BaseScenario(unittest.TestCase):
         LOG.info("Running scenario %s", cls.__name__)
 
         # Populate the LOG handler
-        LOG.extra["scenario"] = cls.__name__
+        argus_log.set_scenario_name(LOG, cls.__name__)
 
         # Create output_directory when given
         if CONFIG.argus.output_directory:

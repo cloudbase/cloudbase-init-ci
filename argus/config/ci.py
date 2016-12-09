@@ -80,6 +80,8 @@ class ArgusOptions(conf_base.Options):
             cfg.IntOpt("retry_delay", default=10,
                        help="The number of seconds between the retries "
                             " of a failed command."),
+            cfg.BoolOpt("log_each_scenario", default=False,
+                        help="Create individual log files for each scenario."),
         ]
 
     def register(self):

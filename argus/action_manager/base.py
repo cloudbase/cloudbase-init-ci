@@ -13,7 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-
 import abc
 
 import six
@@ -40,8 +39,11 @@ class BaseActionManager(object):
         self._config_os_type_on_logger()
 
     def _config_os_type_on_logger(self):
-        """Set the os type on the logger."""
+        """Set the OS type on the logger."""
+        LOG.debug("Update the logger with the following OS version: %s",
+                  self._os_type)
         LOG.extra["os_type"] = self._os_type
+        argus_log.add_new_handler(LOG)
 
     @abc.abstractmethod
     def download(self, uri, location):
