@@ -19,7 +19,8 @@ from argus import config as argus_config
 CONFIG = argus_config.CONFIG
 
 
-DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+DEFAULT_FORMAT = ('%(asctime)s - %(name)s - %(scenario)s - '
+                  '%(os_type)s - %(levelname)s - %(message)s')
 
 
 def get_logger(name="argus",
@@ -31,6 +32,8 @@ def get_logger(name="argus",
     will be the format it will use for logging. `logging_file` is a file
     where the messages will be written.
     """
+    extra = {"scenario": "none", "os_type": "unknown"}
+
     logger = logging.getLogger(name)
     formatter = logging.Formatter(format_string)
 
@@ -44,4 +47,8 @@ def get_logger(name="argus",
             logger.addHandler(file_handler)
 
     logger.setLevel(logging.DEBUG)
-    return logger
+    logger_adapter = logging.LoggerAdapter(logger, extra)
+    return logger_adapter
+
+
+LOG = get_logger()

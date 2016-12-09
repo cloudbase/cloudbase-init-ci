@@ -13,9 +13,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+
 import abc
 
 import six
+
+from argus import log as argus_log
+
+LOG = argus_log.LOG
 
 
 @six.add_metaclass(abc.ABCMeta)
@@ -31,6 +36,12 @@ class BaseActionManager(object):
     def __init__(self, client, os_type):
         self._client = client
         self._os_type = os_type
+
+        self._config_os_type_on_logger()
+
+    def _config_os_type_on_logger(self):
+        """Set the os type on the logger."""
+        LOG.extra["os_type"] = self._os_type
 
     @abc.abstractmethod
     def download(self, uri, location):

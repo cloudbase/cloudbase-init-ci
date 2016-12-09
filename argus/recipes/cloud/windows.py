@@ -31,7 +31,7 @@ from argus.recipes.cloud import base
 from argus import util
 
 CONFIG = argus_config.CONFIG
-LOG = argus_log.get_logger()
+LOG = argus_log.LOG
 
 # Default values for an instance under booting step.
 COUNT = 20

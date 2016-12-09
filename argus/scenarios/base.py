@@ -22,7 +22,7 @@ import six
 from argus import config as argus_config
 from argus import log as argus_log
 
-LOG = argus_log.get_logger()
+LOG = argus_log.LOG
 CONFIG = argus_config.CONFIG
 
 
@@ -131,6 +131,10 @@ class BaseScenario(unittest.TestCase):
         # so we're just disabling the errors for now.
 
         LOG.info("Running scenario %s", cls.__name__)
+
+        # Populate the LOG handler
+        LOG.extra["scenario"] = cls.__name__
+
         # Create output_directory when given
         if CONFIG.argus.output_directory:
             try:

@@ -31,7 +31,7 @@ from argus import util
 DNSMASQ_NEUTRON = '/etc/neutron/dnsmasq-neutron.conf'
 
 CONFIG = argus_config.CONFIG
-LOG = argus_log.get_logger()
+LOG = argus_log.LOG
 
 
 def _get_dhcp_value(key):
