@@ -271,7 +271,7 @@ class WinRemoteClient(base.BaseClient):
                     raise exceptions.ArgusTimeoutError(
                         "Command {!r} failed too many times."
                         .format(cmd))
-                LOG.debug("Retrying...")
+                LOG.debug("Retrying '%s'", cmd)
                 time.sleep(delay)
 
     def run_command_until_condition(self, cmd, cond,
@@ -316,7 +316,7 @@ class WinRemoteClient(base.BaseClient):
 
             if retry_count > 0:
                 retry_count -= 1
-                LOG.debug("Retrying...")
+                LOG.debug("Retrying '%s'", cmd)
                 time.sleep(delay)
             else:
                 raise exceptions.ArgusTimeoutError(
