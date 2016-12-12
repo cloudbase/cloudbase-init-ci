@@ -280,8 +280,8 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                                          value=scripts_path)
 
         self._cbinit_conf.set_conf_value(
-            name="activate_windows",
-            value=CONFIG.cloudbaseinit.activate_windows)
+            name="check_latest_version",
+            value=CONFIG.cloudbaseinit.check_latest_version)
 
         self._backend.remote_client.manager.prepare_config(
             self._cbinit_conf, self._cbinit_unattend_conf)

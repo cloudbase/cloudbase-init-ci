@@ -36,6 +36,9 @@ class CloudbaseInitOptions(conf_base.Options):
             cfg.BoolOpt("activate_windows", default=False, required=True,
                         help="Specifies whether Cloudbase-init will try to "
                              "run the activation plugin on the instance."),
+            cfg.BoolOpt("check_latest_version", default=True, required=False,
+                        help="Specifies whether Cloudbase-init should try to "
+                             "check if there is a newer version of it.")
         ]
 
     def register(self):
