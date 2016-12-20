@@ -279,6 +279,7 @@ ARCHES = get_namedtuple("ARCHES", _ARCHES, _ARCHES)
 
 WINDOWS = "windows"
 
+WINDOWS7 = "windows_7"
 WINDOWS8 = "windows_8"
 WINDOWS10 = "windows_10"
 
@@ -307,6 +308,7 @@ WINDOWS_VERSION = {
     (10, 0, 1): WINDOWS10,
     (6, 0, 3): WINDOWS_SERVER_2008,
     (6, 1, 3): WINDOWS_SERVER_2008_R2,
+    (6, 1, 1): WINDOWS7,
     (6, 2, 3): WINDOWS_SERVER_2012,
     (6, 3, 3): WINDOWS_SERVER_2012_R2,
     (10, 0, 3): {
