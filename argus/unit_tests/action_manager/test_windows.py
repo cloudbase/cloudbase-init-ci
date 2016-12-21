@@ -1468,20 +1468,27 @@ class ActionManagerTest(unittest.TestCase):
         if isinstance(windows_type, dict):
             windows_type = windows_type[is_nanoserver]
 
-        log_message = ("We got the OS type {} because we have the major "
-                       "Version : {}, the minor version {}, the product Type :"
-                       " {}, and IsNanoserver: {}").format(windows_type,
-                                                           major_version,
-                                                           minor_version,
-                                                           product_type,
-                                                           is_nanoserver)
+        log_message_booting = ("Waiting for boot completion in order to "
+                               "select an Action Manager ...")
+
+        log_message_action_manager_type = (
+            "We got the OS type {} because we have the major "
+            "Version : {}, the minor version {}, the product Type"
+            " : {}, and IsNanoserver: {}").format(windows_type, major_version,
+                                                  minor_version, product_type,
+                                                  is_nanoserver)
+
+        log_message_log_update = ("Update the logger with the following OS"
+                                  " version: {}").format(windows_type)
         with test_utils.LogSnatcher('argus.action_manager.windows'
                                     '.get_windows_action_manager') as snatcher:
             self.assertTrue(isinstance(
                 action_manager.get_windows_action_manager(self._client),
                 action_manager.WindowsActionManagers[windows_type]))
-
-            self.assertEqual(snatcher.output[-1:], [log_message])
+            self.assertEqual(snatcher.output,
+                             [log_message_booting,
+                              log_message_action_manager_type,
+                              log_message_log_update])
 
     def test_get_windows_action_manager_wait_boot_completion_exc(self):
         self._test_get_windows_action_manager(

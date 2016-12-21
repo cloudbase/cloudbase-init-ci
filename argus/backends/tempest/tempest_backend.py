@@ -30,7 +30,7 @@ with util.restore_excepthook():
 
 
 CONFIG = argus_config.CONFIG
-LOG = argus_log.get_logger()
+LOG = argus_log.LOG
 
 # Starting size as number of lines and tolerance.
 OUTPUT_SIZE = 128

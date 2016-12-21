@@ -27,7 +27,7 @@ from argus import config as argus_config
 from argus import log as argus_log
 
 
-LOG = argus_log.get_logger()
+LOG = argus_log.LOG
 CONFIG = argus_config.CONFIG
 RETRY_COUNT = 15
 RETRY_DELAY = 10

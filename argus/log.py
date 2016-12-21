@@ -12,6 +12,8 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+
+import os
 import logging
 
 from argus import config as argus_config
@@ -19,7 +21,8 @@ from argus import config as argus_config
 CONFIG = argus_config.CONFIG
 
 
-DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+DEFAULT_FORMAT = ('%(scenario)s - %(os_type)s - %(asctime)s - %(name)s - '
+                  '%(levelname)s - %(message)s')
 
 
 def get_logger(name="argus",
@@ -31,6 +34,8 @@ def get_logger(name="argus",
     will be the format it will use for logging. `logging_file` is a file
     where the messages will be written.
     """
+    extra = {"scenario": "unknown", "os_type": "unknown"}
+
     logger = logging.getLogger(name)
     formatter = logging.Formatter(format_string)
 
@@ -44,4 +49,35 @@ def get_logger(name="argus",
             logger.addHandler(file_handler)
 
     logger.setLevel(logging.DEBUG)
-    return logger
+    logger_adapter = logging.LoggerAdapter(logger, extra)
+    return logger_adapter
+
+
+def set_scenario_name(log, name):
+    """Set a scenario name for a given logger object.
+
+    :param log: A logging handler.
+    """
+    log.extra["scenario"] = name
+
+
+def add_new_handler(log, format_string=DEFAULT_FORMAT):
+    """Add a new FileHandler if it is specified in config
+
+    :param log: A logging handler.
+    """
+    if CONFIG.argus.log_each_scenario:
+        directory = os.path.dirname(os.path.abspath(
+            CONFIG.argus.argus_log_file))
+        logging_file_name = "argus-{}-{}.log".format(
+            log.extra.get("scenario", ""), log.extra.get("os_type", ""))
+        logging_file = os.path.join(directory, logging_file_name)
+
+        formatter = logging.Formatter(format_string)
+        file_handler = logging.FileHandler(logging_file, delay=True)
+        file_handler.setFormatter(formatter)
+
+        log.logger.addHandler(file_handler)
+
+
+LOG = get_logger()

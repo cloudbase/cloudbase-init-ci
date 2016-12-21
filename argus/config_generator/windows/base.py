@@ -27,7 +27,7 @@ from argus import log as argus_log
 from argus import util
 
 
-LOG = argus_log.get_logger()
+LOG = argus_log.LOG
 
 
 class BaseWindowsConfig(base.BaseConfig):

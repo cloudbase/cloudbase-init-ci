@@ -23,7 +23,7 @@ from argus import log as argus_log
 
 
 CONFIG = argus_config.CONFIG
-LOG = argus_log.get_logger()
+LOG = argus_log.LOG
 
 
 @six.add_metaclass(abc.ABCMeta)

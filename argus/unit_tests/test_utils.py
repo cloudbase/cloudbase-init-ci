@@ -88,17 +88,17 @@ class LogSnatcher(object):
     def __init__(self, logger_name):
         self._logger_name = logger_name
         self._snatch_handler = SnatchHandler()
-        self._logger = argus_log.get_logger()
-        self._previous_level = self._logger.getEffectiveLevel()
+        self._logger = argus_log.LOG
+        self._previous_level = self._logger.logger.getEffectiveLevel()
 
     def __enter__(self):
-        self._logger.setLevel(base_logging.DEBUG)
-        self._logger.handlers.append(self._snatch_handler)
+        self._logger.logger.setLevel(base_logging.DEBUG)
+        self._logger.logger.handlers.append(self._snatch_handler)
         return self
 
     def __exit__(self, *args):
-        self._logger.handlers.remove(self._snatch_handler)
-        self._logger.setLevel(self._previous_level)
+        self._logger.logger.handlers.remove(self._snatch_handler)
+        self._logger.logger.setLevel(self._previous_level)
 
 
 class ConfPatcher(object):

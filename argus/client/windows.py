@@ -38,7 +38,7 @@ from argus import log as argus_log
 from argus import util
 
 
-LOG = argus_log.get_logger()
+LOG = argus_log.LOG
 CONFIG = argus_config.CONFIG
 CODEPAGE_UTF8 = 65001
 THREADS = 1

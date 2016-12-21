@@ -30,7 +30,7 @@ with util.restore_excepthook():
 OUTPUT_STATUS_OK = 200
 OUTPUT_SIZE = 128
 OUTPUT_EPSILON = int(OUTPUT_SIZE / 10)
-LOG = argus_log.get_logger()
+LOG = argus_log.LOG
 
 
 @contextlib.contextmanager

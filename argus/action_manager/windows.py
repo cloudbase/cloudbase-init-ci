@@ -30,7 +30,7 @@ from argus.introspection.cloud import windows as introspection
 from argus import log as argus_log
 from argus import util
 
-LOG = argus_log.get_logger()
+LOG = argus_log.LOG
 CONFIG = argus_config.CONFIG
 
 

@@ -26,7 +26,7 @@ from argus.recipes import base
 __all__ = ('BaseCloudbaseinitRecipe', )
 
 CONFIG = argus_config.CONFIG
-LOG = argus_log.get_logger()
+LOG = argus_log.LOG
 
 
 @six.add_metaclass(abc.ABCMeta)
