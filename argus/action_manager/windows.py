@@ -516,6 +516,11 @@ class WindowsServer2008ActionManager(WindowsActionManager):
         cbinit_unattend_conf.set_conf_value("reset_service_password", False)
 
 
+class Windows7ActionManager(WindowsServer2008ActionManager):
+    def __init__(self, client, os_type=util.WINDOWS7):
+        super(Windows7ActionManager, self).__init__(client, os_type)
+
+
 class WindowsSever2012ActionManager(Windows8ActionManager):
     def __init__(self, client, os_type=util.WINDOWS_SERVER_2012):
         super(WindowsSever2012ActionManager, self).__init__(client,
@@ -751,6 +756,7 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
 
 WindowsActionManagers = {
     util.WINDOWS: WindowsNanoActionManager,
+    util.WINDOWS7: Windows7ActionManager,
     util.WINDOWS8: Windows8ActionManager,
     util.WINDOWS10: Windows10ActionManager,
     util.WINDOWS_SERVER_2008: WindowsServer2008ActionManager,
