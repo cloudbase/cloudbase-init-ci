@@ -502,19 +502,6 @@ class WindowsServer2008ActionManager(WindowsActionManager):
             resource_location='windows/2008R2/installCBinit.ps1',
             parameters=parameters)
 
-    def prepare_config(self, cbinit_conf, cbinit_unattend_conf):
-        """Prepare Cloudbase-Init config for every OS.
-
-        :param cbinit_config:
-            Cloudbase-Init config file.
-        :param cbinit_unattend_conf:
-            Cloudbase-Init Unattend config file.
-        """
-        super(WindowsServer2008ActionManager, self).prepare_config(
-            cbinit_conf, cbinit_unattend_conf)
-        cbinit_conf.set_conf_value("reset_service_password", False)
-        cbinit_unattend_conf.set_conf_value("reset_service_password", False)
-
 
 class Windows7ActionManager(WindowsServer2008ActionManager):
     def __init__(self, client, os_type=util.WINDOWS7):
