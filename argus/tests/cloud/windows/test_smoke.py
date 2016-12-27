@@ -191,7 +191,7 @@ class TestNextLogonPassword(base.BaseTestCase):
 
         output = self._introspection.get_user_flags(
             CONFIG.cloudbaseinit.created_user)
-        flags, password_expired = output.splitlines()
+        flags, password_expired = output.split()
         flags = int(flags)
         password_expired = int(password_expired)
 
