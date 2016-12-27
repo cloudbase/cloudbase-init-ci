@@ -480,10 +480,14 @@ class CloudbaseinitWinrmRecipe(CloudbaseinitCreateUserRecipe):
               self).prepare_cbinit_config(service_type)
         self._cbinit_conf.set_conf_value(
             name="plugins",
-            value="cloudbaseinit.plugins.windows.winrmcertificateauth."
-                  "ConfigWinRMCertificateAuthPlugin,"
+            value="cloudbaseinit.plugins.windows.createuser."
+                  "CreateUserPlugin,"
+                  "cloudbaseinit.plugins.windows.setuserpassword."
+                  "SetUserPasswordPlugin,"
                   "cloudbaseinit.plugins.windows.winrmlistener."
-                  "ConfigWinRMListenerPlugin")
+                  "ConfigWinRMListenerPlugin,"
+                  "cloudbaseinit.plugins.windows.winrmcertificateauth."
+                  "ConfigWinRMCertificateAuthPlugin")
 
 
 class CloudbaseinitHTTPRecipe(CloudbaseinitMockServiceRecipe):
