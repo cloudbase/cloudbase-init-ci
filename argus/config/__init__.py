@@ -24,9 +24,11 @@ CONFIG = cfg.ConfigOpts()
 for option_class in factory.get_options():
     option_class(CONFIG).register()
 
+# NOTE(mmicu): Prioritize `argus.conf` configuration file
+# from the current working directory
 _DEFAULT_CONFIG_FILES = [
-    config_file for config_file in ("argus.conf", "etc/argus/argus.conf",
-                                    "/etc/argus/argus.conf")
+    config_file for config_file in ("/etc/argus/argus.conf",
+                                    "etc/argus/argus.conf", "argus.conf")
     if os.path.isfile(config_file)
 ]
 
