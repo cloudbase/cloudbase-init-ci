@@ -17,7 +17,6 @@
 from oslo_config import cfg
 
 from argus.config import base as config_base
-from argus import util
 
 
 class MockMAASOptions(config_base.Options):
@@ -29,7 +28,7 @@ class MockMAASOptions(config_base.Options):
         self._options = [
             cfg.StrOpt(
                 "metadata_base_url",
-                default="http://%s/" % util.get_local_ip(),
+                default="http://127.0.0.1/",
                 help="The base URL for MaaS metadata"),
             cfg.StrOpt(
                 "oauth_consumer_key", default="",

@@ -85,6 +85,11 @@ class WinRemoteClient(base.BaseClient):
         self.manager = get_windows_action_manager(self)
 
     @staticmethod
+    def exec_with_retry(cmd):
+        return util.exec_with_retry(cmd, CONFIG.argus.retry_count,
+                                    CONFIG.argus.retry_delay)
+
+    @staticmethod
     def _run_command(protocol_client, shell_id, command,
                      command_type=util.POWERSHELL,
                      upper_timeout=CONFIG.argus.upper_timeout):
@@ -124,7 +129,9 @@ class WinRemoteClient(base.BaseClient):
     def _run_commands(self, commands, commands_type=util.POWERSHELL,
                       upper_timeout=CONFIG.argus.upper_timeout):
         protocol_client = self._get_protocol()
-        shell_id = protocol_client.open_shell(codepage=CODEPAGE_UTF8)
+        shell_id = self.exec_with_retry(lambda: (protocol_client.open_shell(
+            codepage=CODEPAGE_UTF8)))
+
         try:
             results = [self._run_command(protocol_client, shell_id, command,
                                          commands_type, upper_timeout)

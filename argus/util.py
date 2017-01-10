@@ -22,9 +22,11 @@ import socket
 import struct
 import subprocess
 import sys
+import time
 
 import six
 
+from argus import exceptions
 
 CMD = "cmd"
 BAT_SCRIPT = "bat"
@@ -68,6 +70,21 @@ NETWORK_KEYS = [
     "dns6",
     "dhcp"
 ]
+
+
+def exec_with_retry(action, retry_count, retry_count_interval):
+    i = 0
+    while True:
+        try:
+            return action()
+        except Exception:
+            if i < retry_count:
+                i += 1
+                time.sleep(retry_count_interval)
+            else:
+                raise exceptions.ArgusTimeoutError(
+                    "{!r} failed too many times."
+                    .format(action))
 
 
 def get_int_from_str(content):
