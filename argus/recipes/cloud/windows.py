@@ -354,7 +354,12 @@ class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):
         super(CloudbaseinitScriptRecipe, self).pre_sysprep()
         LOG.info("Doing last step before sysprepping.")
 
-        resource_location = "windows/test_exe.exe"
+        cmd = '$ENV:PROCESSOR_ARCHITECTURE'
+        stdout = self._backend.remote_client.run_command_verbose(cmd)
+        architecture = stdout.strip()
+        resource_location = ("windows/test_exe{0}.exe".format(
+            "64" if architecture == 'AMD64' else "32"))
+
         location = r"C:\Scripts\test_exe.exe"
         self._backend.remote_client.manager.download_resource(
             resource_location=resource_location, location=location)
