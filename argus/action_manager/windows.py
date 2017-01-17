@@ -493,15 +493,6 @@ class WindowsServer2008ActionManager(WindowsActionManager):
     def __init__(self, client, os_type=util.WINDOWS_SERVER_2008):
         super(WindowsServer2008ActionManager, self).__init__(client, os_type)
 
-    def _run_installation_script(self, installer):
-        """Run the installation script for Cloudbase-Init."""
-        LOG.info("Running the installation script for Cloudbase-Init.")
-
-        parameters = '-installer {}'.format(installer)
-        self.execute_powershell_resource_script(
-            resource_location='windows/2008R2/installCBinit.ps1',
-            parameters=parameters)
-
 
 class Windows7ActionManager(WindowsServer2008ActionManager):
     def __init__(self, client, os_type=util.WINDOWS7):

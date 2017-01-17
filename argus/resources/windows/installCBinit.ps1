@@ -24,12 +24,17 @@ function Set-CloudbaseInitServiceStartupPolicy {
 try {
 
     $Host.UI.RawUI.WindowTitle = "Downloading Cloudbase-Init..."
-
     $CloudbaseInitMsiPath = "$ENV:Temp\$installer"
     $CloudbaseInitMsiUrl = "http://www.cloudbase.it/downloads/$installer"
     $CloudbaseInitMsiLog = "C:\\installation.log"
+    $programDir = Get-ProgramDir "Git"
+    $gitPath = Join-Path $programDir "Git"
+    $curlPath = (Get-ChildItem -Path $gitPath -Filter "curl.exe" -Recurse | Select-Object -First 1).Fullname
+    & $curlPath -L $CloudbaseInitMsiUrl --output $CloudbaseInitMsiPath
 
-    (new-object System.Net.WebClient).DownloadFile($CloudbaseInitMsiUrl, $CloudbaseInitMsiPath)
+    if ($LastExitCode -ne 0) {
+        throw "Download failed with exit code $LastExitCode"
+    }
 
     $Host.UI.RawUI.WindowTitle = "Installing Cloudbase-Init..."
 
