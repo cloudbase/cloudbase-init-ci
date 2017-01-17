@@ -45,6 +45,7 @@ EXIT_CODE = 0
 PYTHON_DIR = r"fake\python\dir"
 CBINIT_DIR = r"fake\cbinit\dir"
 INSTALLER = "fake_installer"
+INSTALLER_ROOT_URL = "fake_location"
 RESOURCE = "fake.resource"
 MAJOR_VERSION_10 = "10"
 MAJOR_VERSION_6 = "6"

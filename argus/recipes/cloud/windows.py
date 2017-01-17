@@ -36,7 +36,7 @@ LOG = argus_log.LOG
 # Default values for an instance under booting step.
 COUNT = 20
 DELAY = 20
-_CBINIT_REPO = "https://github.com/openstack/cloudbase-init"
+_CBINIT_REPO = CONFIG.argus.cbinit_git_repository
 _CBINIT_TARGET_LOCATION = r"C:\cloudbaseinit"
 
 
