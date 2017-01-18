@@ -15,7 +15,9 @@ try
     }
 
     & "$ENV:SystemRoot\System32\Sysprep\Sysprep.exe" `/generalize `/oobe `/reboot `/unattend:"$unattendedXmlPath"
-
+    if ($LastExitCode -ne 0) {
+        throw "Sysprep failed with exit code $LastExitCode"
+    }
     # the CI will wait for the service to be stopped, in order to consider
     # the instance prepared. But there could be a small delay window, where
     # the system is preparing to reboot and the CI will see that the
