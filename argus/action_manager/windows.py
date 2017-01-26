@@ -609,8 +609,10 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
         elif exists:
             (self.rmdir if self.is_dir(out_file) else self.remove)(out_file)
 
-        cmd = ("[System.IO.Compression.ZipFile]"
-               "::ExtractToDirectory('{}', '{}')").format(zip_file, out_file)
+        cmd = ("If (Test-Path -Path '{path}') {{cmd /c RD /S /Q '{path}'}} "
+               "Else {{ [System.IO.Compression.ZipFile]::ExtractToDirectory("
+               "'{zip_file}', '{path}') }}".format(zip_file=zip_file,
+                                                   path=out_file))
 
         self._client.run_command_with_retry(
             cmd, command_type=util.POWERSHELL)
