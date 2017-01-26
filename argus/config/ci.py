@@ -82,6 +82,15 @@ class ArgusOptions(conf_base.Options):
                             " of a failed command."),
             cfg.BoolOpt("log_each_scenario", default=False,
                         help="Create individual log files for each scenario."),
+            cfg.StrOpt(
+                "installer_root_url",
+                default="http://www.cloudbase.it/downloads",
+                help="Represents the web resource where the msi file can "
+                     "be found"),
+            cfg.StrOpt(
+                "cbinit_git_repository",
+                default="https://github.com/openstack/cloudbase-init",
+                help="Cloudbase-init repository."),
         ]
 
     def register(self):

@@ -237,7 +237,8 @@ class WindowsActionManager(base.BaseActionManager):
         """Run the installation script for Cloudbase-Init."""
         LOG.info("Running the installation script for Cloudbase-Init.")
 
-        cmd = r'"{}" -installer {}'.format(self._INSTALL_SCRIPT, installer)
+        cmd = r'"{}" -installer {} -MsiWebLocation {}'.format(
+            self._INSTALL_SCRIPT, installer, CONFIG.argus.installer_root_url)
         self._client.run_command_with_retry(
             cmd, command_type=util.POWERSHELL_SCRIPT_BYPASS)
 

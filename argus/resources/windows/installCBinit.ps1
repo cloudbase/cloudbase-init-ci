@@ -1,5 +1,6 @@
 param
 (
+    [string]$MsiWebLocation = 'http://www.cloudbase.it/downloads',
     [string]$installer = 'CloudbaseInitSetup_Beta_x64.msi'
 )
 
@@ -25,7 +26,7 @@ try {
 
     $Host.UI.RawUI.WindowTitle = "Downloading Cloudbase-Init..."
     $CloudbaseInitMsiPath = "$ENV:Temp\$installer"
-    $CloudbaseInitMsiUrl = "http://www.cloudbase.it/downloads/$installer"
+    $CloudbaseInitMsiUrl = "$MsiWebLocation/$installer"
     $CloudbaseInitMsiLog = "C:\\installation.log"
     $programDir = Get-ProgramDir "Git"
     $gitPath = Join-Path $programDir "Git"
