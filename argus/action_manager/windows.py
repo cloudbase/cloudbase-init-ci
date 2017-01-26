@@ -363,7 +363,8 @@ class WindowsActionManager(base.BaseActionManager):
             raise exceptions.ArgusCLIError("Invalid Path '{}'.".format(path))
 
         LOG.debug("Remove file %s", path)
-        cmd = "Remove-Item -Force -Path '{path}'".format(path=path)
+        cmd = ("If (Test-Path -Path '{path}') {{Remove-Item -Force "
+               "-Path '{path}'}}".format(path=path))
         self._client.run_command_with_retry(cmd, command_type=util.POWERSHELL)
 
     def rmdir(self, path):
@@ -372,8 +373,8 @@ class WindowsActionManager(base.BaseActionManager):
             raise exceptions.ArgusCLIError("Invalid Path '{}'.".format(path))
 
         LOG.debug("Remove directory  %s", path)
-        cmd = "Remove-Item -Force -Recurse -Path '{path}'".format(path=path)
-        self._client.run_command_with_retry(cmd, command_type=util.POWERSHELL)
+        cmd = ("IF EXIST '{path}' (RD /S /Q '{path}')".format(path=path))
+        self._client.run_command_with_retry(cmd, command_type=util.CMD)
 
     def _exists(self, path, path_type):
         """Check if the path exists and it has the specified type.

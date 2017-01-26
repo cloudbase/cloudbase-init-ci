@@ -397,8 +397,8 @@ class WindowsActionManagerTest(unittest.TestCase):
     def _test_remove(self, mock_is_file, mock_exists,
                      is_file=True, exists=True,
                      is_file_exc=None, exists_exc=None, run_exc=None):
-        cmd = "Remove-Item -Force -Path '{path}'".format(path=test_utils.PATH)
-
+        cmd = ("If (Test-Path -Path '{path}') {{Remove-Item -Force "
+               "-Path '{path}'}}".format(path=test_utils.PATH))
         mock_exists.return_value = exists
         mock_is_file.return_value = is_file
 
@@ -454,8 +454,8 @@ class WindowsActionManagerTest(unittest.TestCase):
     def _test_rmdir(self, mock_is_dir, mock_exists,
                     is_dir=True, exists=True,
                     is_dir_exc=None, exists_exc=None, run_exc=None):
-        cmd = "Remove-Item -Force -Recurse -Path '{path}'".format(
-            path=test_utils.PATH)
+        cmd = ("IF EXIST '{path}' (RD /S /Q"
+               " '{path}')".format(path=test_utils.PATH))
 
         mock_exists.return_value = exists
         mock_is_dir.return_value = is_dir
@@ -485,7 +485,7 @@ class WindowsActionManagerTest(unittest.TestCase):
 
         self._action_manager.rmdir(test_utils.PATH)
         self._client.run_command_with_retry.assert_called_once_with(
-            cmd, command_type=util.POWERSHELL)
+            cmd, command_type=util.CMD)
 
     def test_rmdir_successful(self):
         self._test_rmdir()
