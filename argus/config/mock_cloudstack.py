@@ -17,7 +17,6 @@
 from oslo_config import cfg
 
 from argus.config import base as config_base
-from argus import util
 
 
 class MockCloudStackOptions(config_base.Options):
@@ -30,7 +29,7 @@ class MockCloudStackOptions(config_base.Options):
         self._options = [
             cfg.StrOpt(
                 "metadata_base_url",
-                default="http://%s/cloudstack" % util.get_local_ip(),
+                default="http://127.0.0.1/cloudstack",
                 help="The base URL where the service looks for metadata"),
             cfg.BoolOpt(
                 "https_allow_insecure", default=False,

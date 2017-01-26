@@ -17,7 +17,6 @@
 from oslo_config import cfg
 
 from argus.config import base as config_base
-from argus import util
 
 
 class MockEC2Options(config_base.Options):
@@ -29,7 +28,7 @@ class MockEC2Options(config_base.Options):
         self._options = [
             cfg.StrOpt(
                 "metadata_base_url",
-                default="http://%s" % util.get_local_ip(),
+                default="http://127.0.0.1",
                 help="The base URL where the service looks for metadata"),
             cfg.BoolOpt(
                 "add_metadata_private_ip_route", default=True,
