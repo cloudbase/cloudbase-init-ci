@@ -61,6 +61,11 @@ def set_scenario_name(log, name):
     log.extra["scenario"] = name
 
 
+def get_log_extra_item(log, item):
+    """Returns an extra item from the logging object."""
+    return log.extra.get(item, 'unknown')
+
+
 def add_new_handler(log, format_string=DEFAULT_FORMAT):
     """Add a new FileHandler if it is specified in config
 

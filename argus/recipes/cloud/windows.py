@@ -119,7 +119,8 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             return
         # Rename the installation log and archive it.
         installation_log = r"C:\installation.log"
-        renamed_log = (r"C:\installation-{}.log".format(
+        renamed_log = (r"C:\{0}-installation-{1}.log".format(
+            argus_log.get_log_extra_item(LOG, 'scenario'),
             self._backend.instance_server()['id']))
         self._backend.remote_client.manager.copy_file(installation_log,
                                                       renamed_log)
@@ -317,20 +318,23 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
             return
 
         instance_id = self._backend.instance_server()['id']
+        scenario_name = argus_log.get_log_extra_item(LOG, 'scenario')
         cbdir = introspection.get_cbinit_dir(self._execute)
         cb_log_files = ["cloudbase-init.log", "cloudbase-init-unattend.log"]
         renamed_cb_log_files = []
         cb_log_files_path = []
         renamed_cb_log_files_path = []
         for log_file in cb_log_files:
-            renamed_cb_log_files.append(str(instance_id) + "-" + log_file)
+            renamed_cb_log_files.append(scenario_name + "-" + instance_id +
+                                        "-" + log_file)
 
         for log_file in cb_log_files:
             log_path = os.path.join(cbdir, r"log\{file}".format(file=log_file))
             renamed_log_path = (os.path.join(cbdir,
-                                             (r"log\{instace_id}"
+                                             (r"log\{scenario}-{instance}-"
                                               "-{file}".
-                                              format(instace_id=instance_id,
+                                              format(scenario=scenario_name,
+                                                     instance=instance_id,
                                                      file=log_file))))
             cb_log_files_path.append(log_path)
             renamed_cb_log_files_path.append(renamed_log_path)

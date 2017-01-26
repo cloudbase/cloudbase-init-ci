@@ -104,7 +104,8 @@ class CloudBackend(BaseBackend):
 
         template = self._get_log_template(suffix)
         path = os.path.join(CONFIG.argus.output_directory,
-                            "serial-logging-" + template.format(
+                            argus_log.get_log_extra_item(LOG, 'scenario') +
+                            "-serial-logging-" + template.format(
                                 self.internal_instance_id()))
         content = self.instance_output()
         if not content.strip():
