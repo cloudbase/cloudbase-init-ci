@@ -229,3 +229,11 @@ class TestSANPolicyPlugin(base.BaseTestCase):
     def test_san_policy_is_set(self):
         value = self._introspection.get_san_policy()
         self.assertEqual(value, util.SAN_POLICY_ONLINE_STR)
+
+
+class TestPageFilePlugin(base.BaseTestCase):
+
+    def test_page_file_set(self):
+        expected = r"C:\pagefile.sys 0 0"
+        result = self._introspection.get_swap_status()
+        self.assertEqual(result, expected)

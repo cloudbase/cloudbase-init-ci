@@ -85,8 +85,4 @@ class CloudInstanceIntrospection(base.BaseInstanceIntrospection):
 
     @abc.abstractmethod
     def get_swap_status(self):
-        """Get whether the swap memory is enabled or not.
-
-        :returns: True if swap memory is enabled, False if not.
-        :rtype: bool
-        """
+        """Get the swap memory status."""

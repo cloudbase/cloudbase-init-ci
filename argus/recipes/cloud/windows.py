@@ -590,15 +590,32 @@ class CloudbaseinitSANPolicy(CloudbaseinitRecipe):
                   ".SANPolicyPlugin")
 
 
+class CloudbaseinitPageFilePlugin(CloudbaseinitRecipe):
+    """Recipe for testing the PageFile plugin"""
+
+    def prepare_cbinit_config(self, service_type):
+        LOG.info("Injecting page file options in the config file.")
+
+        self._cbinit_unattend_conf.set_conf_value(
+            name="page_file_volume_labels", value="Temporary Storage")
+        self._cbinit_unattend_conf.set_conf_value(
+            name="page_file_volume_mount_points", value="C:\\")
+        self._cbinit_unattend_conf.append_conf_value(
+            name="plugins",
+            value="cloudbaseinit.plugins.windows.pagefiles.PageFilesPlugin")
+
+
 class CloudbaseinitIndependentPlugins(CloudbaseinitRecipe):
     """Recipe for independent plugins."""
     METHODS = ('prepare_cbinit_config',
                'pre_sysprep')
-    RECIPES = (CloudbaseinitEnableTrim, CloudbaseinitSANPolicy)
+    RECIPES = (CloudbaseinitEnableTrim, CloudbaseinitSANPolicy,
+               CloudbaseinitPageFilePlugin)
 
     def prepare_cbinit_config(self, service_type):
         super(CloudbaseinitIndependentPlugins, self).prepare_cbinit_config(
             service_type)
+        self._cbinit_conf.set_conf_value(name="plugins", value="")
 
     def pre_sysprep(self):
         super(CloudbaseinitIndependentPlugins, self).pre_sysprep()

@@ -428,13 +428,9 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
         return stdout.strip()
 
     def get_swap_status(self):
-        """Get whether the swap memory is enabled or not.
-
-        :returns: True if swap memory is enabled, False if not.
-        :rtype: bool
-        """
+        """Get the swap memory status."""
         swap_query = (r"HKLM:\SYSTEM\CurrentControlSet\Control\Session"
                       r" Manager\Memory Management")
         cmd = r"(Get-ItemProperty '{}').PagingFiles".format(swap_query)
         stdout = self.remote_client.run_command_verbose(cmd)
-        return stdout.strip() == r'?:\pagefile.sys'
+        return stdout.strip()
