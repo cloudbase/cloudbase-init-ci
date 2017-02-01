@@ -215,3 +215,10 @@ class TestHeatUserdata(base.BaseTestCase):
     def test_heat_file_created(self):
         names = self._introspection.list_location('C:\\')
         self.assertIn('powershell_heat.txt', names)
+
+
+class TestTrimPlugin(base.BaseTestCase):
+
+    def test_trim_is_set(self):
+        value = self._introspection.get_trim_state()
+        self.assertTrue(value)

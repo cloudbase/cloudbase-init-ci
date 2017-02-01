@@ -317,6 +317,15 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
             command, command_type=util.CMD)
         return list(filter(None, stdout.splitlines()))
 
+    def get_trim_state(self):
+        # Query the curent stat of DisableDeleteNotify
+        # 1 - DeleteNotify is disabled
+        # 0 - DeleteNotify is enabled
+        command = "fsutil.exe behavior query disabledeletenotify"
+        stdout = self.remote_client.run_command_verbose(
+            command, command_type=util.CMD)
+        return "DisableDeleteNotify = 0" in stdout
+
     def get_service_triggers(self, service):
         """Get the triggers of the given service.
 

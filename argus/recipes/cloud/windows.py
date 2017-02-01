@@ -538,6 +538,32 @@ class CloudbaseinitLongHostname(CloudbaseinitRecipe):
             name='netbios_host_name_compatibility', value='False')
 
 
+class CloudbaseinitEnableTrim(CloudbaseinitRecipe):
+    """Recipe for testing TRIM configuration."""
+
+    def pre_sysprep(self):
+        super(CloudbaseinitEnableTrim, self).pre_sysprep()
+        command = "fsutil.exe behavior set disabledeletenotify 1"
+        self._backend.remote_client.run_command_with_retry(
+            command, command_type=util.CMD)
+
+    def prepare_cbinit_config(self, service_type):
+        super(CloudbaseinitEnableTrim, self).prepare_cbinit_config(
+            service_type)
+        LOG.info("Injecting trim_enabled option in conf file.")
+        self._cbinit_unattend_conf.set_conf_value(
+            name='trim_enabled', value='True')
+
+        self._cbinit_unattend_conf.set_conf_value(
+            name="plugins",
+            value="cloudbaseinit.plugins.common.trim"
+                  ".TrimConfigPlugin")
+
+
+class CloudbaseinitIndependentPlugins(CloudbaseinitEnableTrim):
+    """Recipe for independent plugins."""
+
+
 class CloudbaseinitLocalScriptsRecipe(CloudbaseinitRecipe):
     """Recipe for testing local scripts return codes."""
 
