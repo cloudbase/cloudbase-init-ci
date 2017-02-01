@@ -67,6 +67,9 @@ class FakeBaseCloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     def get_cb_init_logs(self):
         pass
 
+    def get_cb_init_confs(self):
+        pass
+
 
 class TestBaseCloudbaseinitRecipe(unittest.TestCase):
     def setUp(self):

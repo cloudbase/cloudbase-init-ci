@@ -310,46 +310,58 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         self._cbinit_conf.apply_config(conf_dir)
         self._cbinit_unattend_conf.apply_config(conf_dir)
 
-    def get_cb_init_logs(self):
-        LOG.info("Obtaining the Cloudbase-init logs.")
+    def get_cb_init_files(self, location, files):
+        LOG.info("Obtaining Cloudbase-Init files from %s" % location)
         if not CONFIG.argus.output_directory:
             LOG.warning("The output directory wasn't given, "
-                        "the log files will not be grabbed.")
+                        "the files will not be grabbed.")
             return
 
         instance_id = self._backend.instance_server()['id']
         scenario_name = argus_log.get_log_extra_item(LOG, 'scenario')
         cbdir = introspection.get_cbinit_dir(self._execute)
-        cb_log_files = ["cloudbase-init.log", "cloudbase-init-unattend.log"]
-        renamed_cb_log_files = []
-        cb_log_files_path = []
-        renamed_cb_log_files_path = []
-        for log_file in cb_log_files:
-            renamed_cb_log_files.append(scenario_name + "-" + instance_id +
-                                        "-" + log_file)
+        cb_files = files
+        renamed_cb_files = []
+        cb_files_path = []
+        renamed_cb_files_path = []
+        for cb_file in cb_files:
+            renamed_cb_files.append(scenario_name + "-" + instance_id +
+                                    "-" + cb_file)
 
-        for log_file in cb_log_files:
-            log_path = os.path.join(cbdir, r"log\{file}".format(file=log_file))
-            renamed_log_path = (os.path.join(cbdir,
-                                             (r"log\{scenario}-{instance}-"
-                                              "-{file}".
-                                              format(scenario=scenario_name,
-                                                     instance=instance_id,
-                                                     file=log_file))))
-            cb_log_files_path.append(log_path)
-            renamed_cb_log_files_path.append(renamed_log_path)
+        for cb_file in cb_files:
+            file_path = os.path.join(cbdir, r"{location}\{file}".format(
+                location=location, file=cb_file))
+            renamed_path = (os.path.join(cbdir,
+                                         (r"{location}\{scenario}-{instance}-"
+                                          "-{file}".
+                                          format(location=location,
+                                                 scenario=scenario_name,
+                                                 instance=instance_id,
+                                                 file=cb_file))))
+            cb_files_path.append(file_path)
+            renamed_cb_files_path.append(renamed_path)
 
-        files_to_rename = list(zip(cb_log_files_path,
-                                   renamed_cb_log_files_path))
+        files_to_rename = list(zip(cb_files_path,
+                                   renamed_cb_files_path))
         for current_name, renamed in files_to_rename:
             self._backend.remote_client.manager.copy_file(current_name,
                                                           renamed)
 
-        source_destination = list(zip(renamed_cb_log_files_path,
-                                      renamed_cb_log_files))
+        source_destination = list(zip(renamed_cb_files_path,
+                                      renamed_cb_files))
         for source, destination in source_destination:
             path = os.path.join(CONFIG.argus.output_directory, destination)
             self.transfer_encoded_file_b64(source, path)
+
+    def get_cb_init_logs(self):
+        self.get_cb_init_files(
+            location="log",
+            files=["cloudbase-init.log", "cloudbase-init-unattend.log"])
+
+    def get_cb_init_confs(self):
+        self.get_cb_init_files(
+            location="conf",
+            files=["cloudbase-init.conf", "cloudbase-init-unattend.conf"])
 
 
 class CloudbaseinitScriptRecipe(CloudbaseinitRecipe):
