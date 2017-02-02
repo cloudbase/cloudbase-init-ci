@@ -19,7 +19,6 @@
 # pylint: disable=too-many-public-methods
 
 import ntpath
-import os
 import unittest
 
 try:
@@ -776,7 +775,6 @@ class WindowsActionManagerTest(unittest.TestCase):
     def _test_touch(self, mock_mkfile, mock_is_dir, is_dir=False,
                     is_dir_exc=None, run_command_exc=None, mkfile_exc=None):
         mock_is_dir.return_value = is_dir
-
         if is_dir:
             self._client.run_command_with_retry = mock.Mock()
 
@@ -1093,14 +1091,11 @@ class WindowsNanoActionManagerTest(unittest.TestCase):
         self._action_manager = action_manager.WindowsNanoActionManager(
             client=self._client, os_type=self._os_type)
 
-    def test_get_resource_path(self):
-        os.path.abspath = mock.Mock(return_value=test_utils.PATH)
-        resource_path = os.path.normpath(os.path.join(
-            test_utils.PATH, "..", "resources", "windows", "nano_server",
-            test_utils.RESOURCE))
-
-        self.assertEqual(self._action_manager._get_resource_path(
-            test_utils.RESOURCE), resource_path)
+    @mock.patch('os.path.normpath')
+    def test_get_resource_path(self, mock_normpath):
+        mock_normpath.return_value = "fake result"
+        result = self._action_manager._get_resource_path(test_utils.RESOURCE)
+        self.assertEqual(result, mock_normpath.return_value)
 
     @mock.patch('argus.action_manager.windows.WindowsActionManager'
                 '.specific_prepare')
