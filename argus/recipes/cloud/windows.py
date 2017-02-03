@@ -605,12 +605,29 @@ class CloudbaseinitPageFilePlugin(CloudbaseinitRecipe):
             value="cloudbaseinit.plugins.windows.pagefiles.PageFilesPlugin")
 
 
+class CloudbaseinitDisplayTimeoutPlugin(CloudbaseinitPageFilePlugin):
+    """Recipe for testing the DisplayIdleTimeout plugin"""
+
+    @util.skip_on_os(
+        [util.WINDOWS_NANO, util.WINDOWS_SERVER_2008,
+         util.WINDOWS_SERVER_2008_R2, util.WINDOWS7],
+        "OS Version not supported")
+    def prepare_cbinit_config(self, service_type):
+        LOG.info("Injecting idle display options in the config file.")
+        self._cbinit_conf.set_conf_value(
+            name="display_idle_timeout", value="123")
+        self._cbinit_conf.append_conf_value(
+            name="plugins",
+            value="cloudbaseinit.plugins.windows.displayidletimeout."
+                  "DisplayIdleTimeoutConfigPlugin")
+
+
 class CloudbaseinitIndependentPlugins(CloudbaseinitRecipe):
     """Recipe for independent plugins."""
     METHODS = ('prepare_cbinit_config',
                'pre_sysprep')
     RECIPES = (CloudbaseinitEnableTrim, CloudbaseinitSANPolicy,
-               CloudbaseinitPageFilePlugin)
+               CloudbaseinitPageFilePlugin, CloudbaseinitDisplayTimeoutPlugin)
 
     def prepare_cbinit_config(self, service_type):
         super(CloudbaseinitIndependentPlugins, self).prepare_cbinit_config(

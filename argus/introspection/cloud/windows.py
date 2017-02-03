@@ -330,6 +330,13 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
         """Get the SAN policy."""
         return self.remote_client.manager.get_san_policy()
 
+    def get_power_setting_value(self):
+        command = ('powercfg.exe -query SCHEME_CURRENT SUB_VIDEO VIDEOIDLE'
+                   ' | findstr /R /C:"Current AC Power Setting Index"')
+        stdout = self.remote_client.run_command_verbose(
+            command, command_type=util.CMD)
+        return stdout.strip()
+
     def get_service_triggers(self, service):
         """Get the triggers of the given service.
 

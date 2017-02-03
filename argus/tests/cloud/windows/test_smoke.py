@@ -237,3 +237,15 @@ class TestPageFilePlugin(base.BaseTestCase):
         expected = r"C:\pagefile.sys 0 0"
         result = self._introspection.get_swap_status()
         self.assertEqual(result, expected)
+
+
+class TestDisplayTimeoutPlugin(base.BaseTestCase):
+
+    @util.skip_on_os(
+        [util.WINDOWS_NANO, util.WINDOWS_SERVER_2008,
+         util.WINDOWS_SERVER_2008_R2, util.WINDOWS7],
+        "OS Version not supported")
+    def test_display_timeout_set(self):
+        expected_output = "0x0000007b"  # hex of 123
+        result = self._introspection.get_power_setting_value()
+        self.assertIn(expected_output, result)
