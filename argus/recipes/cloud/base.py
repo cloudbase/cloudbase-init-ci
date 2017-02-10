@@ -116,7 +116,12 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
 
     @abc.abstractmethod
     def get_cb_init_logs(self):
-        """Get the Cloudbase-init logs from the instance."""
+        """Get the Cloudbase-Init logs from the instance."""
+        pass
+
+    @abc.abstractmethod
+    def get_cb_init_confs(self):
+        """Get the Cloudbase-Init configs from the instance."""
         pass
 
     def prepare(self, service_type=None, **kwargs):
@@ -147,3 +152,4 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         self.wait_cbinit_finalization()
         LOG.info("Finished preparing instance.")
         self.get_cb_init_logs()
+        self.get_cb_init_confs()

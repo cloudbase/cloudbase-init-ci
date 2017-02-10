@@ -431,39 +431,42 @@ class TestCloudbaseinitRecipe(unittest.TestCase):
     @mock.patch('argus.recipes.cloud.windows.CloudbaseinitRecipe.'
                 'transfer_encoded_file_b64')
     @mock.patch('argus.introspection.cloud.windows.get_cbinit_dir')
-    def _test_get_cb_init_logs(self, mock_get_dir, mock_encode_file,
-                               output_directory="fake_output_directory"):
+    def _test_get_cb_init_files(self, mock_get_dir, mock_encode_file,
+                                output_directory="fake_output_directory"):
         CONFIG.argus.output_directory = output_directory
-        expected_logging = ["Obtaining the Cloudbase-init logs."]
+        fake_location = "fake_logs"
+        cb_fake_files = []
+        expected_logging = [
+            "Obtaining Cloudbase-Init files from %s" % fake_location]
         if not output_directory:
             expected_logging.append("The output directory wasn't given, "
-                                    "the log files will not be grabbed.")
+                                    "the files will not be grabbed.")
         else:
             self._recipe._backend.instance_server.return_value = {
                 'id': "fake_id"
             }
             mock_get_dir.return_value = "fake_dir"
-            cb_log_files = [
+            cb_fake_files = [
                 "cloudbase-init.log",
                 "cloudbase-init-unattend.log"
             ]
         with test_utils.LogSnatcher('argus.recipes.cloud.windows') as snatcher:
-            self._recipe.get_cb_init_logs()
+            self._recipe.get_cb_init_files(fake_location, cb_fake_files)
         self.assertEqual(snatcher.output, expected_logging)
         if output_directory:
             self._recipe._backend.instance_server.assert_called_once_with()
             mock_get_dir.assert_called_once_with(self._recipe._execute)
             self.assertEqual(
-                len(cb_log_files),
+                len(cb_fake_files),
                 (self._recipe._backend.remote_client.
                  manager.copy_file.call_count))
-            self.assertEqual(mock_encode_file.call_count, len(cb_log_files))
+            self.assertEqual(mock_encode_file.call_count, len(cb_fake_files))
 
-    def test_get_cb_init_logs_no_directory(self):
-        self._test_get_cb_init_logs(output_directory=False)
+    def test_get_cb_init_files_no_directory(self):
+        self._test_get_cb_init_files(output_directory=False)
 
-    def test_get_cb_init_logs(self):
-        self._test_get_cb_init_logs()
+    def test_get_cb_init_files(self):
+        self._test_get_cb_init_files()
 
 
 class TestCloudbaseinitScriptRecipe(unittest.TestCase):
