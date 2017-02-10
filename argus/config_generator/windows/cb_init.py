@@ -15,6 +15,7 @@
 import ntpath
 
 import six
+from six.moves import configparser
 
 from argus import config as argus_config
 from argus.config_generator.windows import base
@@ -44,6 +45,18 @@ class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
         if not self.conf.has_section(section) and section != "DEFAULT":
             self.conf.add_section(section)
         self.conf.set(section, name, value)
+
+    def append_conf_value(self, name, value="", section="DEFAULT"):
+        """Appends a config value to a specified section."""
+        if not self.conf.has_section(section) and section != "DEFAULT":
+            self.conf.add_section(section)
+        try:
+            current_value = self.conf.get(section, name)
+            values = [current_value, value]
+            conf_values = ','.join(values)
+            self.set_conf_value(name, conf_values, section)
+        except configparser.NoOptionError:
+            self.set_conf_value(name, value, section)
 
     def _execute(self, cmd, count=CONFIG.argus.retry_count,
                  delay=CONFIG.argus.retry_delay, command_type=None):
