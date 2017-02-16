@@ -669,13 +669,41 @@ class CloudbaseinitSetRealClock(CloudbaseinitRecipe):
                   "NTPClientPlugin")
 
 
+class CloudbaseinitBootConfigPlugin(CloudbaseinitRecipe):
+    """Recipe for testing the BootStatusPolicyPlugin and BCDConfigPlugin."""
+
+    @util.skip_on_os([util.WINDOWS_NANO], "OS Version not supported")
+    def pre_sysprep(self):
+        resource_location = "windows/get_uniquediskid.ps1"
+        (self._backend.remote_client.
+         manager.execute_powershell_resource_script(
+             resource_location=resource_location))
+
+    @util.skip_on_os([util.WINDOWS_NANO], "OS Version not supported")
+    def prepare_cbinit_config(self, service_type):
+        LOG.info("Injecting Boot config options in the config file.")
+        self._cbinit_conf.append_conf_value(
+            name="bcd_enable_auto_recovery", value="True")
+        self._cbinit_conf.append_conf_value(
+            name="set_unique_boot_disk_id", value="True")
+        self._cbinit_conf.append_conf_value(
+            name="bcd_boot_status_policy", value="ignoreallfailures")
+        self._cbinit_conf.append_conf_value(
+            name="plugins",
+            value="cloudbaseinit.plugins.windows.bootconfig."
+                  "BootStatusPolicyPlugin,"
+                  "cloudbaseinit.plugins.windows.bootconfig."
+                  "BCDConfigPlugin")
+
+
 class CloudbaseinitIndependentPlugins(CloudbaseinitRecipe):
     """Recipe for independent plugins."""
     METHODS = ('prepare_cbinit_config',
                'pre_sysprep')
     RECIPES = (CloudbaseinitEnableTrim, CloudbaseinitSANPolicy,
                CloudbaseinitPageFilePlugin, CloudbaseinitDisplayTimeoutPlugin,
-               CloudbaseinitKMSHostPlugin, CloudbaseinitSetRealClock)
+               CloudbaseinitKMSHostPlugin, CloudbaseinitSetRealClock,
+               CloudbaseinitBootConfigPlugin)
 
     def prepare_cbinit_config(self, service_type):
         super(CloudbaseinitIndependentPlugins, self).prepare_cbinit_config(

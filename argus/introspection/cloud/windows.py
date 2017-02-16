@@ -456,3 +456,9 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
         cmd = r"(Get-ItemProperty '{}').RealTimeIsUniversal".format(swap_query)
         stdout = self.remote_client.run_command_verbose(cmd)
         return stdout.strip() == "1"
+
+    def get_bcd_field(self, field):
+        cmd = r'bcdedit.exe /enum ACTIVE | findstr /R /C:"{}"'.format(field)
+        stdout = self.remote_client.run_command_verbose(
+            cmd, command_type=util.CMD)
+        return stdout
