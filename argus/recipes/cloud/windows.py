@@ -543,6 +543,17 @@ class CloudbaseinitKeysRecipe(CloudbaseinitHTTPRecipe,
                   "ConfigWinRMCertificateAuthPlugin")
 
 
+class CloudbaseinitAddUserdata(CloudbaseinitRecipe):
+    """Recipe for testing that the userdata is being saved on the disk."""
+
+    def prepare_cbinit_config(self, service_type):
+        super(CloudbaseinitAddUserdata, self).prepare_cbinit_config(
+            service_type)
+        LOG.info("Injecting userdata_path option in conf file.")
+        self._cbinit_conf.set_conf_value(
+            name='userdata_save_path', value=r'C:\userdatafile')
+
+
 class CloudbaseinitLongHostname(CloudbaseinitRecipe):
     """Recipe for testing the netbios long hostname compatibility option."""
 
