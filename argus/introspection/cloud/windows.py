@@ -449,3 +449,10 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
                r":'KeyManagementService'".format(licensing_query))
         stdout = self.remote_client.run_command_verbose(cmd)
         return stdout
+
+    def is_real_time(self):
+        swap_query = (r"HKLM:\SYSTEM\CurrentControlSet\Control"
+                      r"\TimeZoneInformation")
+        cmd = r"(Get-ItemProperty '{}').RealTimeIsUniversal".format(swap_query)
+        stdout = self.remote_client.run_command_verbose(cmd)
+        return stdout.strip() == "1"
