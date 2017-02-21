@@ -696,6 +696,20 @@ class CloudbaseinitBootConfigPlugin(CloudbaseinitRecipe):
                   "BCDConfigPlugin")
 
 
+class CloudbaseinitRDPSettingsPlugin(CloudbaseinitRecipe):
+    """Recipe for testing the RDPSettingsPlugin plugin"""
+
+    @util.skip_on_os([util.WINDOWS_NANO], "OS Version not supported")
+    def prepare_cbinit_config(self, service_type):
+        LOG.info("Injecting rdp setting options in the config file.")
+        self._cbinit_unattend_conf.append_conf_value(
+            name="rdp_set_keepalive", value="true")
+        self._cbinit_unattend_conf.append_conf_value(
+            name="plugins",
+            value="cloudbaseinit.plugins.windows.rdp."
+                  "RDPSettingsPlugin")
+
+
 class CloudbaseinitIndependentPlugins(CloudbaseinitRecipe):
     """Recipe for independent plugins."""
     METHODS = ('prepare_cbinit_config',
@@ -703,7 +717,7 @@ class CloudbaseinitIndependentPlugins(CloudbaseinitRecipe):
     RECIPES = (CloudbaseinitEnableTrim, CloudbaseinitSANPolicy,
                CloudbaseinitPageFilePlugin, CloudbaseinitDisplayTimeoutPlugin,
                CloudbaseinitKMSHostPlugin, CloudbaseinitSetRealClock,
-               CloudbaseinitBootConfigPlugin)
+               CloudbaseinitBootConfigPlugin, CloudbaseinitRDPSettingsPlugin)
 
     def prepare_cbinit_config(self, service_type):
         super(CloudbaseinitIndependentPlugins, self).prepare_cbinit_config(

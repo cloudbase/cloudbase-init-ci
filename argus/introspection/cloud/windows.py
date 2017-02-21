@@ -462,3 +462,13 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
         stdout = self.remote_client.run_command_verbose(
             cmd, command_type=util.CMD)
         return stdout
+
+    def get_rdp_settings(self):
+        swap_query = (r"HKLM:\SOFTWARE\Policies\Microsoft\Win"
+                      r"dows NT\Terminal Services")
+        query_properties = ["KeepAliveEnable", "KeepAliveInterval"]
+        stdout = []
+        for query in query_properties:
+            cmd = r"(Get-ItemProperty '{}').{}".format(swap_query, query)
+            stdout.append(self.remote_client.run_command_verbose(cmd))
+        return stdout

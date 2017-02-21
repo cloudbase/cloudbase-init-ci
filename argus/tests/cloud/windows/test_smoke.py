@@ -298,3 +298,12 @@ class TestBCDPlugin(base.BaseTestCase):
         old_id = self._backend.remote_client.read_file(r"C:\\diskid")
         new_id = self._backend.remote_client.read_file(r"C:\\diskidnew")
         self.assertNotEqual(old_id, new_id)
+
+
+class TestRDPPlugin(base.BaseTestCase):
+
+    @util.skip_on_os([util.WINDOWS_NANO], "OS Version not supported")
+    def test_rdp_settings_set(self):
+        stdout = self._introspection.get_rdp_settings()
+        for query_value in stdout:
+            self.assertIn("1", query_value)
