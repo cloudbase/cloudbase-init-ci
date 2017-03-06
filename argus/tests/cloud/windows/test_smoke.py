@@ -222,3 +222,10 @@ class TestTrimPlugin(base.BaseTestCase):
     def test_trim_is_set(self):
         value = self._introspection.get_trim_state()
         self.assertTrue(value)
+
+
+class TestSANPolicyPlugin(base.BaseTestCase):
+
+    def test_san_policy_is_set(self):
+        value = self._introspection.get_san_policy()
+        self.assertEqual(value, util.SAN_POLICY_ONLINE_STR)

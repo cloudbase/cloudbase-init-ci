@@ -16,6 +16,7 @@
 import ntpath
 import os
 import socket
+import re
 import time
 
 import requests
@@ -485,6 +486,29 @@ class WindowsActionManager(base.BaseActionManager):
         """
         LOG.info("Config Cloudbase-Init for %s", self._os_type)
 
+    def get_san_policy(self):
+        """Get the SAN policy."""
+        command = 'echo "SAN" | diskpart'
+        stdout = self._client.run_command_verbose(
+            command, command_type=util.POWERSHELL).strip()
+        stdout = stdout.replace(" ", "")
+        match = re.search("({}|{}|{})".format(
+            util.SAN_POLICY_ONLINE_STR, util.SAN_POLICY_OFFLINE_STR,
+            util.SAN_POLICY_OFFLINE_SHARED_STR), stdout)
+        if match:
+            return match.group()
+        else:
+            raise ValueError("Unable to get the SAN policy")
+
+    def set_san_policy(self, policy):
+        """Set the SAN policy.
+
+        :param policy: The policy to set
+        """
+        cmd = 'echo "SAN Policy={}" | diskpart'.format(policy)
+        self._client.run_command_with_retry(
+            cmd, command_type=util.POWERSHELL)
+
 
 class Windows8ActionManager(WindowsActionManager):
     def __init__(self, client, os_type=util.WINDOWS8):
@@ -734,6 +758,28 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
                 cmd, count=CONFIG.argus.retry_count,
                 delay=CONFIG.argus.retry_delay,
                 command_type=util.POWERSHELL, upper_timeout=upper_timeout)
+
+    def get_san_policy(self):
+        """Get the SAN policy."""
+        command = "Get-StorageSetting | Select-Object NewDiskPolicy"
+        stdout = self._client.run_command_verbose(
+            command, command_type=util.POWERSHELL).strip()
+        match = re.search("({}|{}|{})".format(
+            util.SAN_POLICY_ONLINE_STR, util.SAN_POLICY_OFFLINE_STR,
+            util.SAN_POLICY_OFFLINE_SHARED_STR), stdout)
+        if match:
+            return match.group()
+        else:
+            raise ValueError("Unable to get the SAN policy")
+
+    def set_san_policy(self, policy):
+        """Set the SAN policy.
+
+        :param policy: The policy to set
+        """
+        cmd = '"Set-StorageSetting -NewDiskPolicy {}"'.format(policy)
+        self._client.run_command_with_retry(
+            cmd, command_type=util.POWERSHELL)
 
 
 WindowsActionManagers = {

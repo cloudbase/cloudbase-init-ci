@@ -53,6 +53,10 @@ OPEN_NEBULA_SERVICE = 'opennebula'
 CLOUD_STACK_SERVICE = 'cloudstack'
 MAAS_SERVICE = 'maas'
 
+SAN_POLICY_ONLINE_STR = 'OnlineAll'
+SAN_POLICY_OFFLINE_STR = 'OfflineAll'
+SAN_POLICY_OFFLINE_SHARED_STR = 'OfflineShared'
+
 __all__ = (
     'decrypt_password',
     'get_logger',

@@ -569,11 +569,28 @@ class CloudbaseinitEnableTrim(CloudbaseinitRecipe):
                   ".TrimConfigPlugin")
 
 
+class CloudbaseinitSANPolicy(CloudbaseinitRecipe):
+    """Recipe for testing SAN Policy plugin."""
+    def pre_sysprep(self):
+        self._backend.remote_client.manager.set_san_policy(
+            util.SAN_POLICY_OFFLINE_STR)
+
+    def prepare_cbinit_config(self, service_type):
+        LOG.info("Injecting SAN Policy option in conf file.")
+        self._cbinit_unattend_conf.append_conf_value(
+            name='san_policy', value=util.SAN_POLICY_ONLINE_STR)
+
+        self._cbinit_unattend_conf.append_conf_value(
+            name="plugins",
+            value="cloudbaseinit.plugins.windows.sanpolicy"
+                  ".SANPolicyPlugin")
+
+
 class CloudbaseinitIndependentPlugins(CloudbaseinitRecipe):
     """Recipe for independent plugins."""
     METHODS = ('prepare_cbinit_config',
                'pre_sysprep')
-    RECIPES = (CloudbaseinitEnableTrim,)
+    RECIPES = (CloudbaseinitEnableTrim, CloudbaseinitSANPolicy)
 
     def prepare_cbinit_config(self, service_type):
         super(CloudbaseinitIndependentPlugins, self).prepare_cbinit_config(
