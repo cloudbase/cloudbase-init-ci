@@ -52,15 +52,14 @@ def _download_resource(url, location):
         file_handle.write(response.text)
 
 
-def download_argus_resource(resource_path, location):
+def download_argus_resource(resource_path, location, resources_link):
     """Download an argus Resource.
 
     :param resource_path: Path of the resource relative to the
                          argus `resources` directory
     :param location: Where to save the resource
     """
-    base_url = ci.RESOURCES_LINK
-    base_url = base_url.rsplit("/", 1)[0]
+    base_url = resources_link.rsplit("/", 1)[0]
 
     url_resource = urlparse.urljoin(base_url, resource_path)
     _download_resource(url_resource, location)
@@ -132,7 +131,7 @@ def _prepare_argument_parser():
     return parser
 
 
-def _prepare_enviroment(local, directory):
+def _prepare_enviroment(local, directory, resources_link):
     """Prepare the temp enviroment."""
     os.mkdir(os.path.join(directory, "ci"))
 
@@ -145,8 +144,8 @@ def _prepare_enviroment(local, directory):
         os.link(os.path.join(local, "ci", "tests.py"), tests)
     else:
         # Download the necessary items
-        download_argus_resource(".testr.conf", testr_conf)
-        download_argus_resource("ci/tests.py", tests)
+        download_argus_resource(".testr.conf", testr_conf, resources_link)
+        download_argus_resource("ci/tests.py", tests, resources_link)
 
     # Create a new repository
     subprocess.Popen(["testr", "init"], cwd=directory, close_fds=True).wait()
@@ -205,7 +204,7 @@ def main():
 
     print("Starting at {}".format(base_directory))
 
-    _prepare_enviroment(args.local, base_directory)
+    _prepare_enviroment(args.local, base_directory, args.resources)
 
     _prepare_config(args.separate, args.resources,
                     args.flavor_ref, args.git_command,
