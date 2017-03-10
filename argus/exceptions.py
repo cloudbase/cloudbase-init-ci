@@ -38,3 +38,8 @@ class ArgusHeatTeardown(ArgusError):
 class ArgusEnvironmentError(ArgusError):
     """Base class for errors related to the argus environment."""
     pass
+
+
+class ErrorArgusInvalidDecorator(ArgusError):
+    """The `skip_on_os` decorator was used improperly."""
+    pass
