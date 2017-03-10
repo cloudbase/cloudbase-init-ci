@@ -40,6 +40,6 @@ class ArgusEnvironmentError(ArgusError):
     pass
 
 
-class ErrorArgusInvalidDecorator(ArgusError):
-    """The `skip_on_os` decorator was used improperly."""
+class ArgusInvalidDecoratorError(ArgusError):
+    """Exception triggered when a decorator has been improperly used."""
     pass
