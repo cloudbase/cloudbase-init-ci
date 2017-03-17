@@ -25,6 +25,7 @@ import subprocess
 import sys
 import time
 import unittest
+import types
 
 import six
 
@@ -62,6 +63,17 @@ __all__ = (
     'get_public_keys',
     'get_certificate',
 )
+
+
+def build_new_function(func, name):
+    code = six.get_function_code(func)
+    func_globals = six.get_function_globals(func)
+    func_defaults = six.get_function_defaults(func)
+    func_closure = six.get_function_closure(func)
+    return types.FunctionType(code, func_globals,
+                              name, func_defaults,
+                              func_closure)
+
 
 DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 DEFAULT_LOG_FILE = 'argus.log'

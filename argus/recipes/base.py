@@ -21,8 +21,6 @@ by installing and configuring it with what it's necessary.
 
 import abc
 
-import six
-
 from argus import config as argus_config
 from argus import log as argus_log
 
@@ -38,7 +36,6 @@ __all__ = (
 )
 
 
-@six.add_metaclass(abc.ABCMeta)
 class BaseRecipe(object):
     """Base class for a recipe.
 

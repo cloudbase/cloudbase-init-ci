@@ -554,14 +554,11 @@ class CloudbaseinitEnableTrim(CloudbaseinitRecipe):
     """Recipe for testing TRIM configuration."""
 
     def pre_sysprep(self):
-        super(CloudbaseinitEnableTrim, self).pre_sysprep()
         command = "fsutil.exe behavior set disabledeletenotify 1"
         self._backend.remote_client.run_command_with_retry(
             command, command_type=util.CMD)
 
     def prepare_cbinit_config(self, service_type):
-        super(CloudbaseinitEnableTrim, self).prepare_cbinit_config(
-            service_type)
         LOG.info("Injecting trim_enabled option in conf file.")
         self._cbinit_unattend_conf.append_conf_value(
             name='trim_enabled', value='True')
@@ -572,8 +569,18 @@ class CloudbaseinitEnableTrim(CloudbaseinitRecipe):
                   ".TrimConfigPlugin")
 
 
-class CloudbaseinitIndependentPlugins(CloudbaseinitEnableTrim):
+class CloudbaseinitIndependentPlugins(CloudbaseinitRecipe):
     """Recipe for independent plugins."""
+    METHODS = ('prepare_cbinit_config',
+               'pre_sysprep')
+    RECIPES = (CloudbaseinitEnableTrim,)
+
+    def prepare_cbinit_config(self, service_type):
+        super(CloudbaseinitIndependentPlugins, self).prepare_cbinit_config(
+            service_type)
+
+    def pre_sysprep(self):
+        super(CloudbaseinitIndependentPlugins, self).pre_sysprep()
 
 
 class CloudbaseinitLocalScriptsRecipe(CloudbaseinitRecipe):
