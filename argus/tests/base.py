@@ -24,3 +24,6 @@ class BaseTestCase(unittest.TestCase):
         self._backend = backend
         self._recipe = recipe
         self._introspection = introspection
+
+    def get_os_type(self):
+        return self._backend.remote_client.manager.os_type

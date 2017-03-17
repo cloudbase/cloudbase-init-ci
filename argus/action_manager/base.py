@@ -38,6 +38,10 @@ class BaseActionManager(object):
 
         self._config_os_type_on_logger()
 
+    @property
+    def os_type(self):
+        return self._os_type
+
     def _config_os_type_on_logger(self):
         """Set the OS type on the logger."""
         LOG.debug("Update the logger with the following OS version: %s",

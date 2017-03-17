@@ -38,3 +38,8 @@ class ArgusHeatTeardown(ArgusError):
 class ArgusEnvironmentError(ArgusError):
     """Base class for errors related to the argus environment."""
     pass
+
+
+class ArgusInvalidDecoratorError(ArgusError):
+    """Exception triggered when a decorator has been improperly used."""
+    pass

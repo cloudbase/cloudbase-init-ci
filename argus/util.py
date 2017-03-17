@@ -24,10 +24,14 @@ import struct
 import subprocess
 import sys
 import time
+import unittest
 
 import six
 
+from argus import log as argus_log
 from argus import exceptions
+
+LOG = argus_log.LOG
 
 CMD = "cmd"
 BAT_SCRIPT = "bat"
@@ -362,3 +366,50 @@ WINDOWS_VERSION = {
         True: WINDOWS_NANO
     }
 }
+
+
+class skip_on_os(object):
+    """Decorator to skip a method on a specific OS."""
+
+    def __init__(self, target_os_list, reason=""):
+        """Skip the method decorated if we are using the `os_type`.
+
+        :param target_os_list: A list with OS version on which
+                               the decorator will take effect
+        """
+        self._target_os_list = target_os_list
+        self._reason = reason
+
+    def __call__(self, function):
+        """Return the `function` decorated."""
+        @six.wraps(function)
+        def wrapper(*args, **kwargs):
+            try:
+                target_self = args[0]
+            except IndexError:
+                raise exceptions.ArgusInvalidDecoratorError(
+                    "Incompatible use of decorator %s on %s",
+                    "skip_on_os", function.__name__)
+
+            if isinstance(target_self, unittest.TestCase):
+                try:
+                    instance_os_type = target_self.get_os_type()
+                except AttributeError as ex:
+                    raise exceptions.ArgusInvalidDecoratorError(
+                        ("The OS type has not been determined yet in %s,"
+                         " error message %s"), function.__name__, ex)
+            else:
+                LOG.error(
+                    "Incorrect use of `skip_on_os` decorator on %s",
+                    target_self.__name__)
+                return function(*args, **kwargs)
+
+            if instance_os_type in self._target_os_list:
+                LOG.info("Skip %s on OS type %s : %s",
+                         function.__name__, instance_os_type, self._reason)
+                raise unittest.SkipTest(
+                    "Skip on OS type {} : {}".format(instance_os_type,
+                                                     self._reason))
+
+            return function(*args, **kwargs)
+        return wrapper
