@@ -563,10 +563,10 @@ class CloudbaseinitEnableTrim(CloudbaseinitRecipe):
         super(CloudbaseinitEnableTrim, self).prepare_cbinit_config(
             service_type)
         LOG.info("Injecting trim_enabled option in conf file.")
-        self._cbinit_unattend_conf.set_conf_value(
+        self._cbinit_unattend_conf.append_conf_value(
             name='trim_enabled', value='True')
 
-        self._cbinit_unattend_conf.set_conf_value(
+        self._cbinit_unattend_conf.append_conf_value(
             name="plugins",
             value="cloudbaseinit.plugins.common.trim"
                   ".TrimConfigPlugin")
