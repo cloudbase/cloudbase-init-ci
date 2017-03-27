@@ -326,6 +326,10 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
             command, command_type=util.CMD)
         return "DisableDeleteNotify = 0" in stdout
 
+    def get_san_policy(self):
+        """Get the SAN policy."""
+        return self.remote_client.manager.get_san_policy()
+
     def get_service_triggers(self, service):
         """Get the triggers of the given service.
 
