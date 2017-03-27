@@ -14,26 +14,16 @@
 #    under the License.
 
 import os
-import types
 import unittest
 
 import six
 
 from argus import config as argus_config
 from argus import log as argus_log
+from argus import util
 
 LOG = argus_log.LOG
 CONFIG = argus_config.CONFIG
-
-
-def _build_new_function(func, name):
-    code = six.get_function_code(func)
-    func_globals = six.get_function_globals(func)
-    func_defaults = six.get_function_defaults(func)
-    func_closure = six.get_function_closure(func)
-    return types.FunctionType(code, func_globals,
-                              name, func_defaults,
-                              func_closure)
 
 
 class ScenarioMeta(type):
@@ -70,7 +60,7 @@ class ScenarioMeta(type):
                 # Create a new function from the delegator with the
                 # correct name, since tools such as nose test runner,
                 # will use func.func_name, which will be delegator otherwise.
-                new_func = _build_new_function(delegator, test_name)
+                new_func = util.build_new_function(delegator, test_name)
                 setattr(cls, test_name, new_func)
 
         return cls

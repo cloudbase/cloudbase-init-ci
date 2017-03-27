@@ -22,6 +22,7 @@ import six
 from argus import config as argus_config
 from argus import log as argus_log
 from argus.recipes import base
+from argus import util
 
 __all__ = ('BaseCloudbaseinitRecipe', )
 
@@ -29,7 +30,40 @@ CONFIG = argus_config.CONFIG
 LOG = argus_log.LOG
 
 
-@six.add_metaclass(abc.ABCMeta)
+def prepare_function(cls, method):
+    """Prepare a new Function type."""
+    functions = []
+
+    if hasattr(cls, method):
+        functions.append(getattr(cls, method))
+
+    for recipe in cls.RECIPES:
+        if not hasattr(recipe, method):
+            continue
+        method_name = "{}-{}".format(method, recipe.__name__)
+        functions.append(
+            util.build_new_function(getattr(recipe, method), method_name)
+        )
+
+    def inner(*args, **kwargs):
+        for func in functions:
+            func(*args, **kwargs)
+    return util.build_new_function(inner, method)
+
+
+class RecipeMetaClass(abc.ABCMeta):
+    """Metaclass for merging Recipes."""
+    def __new__(mcs, name, bases, attrs):
+        cls = super(RecipeMetaClass, mcs).__new__(mcs, name, bases, attrs)
+
+        if all([cls.METHODS, cls.RECIPES]):
+            for method in cls.METHODS:
+                setattr(cls, method, prepare_function(cls, method))
+
+        return cls
+
+
+@six.add_metaclass(RecipeMetaClass)
 class BaseCloudbaseinitRecipe(base.BaseRecipe):
     """Base recipe for testing an instance with Cloudbase-Init.
 
@@ -41,6 +75,8 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
     * installs CloudbaseInit
     * waits for the finalization of the installation.
     """
+    RECIPES = None
+    METHODS = None
 
     def __init__(self, backend):
         super(BaseCloudbaseinitRecipe, self).__init__(backend)
