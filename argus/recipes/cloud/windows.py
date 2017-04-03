@@ -47,6 +47,10 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         LOG.info("Waiting for first boot completion...")
         self._backend.remote_client.manager.wait_boot_completion()
 
+    def get_os_type(self):
+        """Get the os type."""
+        return self._backend.remote_client.manager.os_type
+
     def set_mtu(self, interface="ipv4", subinterface_name="Ethernet",
                 mtu_value=1400, store_type='active'):
         cmd = 'netsh interface ipv4 show subinterfaces level=verbose'
