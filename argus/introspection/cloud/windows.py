@@ -330,6 +330,13 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
         """Get the SAN policy."""
         return self.remote_client.manager.get_san_policy()
 
+    def get_power_setting_value(self):
+        command = ('powercfg.exe -query SCHEME_CURRENT SUB_VIDEO VIDEOIDLE'
+                   ' | findstr /R /C:"Current AC Power Setting Index"')
+        stdout = self.remote_client.run_command_verbose(
+            command, command_type=util.CMD)
+        return stdout.strip()
+
     def get_service_triggers(self, service):
         """Get the triggers of the given service.
 
@@ -428,13 +435,17 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
         return stdout.strip()
 
     def get_swap_status(self):
-        """Get whether the swap memory is enabled or not.
-
-        :returns: True if swap memory is enabled, False if not.
-        :rtype: bool
-        """
+        """Get the swap memory status."""
         swap_query = (r"HKLM:\SYSTEM\CurrentControlSet\Control\Session"
                       r" Manager\Memory Management")
         cmd = r"(Get-ItemProperty '{}').PagingFiles".format(swap_query)
         stdout = self.remote_client.run_command_verbose(cmd)
-        return stdout.strip() == r'?:\pagefile.sys'
+        return stdout.strip()
+
+    def get_kms_host_settings(self):
+        licensing_query = (r"HKLM:\SOFTWARE\Microsoft\Windows "
+                           r"NT\CurrentVersion\SoftwareProtectionPlatform")
+        cmd = (r"(Get-ItemProperty '{}') | findstr /R /C"
+               r":'KeyManagementService'".format(licensing_query))
+        stdout = self.remote_client.run_command_verbose(cmd)
+        return stdout

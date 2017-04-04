@@ -578,13 +578,14 @@ class TestInstanceIntrospection(unittest.TestCase):
          assert_called_once_with("fake cmd"))
 
     def test_get_swap_status(self):
+        expected_result = r'?:\pagefile.sys'
         (self._introspect.remote_client.run_command_verbose.
-         return_value) = r'?:\pagefile.sys'
+         return_value) = expected_result
         swap_query = (r"HKLM:\SYSTEM\CurrentControlSet\Control\Session"
                       r" Manager\Memory Management")
         cmd = r"(Get-ItemProperty '{}').PagingFiles".format(swap_query)
         result = self._introspect.get_swap_status()
-        self.assertEqual(result, True)
+        self.assertEqual(result, expected_result)
         (self._introspect.remote_client.run_command_verbose.
          assert_called_once_with(cmd))
 

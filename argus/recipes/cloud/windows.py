@@ -47,6 +47,10 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         LOG.info("Waiting for first boot completion...")
         self._backend.remote_client.manager.wait_boot_completion()
 
+    def get_os_type(self):
+        """Get the os type."""
+        return self._backend.remote_client.manager.os_type
+
     def set_mtu(self, interface="ipv4", subinterface_name="Ethernet",
                 mtu_value=1400, store_type='active'):
         cmd = 'netsh interface ipv4 show subinterfaces level=verbose'
@@ -586,15 +590,66 @@ class CloudbaseinitSANPolicy(CloudbaseinitRecipe):
                   ".SANPolicyPlugin")
 
 
+class CloudbaseinitPageFilePlugin(CloudbaseinitRecipe):
+    """Recipe for testing the PageFile plugin"""
+
+    def prepare_cbinit_config(self, service_type):
+        LOG.info("Injecting page file options in the config file.")
+
+        self._cbinit_unattend_conf.set_conf_value(
+            name="page_file_volume_labels", value="Temporary Storage")
+        self._cbinit_unattend_conf.set_conf_value(
+            name="page_file_volume_mount_points", value="C:\\")
+        self._cbinit_unattend_conf.append_conf_value(
+            name="plugins",
+            value="cloudbaseinit.plugins.windows.pagefiles.PageFilesPlugin")
+
+
+class CloudbaseinitDisplayTimeoutPlugin(CloudbaseinitPageFilePlugin):
+    """Recipe for testing the DisplayIdleTimeout plugin"""
+
+    @util.skip_on_os(
+        [util.WINDOWS_NANO, util.WINDOWS_SERVER_2008,
+         util.WINDOWS_SERVER_2008_R2, util.WINDOWS7],
+        "OS Version not supported")
+    def prepare_cbinit_config(self, service_type):
+        LOG.info("Injecting idle display options in the config file.")
+        self._cbinit_conf.set_conf_value(
+            name="display_idle_timeout", value="123")
+        self._cbinit_conf.append_conf_value(
+            name="plugins",
+            value="cloudbaseinit.plugins.windows.displayidletimeout."
+                  "DisplayIdleTimeoutConfigPlugin")
+
+
+class CloudbaseinitKMSHostPlugin(CloudbaseinitRecipe):
+    """Recipe for testing the kms_host option."""
+
+    @util.skip_on_os([util.WINDOWS_NANO], "OS Version not supported")
+    def prepare_cbinit_config(self, service_type):
+        LOG.info("Injecting kms_host options in the config file.")
+        self._cbinit_conf.set_conf_value(
+            name="activate_windows", value="True")
+        self._cbinit_conf.set_conf_value(
+            name="kms_host", value="127.0.0.1:1688")
+        self._cbinit_conf.append_conf_value(
+            name="plugins",
+            value="cloudbaseinit.plugins.windows.licensing."
+                  "WindowsLicensingPlugin")
+
+
 class CloudbaseinitIndependentPlugins(CloudbaseinitRecipe):
     """Recipe for independent plugins."""
     METHODS = ('prepare_cbinit_config',
                'pre_sysprep')
-    RECIPES = (CloudbaseinitEnableTrim, CloudbaseinitSANPolicy)
+    RECIPES = (CloudbaseinitEnableTrim, CloudbaseinitSANPolicy,
+               CloudbaseinitPageFilePlugin, CloudbaseinitDisplayTimeoutPlugin,
+               CloudbaseinitKMSHostPlugin)
 
     def prepare_cbinit_config(self, service_type):
         super(CloudbaseinitIndependentPlugins, self).prepare_cbinit_config(
             service_type)
+        self._cbinit_conf.set_conf_value(name="plugins", value="")
 
     def pre_sysprep(self):
         super(CloudbaseinitIndependentPlugins, self).pre_sysprep()

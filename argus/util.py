@@ -407,25 +407,22 @@ class skip_on_os(object):
                     "Incompatible use of decorator %s on %s",
                     "skip_on_os", function.__name__)
 
-            if isinstance(target_self, unittest.TestCase):
-                try:
-                    instance_os_type = target_self.get_os_type()
-                except AttributeError as ex:
-                    raise exceptions.ArgusInvalidDecoratorError(
-                        ("The OS type has not been determined yet in %s,"
-                         " error message %s"), function.__name__, ex)
-            else:
-                LOG.error(
-                    "Incorrect use of `skip_on_os` decorator on %s",
-                    target_self.__name__)
-                return function(*args, **kwargs)
+            try:
+                instance_os_type = target_self.get_os_type()
+            except AttributeError as ex:
+                raise exceptions.ArgusInvalidDecoratorError(
+                    ("The OS type has not been determined yet in %s,"
+                     " error message %s"), function.__name__, ex)
 
             if instance_os_type in self._target_os_list:
                 LOG.info("Skip %s on OS type %s : %s",
                          function.__name__, instance_os_type, self._reason)
-                raise unittest.SkipTest(
-                    "Skip on OS type {} : {}".format(instance_os_type,
-                                                     self._reason))
 
-            return function(*args, **kwargs)
+                if isinstance(target_self, unittest.TestCase):
+                    raise unittest.SkipTest(
+                        "Skip on OS type {} : {}".format(instance_os_type,
+                                                         self._reason))
+
+            else:
+                return function(*args, **kwargs)
         return wrapper

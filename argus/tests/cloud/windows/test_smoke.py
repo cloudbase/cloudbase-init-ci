@@ -229,3 +229,33 @@ class TestSANPolicyPlugin(base.BaseTestCase):
     def test_san_policy_is_set(self):
         value = self._introspection.get_san_policy()
         self.assertEqual(value, util.SAN_POLICY_ONLINE_STR)
+
+
+class TestPageFilePlugin(base.BaseTestCase):
+
+    def test_page_file_set(self):
+        expected = r"C:\pagefile.sys 0 0"
+        result = self._introspection.get_swap_status()
+        self.assertEqual(result, expected)
+
+
+class TestDisplayTimeoutPlugin(base.BaseTestCase):
+
+    @util.skip_on_os(
+        [util.WINDOWS_NANO, util.WINDOWS_SERVER_2008,
+         util.WINDOWS_SERVER_2008_R2, util.WINDOWS7],
+        "OS Version not supported")
+    def test_display_timeout_set(self):
+        expected_output = "0x0000007b"  # hex of 123
+        result = self._introspection.get_power_setting_value()
+        self.assertIn(expected_output, result)
+
+
+class TestKMSHost(base.BaseTestCase):
+
+    @util.skip_on_os([util.WINDOWS_NANO], "OS Version not supported")
+    def test_kms_host_set(self):
+        stdout = self._introspection.get_kms_host_settings()
+        expected_values = ["127.0.0.1", "1688"]
+        for kms_value in expected_values:
+            self.assertIn(kms_value, stdout)

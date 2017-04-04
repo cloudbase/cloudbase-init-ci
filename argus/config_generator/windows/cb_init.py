@@ -52,8 +52,11 @@ class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
             self.conf.add_section(section)
         try:
             current_value = self.conf.get(section, name)
-            values = [current_value, value]
-            conf_values = ','.join(values)
+            if current_value:
+                values = [current_value, value]
+                conf_values = ','.join(values)
+            else:
+                conf_values = value
             self.set_conf_value(name, conf_values, section)
         except configparser.NoOptionError:
             self.set_conf_value(name, value, section)

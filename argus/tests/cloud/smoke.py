@@ -267,8 +267,9 @@ class TestSwapEnabled(base.BaseTestCase):
 
     def test_swap_enabled(self):
         """Tests the swap status on the underlying instance."""
+        expected = r'?:\pagefile.sys'
         swap_status = self._introspection.get_swap_status()
-        self.assertTrue(swap_status)
+        self.assertEqual(swap_status, expected)
 
 
 class TestNoError(base.BaseTestCase):
