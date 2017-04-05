@@ -228,12 +228,13 @@ class ScenarioSmokeConfigdriveIso9660Cdrom(BaseWindowsScenario):
     availability_zone = 'configdrive_iso9660_cdrom'
 
 
-@unittest.skipIf('static_network' not in AVAILABILITY_ZONES,
-                 'Needs special availability zone')
 class ScenarioNetworkConfig(BaseWindowsScenario):
+    # NOTE: For the KVM node, in nova.conf the `use_ipv6`,
+    # `flat_injected` and `force_config_drive` parameters
+    # need to be set to True
     backend_type = tempest_cloud_backend.NetworkWindowsBackend
     test_classes = (smoke.TestStaticNetwork, )
-    availability_zone = 'static_network'
+    service_type = util.CONFIG_DRIVE_SERVICE
 
 
 @unittest.skipIf(CONFIG.openstack.require_sysprep,
