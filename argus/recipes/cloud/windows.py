@@ -638,13 +638,33 @@ class CloudbaseinitKMSHostPlugin(CloudbaseinitRecipe):
                   "WindowsLicensingPlugin")
 
 
+class CloudbaseinitSetRealClock(CloudbaseinitRecipe):
+
+    def pre_sysprep(self):
+        cmd = ("New-ItemProperty -Path '{}' -Name '{}' -Value '{}' "
+               "-PropertyType DWORD -Force".format(
+                   (r'HKLM:\SYSTEM\CurrentControlSet\Control'
+                    r'\TimeZoneInformation'), 'RealTimeIsUniversal', 0))
+        self._backend.remote_client.run_command_verbose(cmd)
+
+    def prepare_cbinit_config(self, service_type):
+        LOG.info("Injecting real_time_clock_utc option in config file.")
+        self._cbinit_unattend_conf.set_conf_value(
+            name="real_time_clock_utc",
+            value="true")
+        self._cbinit_unattend_conf.set_conf_value(
+            name="plugins",
+            value="cloudbaseinit.plugins.common.ntpclient."
+                  "NTPClientPlugin")
+
+
 class CloudbaseinitIndependentPlugins(CloudbaseinitRecipe):
     """Recipe for independent plugins."""
     METHODS = ('prepare_cbinit_config',
                'pre_sysprep')
     RECIPES = (CloudbaseinitEnableTrim, CloudbaseinitSANPolicy,
                CloudbaseinitPageFilePlugin, CloudbaseinitDisplayTimeoutPlugin,
-               CloudbaseinitKMSHostPlugin)
+               CloudbaseinitKMSHostPlugin, CloudbaseinitSetRealClock)
 
     def prepare_cbinit_config(self, service_type):
         super(CloudbaseinitIndependentPlugins, self).prepare_cbinit_config(

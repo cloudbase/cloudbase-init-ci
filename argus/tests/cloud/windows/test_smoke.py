@@ -259,3 +259,10 @@ class TestKMSHost(base.BaseTestCase):
         expected_values = ["127.0.0.1", "1688"]
         for kms_value in expected_values:
             self.assertIn(kms_value, stdout)
+
+
+class TestNTPClientPlugin(base.BaseTestCase):
+
+    def test_set_real_time(self):
+        result = self._introspection.is_real_time()
+        self.assertTrue(result)
