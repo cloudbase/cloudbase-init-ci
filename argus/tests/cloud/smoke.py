@@ -287,7 +287,19 @@ class TestPowershellMultipartX86TxtExists(base.BaseTestCase):
 
     def test_file_exists(self):
         names = self._introspection.list_location("C:\\")
-        self.assertIn("powershell_multipart_x86.txt", names)
+        expected_files = ["powershell_multipart_x86.txt"]
+        for file_exists in expected_files:
+            self.assertIn(file_exists, names)
+
+
+class TestUserdataFileExists(base.BaseTestCase):
+    """Tests that the file userdatafile exists on 'C:'."""
+
+    def test_userdatafile_exists(self):
+        names = self._introspection.list_location("C:\\")
+        expected_files = ["userdatafile"]
+        for file_exists in expected_files:
+            self.assertIn(file_exists, names)
 
 
 # pylint: disable=abstract-method

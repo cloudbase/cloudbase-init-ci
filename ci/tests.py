@@ -71,9 +71,11 @@ class ScenarioMultipartSmoke(BaseWindowsScenario):
 
 class ScenarioMultipartSmokeWindowsPartTwo(BaseWindowsScenario):
 
+    recipe_type = recipe.CloudbaseinitAddUserdata
     test_classes = (smoke.TestSetHostname,
                     smoke.TestSetTimezone,
                     smoke.TestPowershellMultipartX86TxtExists,
+                    smoke.TestUserdataFileExists,
                     smoke.TestNoError)
     userdata = util.get_resource('windows/multipart_userdata_part_two')
 
