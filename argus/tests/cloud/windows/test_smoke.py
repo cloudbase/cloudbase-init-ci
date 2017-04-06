@@ -266,3 +266,12 @@ class TestNTPClientPlugin(base.BaseTestCase):
     def test_set_real_time(self):
         result = self._introspection.is_real_time()
         self.assertTrue(result)
+
+
+class TestRenameUserAdminPlugin(base.BaseTestCase):
+
+    def test_check_renamed_user(self):
+        admin_exists = self._introspection.username_exists("Administrator")
+        renamed_user = self._introspection.username_exists("RenamedAdminUser")
+        self.assertFalse(admin_exists)
+        self.assertTrue(renamed_user)

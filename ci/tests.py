@@ -96,6 +96,11 @@ class ScenarioIndependentPlugins(BaseWindowsScenario):
     recipe_type = recipe.CloudbaseinitIndependentPlugins
 
 
+class ScenarioRenameBuiltinAdministrator(BaseWindowsScenario):
+    test_classes = (test_smoke.TestRenameUserAdminPlugin, )
+    recipe_type = recipe.CloudbaseinitRenameAdminUserPlugin
+
+
 class ScenarioUserAlreadyCreated(BaseWindowsScenario):
 
     test_classes = (test_smoke.TestSmoke, )
