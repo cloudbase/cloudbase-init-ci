@@ -226,6 +226,11 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
                                      location=_CBINIT_TARGET_LOCATION),
                       command_type=util.CMD)
 
+        command = '"{folder}" -m pip install {location}'
+        self._execute(command.format(folder=python,
+                                     location=_CBINIT_TARGET_LOCATION),
+                      command_type=util.CMD)
+
     def pre_sysprep(self):
         # Patch the installation of Cloudbase-Init in order to create
         # a file when the execution ends. We're doing this instead of

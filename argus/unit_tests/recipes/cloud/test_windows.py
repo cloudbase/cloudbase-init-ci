@@ -313,7 +313,7 @@ class TestCloudbaseinitRecipe(unittest.TestCase):
                     python_dir, "Lib", "site-packages", "cloudbaseinit")
                 self.assertEqual(mock_execute.call_count, 1)
             else:
-                self.assertEqual(mock_execute.call_count, 4)
+                self.assertEqual(mock_execute.call_count, 5)
                 self.assertEqual(mock_join.call_count, 2)
 
     def test_replace_code_no_git(self):
