@@ -274,6 +274,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         #              authentication failures.
 
         self._cbinit_conf.set_service_type(service_type)
+        self._cbinit_unattend_conf.set_service_type(service_type)
 
         self._cbinit_conf.set_conf_value(name="first_logon_behaviour",
                                          value="no")
