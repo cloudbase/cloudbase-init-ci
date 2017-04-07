@@ -98,6 +98,7 @@ class ScenarioIndependentPlugins(BaseWindowsScenario):
                     test_smoke.TestBCDPlugin,
                     test_smoke.TestRDPPlugin)
     recipe_type = recipe.CloudbaseinitIndependentPlugins
+    service_type = util.HTTP_SERVICE
 
 
 class ScenarioRenameBuiltinAdministrator(BaseWindowsScenario):
