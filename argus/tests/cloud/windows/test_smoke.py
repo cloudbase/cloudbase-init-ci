@@ -275,3 +275,35 @@ class TestRenameUserAdminPlugin(base.BaseTestCase):
         renamed_user = self._introspection.username_exists("RenamedAdminUser")
         self.assertFalse(admin_exists)
         self.assertTrue(renamed_user)
+
+
+class TestBCDPlugin(base.BaseTestCase):
+
+    @util.skip_on_os([util.WINDOWS_NANO], "OS Version not supported")
+    def test_bcd_boot_status_policy(self):
+        stdout = self._introspection.get_bcd_field('bootstatuspolicy')
+        self.assertIn('IgnoreAllFailures', stdout)
+
+    @util.skip_on_os([util.WINDOWS_NANO], "OS Version not supported")
+    def test_bcd_enable_auto_recovery(self):
+        stdout = self._introspection.get_bcd_field('recoveryenabled')
+        self.assertIn('Yes', stdout)
+
+    @util.skip_on_os([util.WINDOWS_NANO], "OS Version not supported")
+    def test_set_unique_boot_disk_id(self):
+        cmd = r'"{}" -fileLocation {}'.format(r"C:\\get_uniquediskid.ps1",
+                                              r"C:\\diskidnew")
+        self._backend.remote_client.run_command_with_retry(
+            cmd, command_type=util.POWERSHELL_SCRIPT_BYPASS)
+        old_id = self._backend.remote_client.read_file(r"C:\\diskid")
+        new_id = self._backend.remote_client.read_file(r"C:\\diskidnew")
+        self.assertNotEqual(old_id, new_id)
+
+
+class TestRDPPlugin(base.BaseTestCase):
+
+    @util.skip_on_os([util.WINDOWS_NANO], "OS Version not supported")
+    def test_rdp_settings_set(self):
+        stdout = self._introspection.get_rdp_settings()
+        for query_value in stdout:
+            self.assertIn("1", query_value)

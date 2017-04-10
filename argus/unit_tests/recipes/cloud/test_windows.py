@@ -373,7 +373,7 @@ class TestCloudbaseinitRecipe(unittest.TestCase):
         mock_cbinit_conf = mock.Mock()
         mock_cbinit_conf.return_value = mock.Mock()
         mock_cbinitconfig.return_value = mock_cbinit_conf
-        mock_unattend.return_value = mock.sentinel
+        mock_unattend.return_value = mock.Mock()
         service_type = mock.sentinel
         self._recipe.prepare_cbinit_config(service_type)
         mock_cbinitconfig.assert_called_once_with(

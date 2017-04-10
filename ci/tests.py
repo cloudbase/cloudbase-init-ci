@@ -94,8 +94,11 @@ class ScenarioIndependentPlugins(BaseWindowsScenario):
                     test_smoke.TestPageFilePlugin,
                     test_smoke.TestDisplayTimeoutPlugin,
                     test_smoke.TestKMSHost,
-                    test_smoke.TestNTPClientPlugin)
+                    test_smoke.TestNTPClientPlugin,
+                    test_smoke.TestBCDPlugin,
+                    test_smoke.TestRDPPlugin)
     recipe_type = recipe.CloudbaseinitIndependentPlugins
+    service_type = util.HTTP_SERVICE
 
 
 class ScenarioRenameBuiltinAdministrator(BaseWindowsScenario):
