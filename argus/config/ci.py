@@ -93,6 +93,9 @@ class ArgusOptions(conf_base.Options):
                 help="Cloudbase-init repository."),
             cfg.BoolOpt("use_arestor", default=False,
                         help="Use Arestor as a metadata provider."),
+            cfg.BoolOpt("delete_metadata", default=True,
+                        help="Clean up all metadata when the "
+                             "scenario is over."),
         ]
 
     def register(self):

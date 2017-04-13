@@ -82,12 +82,20 @@ class TestBaseCloudbaseinitRecipe(unittest.TestCase):
         self._base = FakeBaseCloudbaseinitRecipe(mock.Mock())
 
     @mock.patch('argus.recipes.cloud.base.six.moves')
-    def _test_prepare(self, mock_six_moves, pause=False):
+    def _test_prepare(self, mock_six_moves, pause=False, delete_metadata=True):
+        # TODO(mmicu): Use ConfPatcher in this case
         CONFIG.argus.pause = pause
+        CONFIG.argus.delete_metadata = delete_metadata
         expected_logging = [
             "Preparing instance...",
             "Finished preparing instance."
         ]
+
+        if delete_metadata:
+            expected_logging.append("Deleting metadata.")
+        else:
+            expected_logging.append("The metadata was preserved.")
+
         with test_utils.LogSnatcher('argus.recipes.cloud.base') as snatcher:
             self._base.prepare(service_type="fake type")
         self.assertEqual(expected_logging, snatcher.output)
@@ -100,3 +108,6 @@ class TestBaseCloudbaseinitRecipe(unittest.TestCase):
 
     def test_prepare_pause(self):
         self._test_prepare(pause=True)
+
+    def test_prepare_preserve_metadata_true(self):
+        self._test_prepare(delete_metadata=False)
