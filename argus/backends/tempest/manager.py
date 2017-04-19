@@ -13,10 +13,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import contextlib
-import os
-import tempfile
-
 from argus import exceptions
 from argus import log as argus_log
 from argus import util
@@ -31,17 +27,6 @@ OUTPUT_STATUS_OK = 200
 OUTPUT_SIZE = 128
 OUTPUT_EPSILON = int(OUTPUT_SIZE / 10)
 LOG = argus_log.LOG
-
-
-@contextlib.contextmanager
-def _create_tempfile(content):
-    fd, path = tempfile.mkstemp()
-    os.write(fd, content.encode())
-    os.close(fd)
-    try:
-        yield path
-    finally:
-        os.remove(path)
 
 
 class APIManager(object):
@@ -134,7 +119,7 @@ class APIManager(object):
         """
         encoded_password = self.servers_client.show_password(
             instance_id)
-        with _create_tempfile(keypair.private_key) as tmp:
+        with util.create_tempfile(keypair.private_key) as tmp:
             return util.decrypt_password(
                 private_key=tmp,
                 password=encoded_password['password'])

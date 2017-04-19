@@ -67,7 +67,7 @@ class TestAPIManager(unittest.TestCase):
         self._api_manager.servers_client.reboot_server.assert_called_once()
         mock_waiters.assert_called_once()
 
-    @mock.patch('argus.backends.tempest.manager._create_tempfile')
+    @mock.patch('argus.util.create_tempfile')
     @mock.patch('argus.util.decrypt_password')
     def test_instance_password(self, mock_decrypt_password,
                                mock_create_temp_file):
@@ -160,23 +160,3 @@ class TestKeypair(unittest.TestCase):
         self._key_pair.destroy()
         (self._key_pair._manager.keypairs_client.delete_keypair.
          assert_called_once_with("fake name"))
-
-
-class TestCreateTempFile(unittest.TestCase):
-
-    @mock.patch('os.remove')
-    @mock.patch('os.write')
-    @mock.patch('os.close')
-    @mock.patch('tempfile.mkstemp')
-    def test_create_temp_file(self, mock_mkstemp,
-                              mock_close, mock_write, mock_remove):
-        content = mock.Mock()
-        content.encode.return_value = mock.sentinel
-        mock_mkstemp.return_value = "fd", "path"
-        with manager._create_tempfile(content) as result:
-            self.assertEqual(result, "path")
-        mock_mkstemp.assert_called_once_with()
-        mock_write.assert_called_once_with(
-            "fd", content.encode.return_value)
-        mock_close.assert_called_once_with("fd")
-        mock_remove.assert_called_once_with("path")

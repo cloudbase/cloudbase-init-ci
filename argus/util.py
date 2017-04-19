@@ -26,6 +26,8 @@ import sys
 import time
 import unittest
 import types
+import os
+import tempfile
 
 import six
 
@@ -382,6 +384,17 @@ WINDOWS_VERSION = {
         True: WINDOWS_NANO
     }
 }
+
+
+@contextlib.contextmanager
+def create_tempfile(content):
+    fd, path = tempfile.mkstemp()
+    os.write(fd, content.encode())
+    os.close(fd)
+    try:
+        yield path
+    finally:
+        os.remove(path)
 
 
 class skip_on_os(object):
