@@ -107,22 +107,17 @@ class APIManager(object):
             self.servers_client,
             instance_id, 'ACTIVE')
 
-    def instance_password(self, instance_id, keypair):
+    def instance_password(self, instance_id):
         """Get the password posted by the given instance.
 
         :param instance_id:
             The id of the instance for which the password will
             be returned.
-        :param keypair:
-            A key-pair whose private key can be used to decrypt
-            the password.
         """
         encoded_password = self.servers_client.show_password(
             instance_id)
-        with util.create_tempfile(keypair.private_key) as tmp:
-            return util.decrypt_password(
-                private_key=tmp,
-                password=encoded_password['password'])
+
+        return encoded_password.get('password')
 
     def _instance_output(self, instance_id, limit):
         return self.servers_client.get_console_output(

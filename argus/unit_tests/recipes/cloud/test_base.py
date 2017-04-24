@@ -70,6 +70,12 @@ class FakeBaseCloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     def get_cb_init_confs(self):
         pass
 
+    def create_mock_metadata(self, service_type):
+        pass
+
+    def delete_mock_metadata(self):
+        pass
+
 
 class TestBaseCloudbaseinitRecipe(unittest.TestCase):
     def setUp(self):

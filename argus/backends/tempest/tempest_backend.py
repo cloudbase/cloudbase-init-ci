@@ -237,8 +237,7 @@ class BaseTempestBackend(base_backend.CloudBackend):
     def instance_password(self):
         # Delegate to the manager to find out the instance password
         return self._manager.instance_password(
-            self.internal_instance_id(),
-            self._keypair)
+            self.internal_instance_id())
 
     def internal_instance_id(self):
         return self._server["id"]
@@ -269,6 +268,7 @@ class BaseTempestBackend(base_backend.CloudBackend):
 
 
 class BaseWindowsTempestBackend(windows.WindowsBackendMixin,
+                                windows.BaseMetadataProviderMixin,
                                 BaseTempestBackend):
     """Base Tempest back-end for testing Windows."""
 

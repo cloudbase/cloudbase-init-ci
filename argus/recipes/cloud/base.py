@@ -160,6 +160,16 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         """Get the Cloudbase-Init configs from the instance."""
         pass
 
+    @abc.abstractmethod
+    def create_mock_metadata(self, service_type):
+        """Create the mocked metadata."""
+        pass
+
+    @abc.abstractmethod
+    def delete_mock_metadata(self):
+        """Delete the mocked metadata."""
+        pass
+
     def prepare(self, service_type=None, **kwargs):
         """Prepare the underlying instance.
 
@@ -172,6 +182,7 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         """
         LOG.info("Preparing instance...")
         self.wait_for_boot_completion()
+        self.create_mock_metadata(service_type)
         self.set_mtu()
         self.execution_prologue()
         self.get_installation_script()
@@ -189,3 +200,5 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         LOG.info("Finished preparing instance.")
         self.get_cb_init_logs()
         self.get_cb_init_confs()
+
+        self.delete_mock_metadata()

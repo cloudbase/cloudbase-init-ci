@@ -67,10 +67,8 @@ class TestAPIManager(unittest.TestCase):
         self._api_manager.servers_client.reboot_server.assert_called_once()
         mock_waiters.assert_called_once()
 
-    @mock.patch('argus.util.create_tempfile')
     @mock.patch('argus.util.decrypt_password')
-    def test_instance_password(self, mock_decrypt_password,
-                               mock_create_temp_file):
+    def test_instance_password(self, mock_decrypt_password):
         mock_servers_client = mock.Mock()
         mock_servers_client.show_password.return_value = {
             "password": "fake password"
@@ -78,15 +76,11 @@ class TestAPIManager(unittest.TestCase):
 
         self._api_manager.servers_client = mock_servers_client
         mock_decrypt_password.return_value = "fake return"
-        mock_keypair = mock.Mock()
-        mock_keypair.private_key = "fake private key"
-        result = self._api_manager.instance_password(instance_id="fake id",
-                                                     keypair=mock_keypair)
+        result = self._api_manager.instance_password(instance_id="fake id")
 
-        self.assertEqual(result, "fake return")
+        self.assertEqual(result, "fake password")
         (self._api_manager.servers_client.show_password.
          assert_called_once_with("fake id"))
-        mock_create_temp_file.assert_called_once_with("fake private key")
 
     def test__instance_output(self):
         mock_servers_client = mock.Mock()

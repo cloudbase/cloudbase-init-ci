@@ -272,8 +272,7 @@ class BaseHeatBackend(base.CloudBackend):
     def instance_password(self):
         """Get the underlying instance password, if any."""
         return self._manager.instance_password(
-            self.internal_instance_id(),
-            self._keypair)
+            self.internal_instance_id())
 
     def private_key(self):
         """Get the underlying private key."""
@@ -296,5 +295,7 @@ class BaseHeatBackend(base.CloudBackend):
         return self._manager.get_mtu()
 
 
-class WindowsHeatBackend(windows.WindowsBackendMixin, BaseHeatBackend):
+class WindowsHeatBackend(windows.WindowsBackendMixin,
+                         windows.BaseMetadataProviderMixin,
+                         BaseHeatBackend):
     """Heat back-end tailored to work with Windows platforms."""
