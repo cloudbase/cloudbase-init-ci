@@ -113,6 +113,16 @@ class TestSmoke(smoke.TestsBaseSmoke):
             self.assertEqual('IP ADDRESS AVAILABILITY', start_trigger)
 
 
+class TestPasswordLength(TestSmoke):
+    # pylint: disable=protected-access
+    def test_password_length(self):
+        password = self._backend.instance_password()
+        self.assertEqual(
+            str(len(password)),
+            self._recipe._cbinit_conf.conf.get(
+                'DEFAULT', 'user_password_length'))
+
+
 class TestScriptsUserdataSmoke(TestSmoke):
     """This test is tied up to a particular user-data:
 

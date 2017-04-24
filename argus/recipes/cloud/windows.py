@@ -785,3 +785,14 @@ class CloudbaseinitImageRecipe(CloudbaseinitRecipe):
 
         self.wait_cbinit_finalization()
         LOG.info("Finished preparing instance.")
+
+
+class CloudbaseinitPasswordRecipe(CloudbaseinitWinrmRecipe):
+    """A recipe for testing the WinRM configuration plugin."""
+
+    def prepare_cbinit_config(self, service_type):
+        super(CloudbaseinitPasswordRecipe,
+              self).prepare_cbinit_config(service_type)
+        self._cbinit_conf.set_conf_value(
+            name="user_password_length",
+            value="3")
