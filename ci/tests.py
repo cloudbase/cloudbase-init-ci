@@ -255,3 +255,9 @@ class ScenarioImageSmoke(ScenarioSmoke):
     test_classes = (test_smoke.TestSmoke, smoke.TestSwapEnabled)
     recipe_type = recipe.CloudbaseinitImageRecipe
     userdata = util.get_resource("windows/winrm.ps1")
+
+
+class ScenarioPasswordLength(BaseWindowsScenario):
+
+    test_classes = (test_smoke.TestPasswordLength,)
+    recipe_type = recipe.CloudbaseinitPasswordRecipe
