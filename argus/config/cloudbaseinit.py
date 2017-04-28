@@ -38,7 +38,11 @@ class CloudbaseInitOptions(conf_base.Options):
                              "run the activation plugin on the instance."),
             cfg.BoolOpt("check_latest_version", default=True, required=False,
                         help="Specifies whether Cloudbase-init should try to "
-                             "check if there is a newer version of it.")
+                             "check if there is a newer version of it."),
+            cfg.StrOpt("service_display_name", required=True,
+                       default="cloudbase-init",
+                       help="Represents the display name"
+                       "of the Cloudbase-Init service."),
         ]
 
     def register(self):
