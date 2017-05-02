@@ -267,7 +267,6 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         self._cbinit_unattend_conf = cbinit_config.UnattendCBInitConfig(
             client=self._backend.remote_client)
-
         # NOTE(mmicu): Because first_logon_behaviour will control
         #              how the password should work on next logon,
         #              we could have failing tests due to
@@ -550,9 +549,13 @@ class CloudbaseinitAddUserdata(CloudbaseinitRecipe):
     def prepare_cbinit_config(self, service_type):
         super(CloudbaseinitAddUserdata, self).prepare_cbinit_config(
             service_type)
-        LOG.info("Injecting userdata_path option in conf file.")
-        self._cbinit_conf.set_conf_value(
-            name='userdata_save_path', value=r'C:\userdatafile')
+
+        # NOTE(mmicu): add a post_config method for the
+        # prepare_cbinit_config
+        if self._backend.remote_client.manager.os_type != util.WINDOWS_NANO:
+            LOG.info("Injecting userdata_path option in conf file.")
+            self._cbinit_conf.set_conf_value(
+                name='userdata_save_path', value=r'C:\userdatafile')
 
 
 class CloudbaseinitLongHostname(CloudbaseinitRecipe):

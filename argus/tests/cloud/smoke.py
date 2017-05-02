@@ -295,6 +295,7 @@ class TestPowershellMultipartX86TxtExists(base.BaseTestCase):
 class TestUserdataFileExists(base.BaseTestCase):
     """Tests that the file userdatafile exists on 'C:'."""
 
+    @util.skip_on_os([util.WINDOWS_NANO], "OS Version not supported")
     def test_userdatafile_exists(self):
         names = self._introspection.list_location("C:\\")
         expected_files = ["userdatafile"]

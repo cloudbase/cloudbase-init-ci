@@ -1250,10 +1250,11 @@ class WindowsNanoActionManagerTest(unittest.TestCase):
 
         cbinit_conf.set_conf_value.assert_called_once_with(
             "stop_service_on_exit", False)
-        cbinit_conf.conf.remove_option.assert_called_once_with(
-            "DEFAULT", "logging_serial_port_settings")
-        cbinit_unattend_conf.conf.remove_option.assert_called_once_with(
-            "DEFAULT", "logging_serial_port_settings")
+        for config in (cbinit_conf, cbinit_unattend_conf):
+            config.conf.remove_option.assert_has_calls([
+                mock.call("DEFAULT", "logging_serial_port_settings"),
+                mock.call("DEFAULT", "userdata_save_path")
+            ])
 
     def test_prepare_config_successful(self):
         self._test_prepare_config()
