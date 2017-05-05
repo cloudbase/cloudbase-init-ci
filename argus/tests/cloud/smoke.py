@@ -434,6 +434,7 @@ class TestPublicKeys(base.BaseTestCase):
         authorized_keys = self._introspection.get_instance_keys_path()
         public_keys = self._introspection.get_instance_file_content(
             authorized_keys)
-        metadata_public_keys = self._recipe.metadata_provider.get_ssh_pubkeys()
+        metadata_provider = self._recipe.metadata_provider
+        metadata_public_keys = metadata_provider.get_ssh_pubkeys().values()
         self.assertEqual(set(metadata_public_keys),
                          set(_parse_ssh_public_keys(public_keys)))

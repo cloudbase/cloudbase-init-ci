@@ -20,6 +20,7 @@ _OPT_PATHS = (
     'argus.config.mock_ec2.MockEC2Options',
     'argus.config.mock_maas.MockMAASOptions',
     'argus.config.mock_openstack.MockOpenStackOptions',
+    'argus.config.arestor.ArestorOptions',
 )
 
 

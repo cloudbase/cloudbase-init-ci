@@ -91,6 +91,8 @@ class ArgusOptions(conf_base.Options):
                 "cbinit_git_repository",
                 default="https://github.com/openstack/cloudbase-init",
                 help="Cloudbase-init repository."),
+            cfg.BoolOpt("use_arestor", default=False,
+                        help="Use Arestor as a metadata provider."),
         ]
 
     def register(self):

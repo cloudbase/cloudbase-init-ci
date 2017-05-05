@@ -279,7 +279,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     def create_mock_metadata(self, service_type):
         """Create the mocked metadata."""
         self.metadata_provider = metadata_provider.get_provider(
-            self, self._backend, service_type)
+            self, self._backend)
 
         self.metadata_provider.prepare_metadata(service_type)
 

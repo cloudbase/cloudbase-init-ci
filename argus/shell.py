@@ -128,6 +128,9 @@ def _prepare_argument_parser():
                         help="The zip patch to use when testing.")
     parser.add_argument("-a", "--architecture", default="x64",
                         help="The OS architecture.")
+    parser.add_argument("--use_arestor", dest="use_arestor",
+                        action='store_true',
+                        help="Use arestor metadata.")
     return parser
 
 
@@ -153,7 +156,7 @@ def _prepare_enviroment(local, directory, resources_link):
 
 def _prepare_config(separate, resources, flavor_ref,
                     git_command, zip_patch,
-                    directory, image_ref, architecture):
+                    directory, image_ref, architecture, use_arestor):
     """Prepare the argus config file."""
 
     conf = six.moves.configparser.SafeConfigParser()
@@ -166,6 +169,7 @@ def _prepare_config(separate, resources, flavor_ref,
     conf.set("argus", "patch_install", str(zip_patch))
     conf.set("argus", "log_each_scenario", str(separate))
     conf.set("argus", "arch", str(architecture))
+    conf.set("argus", "use_arestor", str(use_arestor))
     conf.set("openstack", "image_ref", str(image_ref))
 
     if resources:
@@ -209,7 +213,8 @@ def main():
     _prepare_config(args.separate, args.resources,
                     args.flavor_ref, args.git_command,
                     args.zip_patch, base_directory,
-                    args.image_ref, args.architecture)
+                    args.image_ref, args.architecture,
+                    args.use_arestor)
 
     process = _start_testr(args.parallel, args.tests, base_directory)
     exit_code = process.wait()
