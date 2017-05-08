@@ -610,6 +610,7 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
             cbinit_conf, cbinit_unattend_conf)
         for conf in (cbinit_conf, cbinit_unattend_conf):
             conf.conf.remove_option("DEFAULT", "logging_serial_port_settings")
+            conf.conf.remove_option("DEFAULT", "userdata_save_path")
             conf.set_conf_value("stop_service_on_exit", False)
 
     def get_installation_script(self):
