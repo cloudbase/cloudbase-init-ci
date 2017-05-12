@@ -46,7 +46,7 @@ class BaseMetadataProviderMixin(
 
     def get_url(self, service_type):
         """Return the metadata url."""
-        return util.DETAULT_METADATA_URL.get(service_type)
+        return util.DEFAULT_METADATA_URL.get(service_type)
 
     def get_password(self):
         """Get the encrypted password."""
