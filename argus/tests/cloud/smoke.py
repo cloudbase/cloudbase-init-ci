@@ -99,7 +99,13 @@ class TestPasswordPostedSmoke(BaseTestPassword):
 
     @property
     def password(self):
-        return self._backend.instance_password()
+        enc_password = self._recipe.metadata_provider.get_password()
+        private_keys = self._recipe.metadata_provider.get_ssh_privatekeys()
+        private_key = private_keys.values().pop()
+        with util.create_tempfile(private_key) as tmp:
+            return util.decrypt_password(
+                private_key=tmp,
+                password=enc_password)
 
     @test_util.requires_service('http')
     def test_password_set_posted(self):
@@ -344,7 +350,9 @@ class TestsBaseSmoke(TestCreatedUser,
         authorized_keys = self._introspection.get_instance_keys_path()
         public_keys = self._introspection.get_instance_file_content(
             authorized_keys)
-        self.assertEqual(set(self._backend.public_key().splitlines()),
+        metadata_provider = self._recipe.metadata_provider
+        posted_pubkeys = metadata_provider.get_ssh_pubkeys().values()
+        self.assertEqual(set(posted_pubkeys),
                          set(_parse_ssh_public_keys(public_keys)))
 
     def test_mtu(self):
@@ -426,5 +434,6 @@ class TestPublicKeys(base.BaseTestCase):
         authorized_keys = self._introspection.get_instance_keys_path()
         public_keys = self._introspection.get_instance_file_content(
             authorized_keys)
-        self.assertEqual(set(util.get_public_keys()),
+        metadata_public_keys = self._recipe.metadata_provider.get_ssh_pubkeys()
+        self.assertEqual(set(metadata_public_keys),
                          set(_parse_ssh_public_keys(public_keys)))

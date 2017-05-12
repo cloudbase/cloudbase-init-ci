@@ -425,7 +425,6 @@ class TestBaseHeatBackend(unittest.TestCase):
 
     def test_instance_password(self):
         self._base_heat_backend.internal_instance_id = mock.Mock()
-        self._base_heat_backend._keypair = mock.sentinel
         self._base_heat_backend._manager = mock.Mock()
         (self._base_heat_backend._manager.instance_password.
          return_value) = mock.sentinel
@@ -435,8 +434,7 @@ class TestBaseHeatBackend(unittest.TestCase):
             self._base_heat_backend._manager.instance_password.return_value)
         (self._base_heat_backend._manager.instance_password.
          assert_called_once_with(
-             self._base_heat_backend.internal_instance_id(),
-             self._base_heat_backend._keypair))
+             self._base_heat_backend.internal_instance_id()))
 
     def test_private_key(self):
         self._base_heat_backend._keypair = mock.Mock()

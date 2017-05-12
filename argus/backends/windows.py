@@ -16,6 +16,7 @@
 from argus.client import windows
 from argus import config as argus_config
 from argus import util
+from argus.metadata_provider import base as base_metadata_provider
 
 CONFIG = argus_config.CONFIG
 
@@ -37,3 +38,36 @@ class WindowsBackendMixin(object):
                                        transport_protocol=protocol)
 
     remote_client = util.cached_property(get_remote_client, 'remote_client')
+
+
+class BaseMetadataProviderMixin(
+        base_metadata_provider.BaseMetadataProviderMixin):
+    """Backend Metadata Provider mixin."""
+
+    def get_url(self, service_type):
+        """Return the metadata url."""
+        return util.DETAULT_METADATA_URL.get(service_type)
+
+    def get_password(self):
+        """Get the encrypted password."""
+        return self.instance_password()
+
+    def get_ssh_pubkeys(self):
+        """Get a dictionary with ssh public keys."""
+        return {0: self.public_key()}
+
+    def get_ssh_privatekeys(self):
+        """Get a dictionary with ssh private keys."""
+        return {0: self.private_key()}
+
+    def set_ssh_pubkeys(self, public_key):
+        """Set a dictionary with ssh public keys."""
+        raise NotImplementedError()
+
+    def delete_all_data(self):
+        """Clean up all metadata."""
+        pass
+
+    def prepare_metadata(self, service_type):
+        """Prepare the metadata."""
+        pass

@@ -375,6 +375,8 @@ class TestCloudbaseinitRecipe(unittest.TestCase):
         mock_cbinitconfig.return_value = mock_cbinit_conf
         mock_unattend.return_value = mock.Mock()
         service_type = mock.sentinel
+        old_metadata_provider = self._recipe.metadata_provider
+        self._recipe.metadata_provider = mock.MagicMock()
         self._recipe.prepare_cbinit_config(service_type)
         mock_cbinitconfig.assert_called_once_with(
             client=self._recipe._backend.remote_client)
@@ -383,9 +385,10 @@ class TestCloudbaseinitRecipe(unittest.TestCase):
         mock_cbinit_conf.set_service_type.assert_called_once_with(service_type)
         scripts_path = "C:\\Scripts"
         mock_make_dir.assert_called_once_with(scripts_path)
-        self.assertEqual(mock_cbinit_conf.set_conf_value.call_count, 4)
+        self.assertEqual(mock_cbinit_conf.set_conf_value.call_count, 5)
         self._recipe._backend.remote_client.manager.prepare_config(
             mock_cbinit_conf, mock_unattend)
+        self._recipe.metadata_provider = old_metadata_provider
 
     def _test_make_dir_if_needed(self, is_dir=False):
         (self._recipe._backend.remote_client.manager.

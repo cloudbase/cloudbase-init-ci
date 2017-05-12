@@ -29,6 +29,7 @@ from argus.introspection.cloud import windows as introspection
 from argus import log as argus_log
 from argus.recipes.cloud import base
 from argus import util
+from argus import metadata_provider
 
 CONFIG = argus_config.CONFIG
 LOG = argus_log.LOG
@@ -42,6 +43,10 @@ _CBINIT_TARGET_LOCATION = r"C:\cloudbaseinit"
 
 class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
     """Recipe for preparing a Windows instance."""
+
+    def __init__(self, backend):
+        super(CloudbaseinitRecipe, self).__init__(backend)
+        self.metadata_provider = None
 
     def wait_for_boot_completion(self):
         LOG.info("Waiting for first boot completion...")
@@ -265,6 +270,23 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         LOG.debug("Wait for the Cloudbase-Init service to stop ...")
         self._backend.remote_client.manager.wait_cbinit_service()
 
+    @staticmethod
+    def _get_namespace(service_type):
+        """Return the metadata namespace."""
+        # NOTE(mmicu): for Openstack we have the service_type set to http
+        return service_type if service_type != "http" else "openstack"
+
+    def create_mock_metadata(self, service_type):
+        """Create the mocked metadata."""
+        self.metadata_provider = metadata_provider.get_provider(
+            self, self._backend, service_type)
+
+        self.metadata_provider.prepare_metadata(service_type)
+
+    def delete_mock_metadata(self):
+        """Delete the mocked metadata."""
+        self.metadata_provider.delete_all_data()
+
     def prepare_cbinit_config(self, service_type):
         """Prepare the Cloudbase-Init config."""
         self._cbinit_conf = cbinit_config.CBInitConfig(
@@ -296,6 +318,15 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
         self._backend.remote_client.manager.prepare_config(
             self._cbinit_conf, self._cbinit_unattend_conf)
+
+        metadata_url = self.metadata_provider.get_url(service_type)
+        LOG.info("Injecting metadata URL %s option in conf file.",
+                 metadata_url)
+        if service_type:
+            for conf in (self._cbinit_conf, self._cbinit_unattend_conf):
+                conf.set_conf_value(
+                    name="metadata_base_url", value=metadata_url,
+                    section=self._get_namespace(service_type))
 
     def _make_dir_if_needed(self, path):
         """Check if the directory exists, if it doesn't create it."""
