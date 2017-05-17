@@ -192,8 +192,6 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         self.prepare_cbinit_config(service_type)
         self.inject_cbinit_config()
         self.pre_sysprep()
-        if CONFIG.argus.pause:
-            six.moves.input("Press Enter to continue...")
 
         self.sysprep()
         self.wait_cbinit_finalization()

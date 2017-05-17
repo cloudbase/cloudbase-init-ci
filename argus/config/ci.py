@@ -40,9 +40,6 @@ class ArgusOptions(conf_base.Options):
                 "resources", default=RESOURCES_LINK, required=True,
                 help="An url that holds the resources usually from "
                      "/argus/resources available on the web"),
-            cfg.BoolOpt("pause", default=False,
-                        help="Pauses the CI after the installation process if "
-                             "set on True."),
             cfg.ListOpt(
                 "dns_nameservers", default=['8.8.8.8', '8.8.4.4'],
                 help="A comma separated list of DNS IPs, which will be used "

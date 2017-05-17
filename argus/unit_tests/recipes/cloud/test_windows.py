@@ -698,14 +698,12 @@ class TestCloudbaseinitImageRecipe(unittest.TestCase):
         (self._recipe._backend.remote_client.manager.wait_cbinit_service.
          assert_called_once_with())
 
-    @mock.patch('argus.recipes.cloud.windows.six.moves')
     @mock.patch('argus.recipes.cloud.windows.CloudbaseinitImageRecipe.'
                 'wait_cbinit_finalization')
     @mock.patch('argus.recipes.cloud.windows.CloudbaseinitImageRecipe.'
                 'execution_prologue')
     def _test_prepare(self, mock_execution_prologue,
-                      mock_wait_finalization, mock_moves, pause=False):
-        CONFIG.argus.pause = pause
+                      mock_wait_finalization):
         expected_logging = [
             "Preparing already sysprepped instance...",
             "Finished preparing instance."
@@ -715,12 +713,6 @@ class TestCloudbaseinitImageRecipe(unittest.TestCase):
         self.assertEqual(expected_logging, snatcher.output)
         mock_execution_prologue.assert_called_once_with()
         mock_wait_finalization.assert_called_once_with()
-        if pause:
-            mock_moves.input.assert_called_once_with(
-                "Press Enter to continue...")
 
     def test_prepare(self):
         self._test_prepare()
-
-    def test_prepare_with_pause(self):
-        self._test_prepare(pause=True)

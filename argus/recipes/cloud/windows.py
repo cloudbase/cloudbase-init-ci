@@ -20,8 +20,6 @@ import ntpath
 import os
 import zipfile
 
-import six
-
 from argus import config as argus_config
 from argus.config_generator.windows import cb_init as cbinit_config
 from argus import exceptions
@@ -819,9 +817,6 @@ class CloudbaseinitImageRecipe(CloudbaseinitRecipe):
     def prepare(self, service_type=None, **kwargs):
         LOG.info("Preparing already sysprepped instance...")
         self.execution_prologue()
-
-        if CONFIG.argus.pause:
-            six.moves.input("Press Enter to continue...")
 
         self.wait_cbinit_finalization()
         LOG.info("Finished preparing instance.")
