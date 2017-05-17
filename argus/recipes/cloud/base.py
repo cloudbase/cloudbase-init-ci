@@ -201,6 +201,8 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         self.get_cb_init_logs()
         self.get_cb_init_confs()
 
+    def cleanup(self, **kwargs):
+        """Cleanup the allocated resources."""
         if CONFIG.argus.delete_metadata:
             LOG.info("Deleting metadata.")
             self.delete_mock_metadata()

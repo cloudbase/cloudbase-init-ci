@@ -177,3 +177,6 @@ class BaseScenario(unittest.TestCase):
         """
         if cls.backend:
             cls.backend.cleanup()
+
+        if cls.recipe:
+            cls.recipe.cleanup()

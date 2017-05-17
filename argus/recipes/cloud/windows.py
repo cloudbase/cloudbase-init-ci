@@ -285,7 +285,8 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
 
     def delete_mock_metadata(self):
         """Delete the mocked metadata."""
-        self.metadata_provider.delete_all_data()
+        if self.metadata_provider:
+            self.metadata_provider.delete_all_data()
 
     def prepare_cbinit_config(self, service_type):
         """Prepare the Cloudbase-Init config."""
