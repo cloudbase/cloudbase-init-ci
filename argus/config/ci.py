@@ -93,6 +93,9 @@ class ArgusOptions(conf_base.Options):
             cfg.BoolOpt("delete_metadata", default=True,
                         help="Clean up all metadata when the "
                              "scenario is over."),
+            cfg.BoolOpt("delete_instance", default=True,
+                        help="Delete the instance when the "
+                             "scenario is over."),
         ]
 
     def register(self):
