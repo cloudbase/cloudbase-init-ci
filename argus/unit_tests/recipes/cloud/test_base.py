@@ -81,22 +81,12 @@ class TestBaseCloudbaseinitRecipe(unittest.TestCase):
     def setUp(self):
         self._base = FakeBaseCloudbaseinitRecipe(mock.Mock())
 
-    @mock.patch('argus.recipes.cloud.base.six.moves')
-    def _test_prepare(self, mock_six_moves, pause=False):
-        CONFIG.argus.pause = pause
+    def test_prepare(self):
         expected_logging = [
             "Preparing instance...",
             "Finished preparing instance."
         ]
+
         with test_utils.LogSnatcher('argus.recipes.cloud.base') as snatcher:
             self._base.prepare(service_type="fake type")
         self.assertEqual(expected_logging, snatcher.output)
-        if pause:
-            mock_six_moves.input.assert_called_once_with(
-                "Press Enter to continue...")
-
-    def test_prepare(self):
-        self._test_prepare()
-
-    def test_prepare_pause(self):
-        self._test_prepare(pause=True)

@@ -175,5 +175,11 @@ class BaseScenario(unittest.TestCase):
         This usually means that any resource that was created in
         :meth:`setUpClass` needs to be destroyed here.
         """
-        if cls.backend:
+        if cls.backend and CONFIG.argus.delete_instance:
+            LOG.info("Delete the instance.")
             cls.backend.cleanup()
+        else:
+            LOG.info("The instance was preserved.")
+
+        if cls.recipe:
+            cls.recipe.cleanup()

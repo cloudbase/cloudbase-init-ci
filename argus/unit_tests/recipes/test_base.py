@@ -32,6 +32,9 @@ class FakeBaseRecipe(base.BaseRecipe):
     def prepare(self, **kwargs):
         pass
 
+    def cleanup(self, **kwargs):
+        pass
+
 
 class TestBaseRecipe(unittest.TestCase):
     def setUp(self):

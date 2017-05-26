@@ -74,3 +74,12 @@ class BaseRecipe(object):
             If the recipe requires, pass additional information in the
             **kwargs** parameter.
         """
+
+    @abc.abstractmethod
+    def cleanup(self, **kwargs):
+        """Call this method to cleanup an instance.
+
+        :param kwargs:
+            If the recipe requires, pass additional information in the
+            **kwargs** parameter.
+        """

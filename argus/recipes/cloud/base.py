@@ -192,8 +192,6 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         self.prepare_cbinit_config(service_type)
         self.inject_cbinit_config()
         self.pre_sysprep()
-        if CONFIG.argus.pause:
-            six.moves.input("Press Enter to continue...")
 
         self.sysprep()
         self.wait_cbinit_finalization()
@@ -201,4 +199,10 @@ class BaseCloudbaseinitRecipe(base.BaseRecipe):
         self.get_cb_init_logs()
         self.get_cb_init_confs()
 
-        self.delete_mock_metadata()
+    def cleanup(self, **kwargs):
+        """Cleanup the allocated resources."""
+        if CONFIG.argus.delete_metadata:
+            LOG.info("Deleting metadata.")
+            self.delete_mock_metadata()
+        else:
+            LOG.info("The metadata was preserved.")

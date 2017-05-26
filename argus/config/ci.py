@@ -40,9 +40,6 @@ class ArgusOptions(conf_base.Options):
                 "resources", default=RESOURCES_LINK, required=True,
                 help="An url that holds the resources usually from "
                      "/argus/resources available on the web"),
-            cfg.BoolOpt("pause", default=False,
-                        help="Pauses the CI after the installation process if "
-                             "set on True."),
             cfg.ListOpt(
                 "dns_nameservers", default=['8.8.8.8', '8.8.4.4'],
                 help="A comma separated list of DNS IPs, which will be used "
@@ -91,6 +88,14 @@ class ArgusOptions(conf_base.Options):
                 "cbinit_git_repository",
                 default="https://github.com/openstack/cloudbase-init",
                 help="Cloudbase-init repository."),
+            cfg.BoolOpt("use_arestor", default=False,
+                        help="Use Arestor as a metadata provider."),
+            cfg.BoolOpt("delete_metadata", default=True,
+                        help="Clean up all metadata when the "
+                             "scenario is over."),
+            cfg.BoolOpt("delete_instance", default=True,
+                        help="Delete the instance when the "
+                             "scenario is over."),
         ]
 
     def register(self):
