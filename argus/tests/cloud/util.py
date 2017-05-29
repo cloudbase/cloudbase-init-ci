@@ -70,3 +70,25 @@ def requires_service(service_type='http'):
         func.required_service_type = service_type
         return func
     return decorator
+
+
+def decrypt_password(password, private_key):
+    """Decript the password using the private key.
+
+    :param password: The password we want to decrypt
+    :param private_ley: The private key to use
+    """
+    with util.create_tempfile(private_key) as tmp:
+        return util.decrypt_password(
+            private_key=tmp,
+            password=password)
+
+
+class InstancePasswordMixin(object):
+
+    @property
+    def password(self):
+        enc_password = self._recipe.metadata_provider.get_password()
+        private_keys = self._recipe.metadata_provider.get_ssh_privatekeys()
+        private_key = private_keys.values().pop()
+        return decrypt_password(enc_password, private_key)
