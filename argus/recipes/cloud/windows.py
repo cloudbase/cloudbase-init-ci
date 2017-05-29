@@ -702,7 +702,7 @@ class CloudbaseinitSetRealClock(CloudbaseinitRecipe):
         self._cbinit_unattend_conf.set_conf_value(
             name="real_time_clock_utc",
             value="true")
-        self._cbinit_unattend_conf.set_conf_value(
+        self._cbinit_unattend_conf.append_conf_value(
             name="plugins",
             value="cloudbaseinit.plugins.common.ntpclient."
                   "NTPClientPlugin")
