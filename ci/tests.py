@@ -49,12 +49,12 @@ class BaseWindowsScenario(scenarios.CloudScenario):
     recipe_type = recipe.CloudbaseinitRecipe
 
 
-class ScenarioSmoke(BaseWindowsScenario):
+class ScenarioBaseSmoke(BaseWindowsScenario):
 
     test_classes = (test_smoke.TestSmoke, )
 
 
-class ScenarioSmokeHeat(BaseWindowsScenario):
+class ScenarioHeatSmoke(BaseWindowsScenario):
 
     test_classes = (test_smoke.TestSmoke, test_smoke.TestHeatUserdata)
     backend_type = heat_backend.WindowsHeatBackend
@@ -69,7 +69,7 @@ class ScenarioMultipartSmoke(BaseWindowsScenario):
     userdata = util.get_resource('windows/multipart_userdata')
 
 
-class ScenarioMultipartSmokeWindowsPartTwo(BaseWindowsScenario):
+class ScenarioMultipartAdvancedSmoke(BaseWindowsScenario):
 
     recipe_type = recipe.CloudbaseinitAddUserdata
     test_classes = (smoke.TestSetHostname,
@@ -80,7 +80,7 @@ class ScenarioMultipartSmokeWindowsPartTwo(BaseWindowsScenario):
     userdata = util.get_resource('windows/multipart_userdata_part_two')
 
 
-class ScenarioLongHostname(BaseWindowsScenario):
+class ScenarioLongHostnameSmoke(BaseWindowsScenario):
 
     test_classes = (smoke.TestLongHostname, )
     recipe_type = recipe.CloudbaseinitLongHostname
@@ -119,7 +119,7 @@ class ScenarioGenericSmoke(BaseWindowsScenario):
     metadata = {"admin_pass": "PASsw0r4&!="}
 
 
-class ScenarioSmokeRescue(BaseWindowsScenario):
+class ScenarioRescueSmoke(BaseWindowsScenario):
 
     backend_type = tempest_cloud_backend.RescueWindowsBackend
     test_classes = (smoke.TestPasswordPostedRescueSmoke,
@@ -127,7 +127,7 @@ class ScenarioSmokeRescue(BaseWindowsScenario):
     metadata = {"admin_pass": "PASsw0r4&!="}
 
 
-class ScenarioCloudstackSmokeUpdatePassword(
+class ScenarioCloudstackUpdatePasswordSmoke(
         BaseWindowsScenario,
         windows_scenarios.CloudstackWindowsScenario):
 
@@ -209,7 +209,7 @@ class ScenarioLocalScripts(BaseWindowsScenario):
 
 @unittest.skipIf('configdrive_vfat_drive' not in AVAILABILITY_ZONES,
                  'Needs special availability zone')
-class ScenarioSmokeConfigdriveVfatDrive(BaseWindowsScenario):
+class ScenarioConfigdriveVfatDriveSmoke(BaseWindowsScenario):
     test_classes = (test_smoke.TestSmoke, )
     service_type = util.CONFIG_DRIVE_SERVICE
     availability_zone = 'configdrive_vfat_drive'
@@ -217,7 +217,7 @@ class ScenarioSmokeConfigdriveVfatDrive(BaseWindowsScenario):
 
 @unittest.skipIf('configdrive_vfat_cdrom' not in AVAILABILITY_ZONES,
                  'Needs special availability zone')
-class ScenarioSmokeConfigdriveVfatCdrom(BaseWindowsScenario):
+class ScenarioConfigdriveVfatCdromSmoke(BaseWindowsScenario):
     test_classes = (test_smoke.TestSmoke, )
     service_type = util.CONFIG_DRIVE_SERVICE
     availability_zone = 'configdrive_vfat_cdrom'
@@ -225,7 +225,7 @@ class ScenarioSmokeConfigdriveVfatCdrom(BaseWindowsScenario):
 
 @unittest.skipIf('configdrive_iso9660_drive' not in AVAILABILITY_ZONES,
                  'Needs special availability zone')
-class ScenarioSmokeConfigdriveIso9660Drive(BaseWindowsScenario):
+class ScenarioConfigdriveIso9660DriveSmoke(BaseWindowsScenario):
     test_classes = (test_smoke.TestSmoke, )
     service_type = util.CONFIG_DRIVE_SERVICE
     availability_zone = 'configdrive_iso9660_drive'
@@ -233,7 +233,7 @@ class ScenarioSmokeConfigdriveIso9660Drive(BaseWindowsScenario):
 
 @unittest.skipIf('configdrive_iso9660_cdrom' not in AVAILABILITY_ZONES,
                  'Needs special availability zone')
-class ScenarioSmokeConfigdriveIso9660Cdrom(BaseWindowsScenario):
+class ScenarioConfigdriveIso9660CdromSmoke(BaseWindowsScenario):
     test_classes = (test_smoke.TestSmoke, )
     service_type = util.CONFIG_DRIVE_SERVICE
     availability_zone = 'configdrive_iso9660_cdrom'
@@ -250,7 +250,7 @@ class ScenarioNetworkConfig(BaseWindowsScenario):
 
 @unittest.skipIf(CONFIG.openstack.require_sysprep,
                  'Needs sysprep')
-class ScenarioImageSmoke(ScenarioSmoke):
+class ScenarioImageSmoke(ScenarioBaseSmoke):
 
     test_classes = (test_smoke.TestSmoke, smoke.TestSwapEnabled)
     recipe_type = recipe.CloudbaseinitImageRecipe
