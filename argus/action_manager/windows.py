@@ -698,9 +698,11 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
         LOG.info("Unzipping at %s", self._BASE_DIR)
         self._unzip(zip_path, self._BASE_DIR)
 
-        cmd = "{install_script} *>> {log_file}".format(
-            install_script=self._INSTALL_SCRIPT,
-            log_file=self._INSTALLATION_LOG_FILE)
+        cmd = ('{install_script} -ServiceDisplayName "{display_name}" '
+               '*>> {log_file}').format(
+                   install_script=self._INSTALL_SCRIPT,
+                   display_name=CONFIG.cloudbaseinit.service_display_name,
+                   log_file=self._INSTALLATION_LOG_FILE)
 
         self._client.run_command_with_retry(
             cmd, command_type=util.POWERSHELL)

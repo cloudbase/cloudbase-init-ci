@@ -13,6 +13,10 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 #>
+param
+(
+    [string]$ServiceDisplayName = 'cloudbase-init'
+)
 
 # Import required PowerShell modules
 import-module Microsoft.PowerShell.Management
@@ -43,7 +47,7 @@ if ($LASTEXITCODE -ne 0) {
 
 $cloudbaseInitServiceWrapper = Join-Path $cloudbaseInitBinDir "OpenStackService.exe"
 # Create cloudbase-init service
-& sc.exe create "cloudbase-init" binPath= "\""${cloudbaseInitServiceWrapper} \"" cloudbase-init \""${cloudbaseInitExePath}\"" --config-file \""${cloudbaseInitConfigFile}\""" DisplayName= "Cloud Initialization Service" start= auto
+& sc.exe create "cloudbase-init" binPath= "\""${cloudbaseInitServiceWrapper} \"" cloudbase-init \""${cloudbaseInitExePath}\"" --config-file \""${cloudbaseInitConfigFile}\""" DisplayName= "$ServiceDisplayName" start= auto
 if ($LASTEXITCODE -ne 0) {
     Write-Error "Failed to create cloudbase-init service"
     exit 1

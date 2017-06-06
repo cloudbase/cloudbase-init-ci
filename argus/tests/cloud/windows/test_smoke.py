@@ -64,7 +64,8 @@ class TestSmoke(smoke.TestsBaseSmoke):
 
         stdout = self._backend.remote_client.run_command_verbose(
             cmd, command_type=util.POWERSHELL)
-        self.assertEqual("Cloud Initialization Service", str(stdout))
+        self.assertEqual(CONFIG.cloudbaseinit.service_display_name,
+                         str(stdout))
 
     @test_util.skip_unless_dnsmasq_configured
     def test_ntp_service_running(self):
