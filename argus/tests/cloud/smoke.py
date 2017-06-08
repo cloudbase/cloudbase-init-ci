@@ -89,23 +89,14 @@ class TestPasswordMetadataSmoke(BaseTestPassword):
             raise unittest.SkipTest("No metadata password")
 
 
-class TestPasswordPostedSmoke(BaseTestPassword):
+class TestPasswordPostedSmoke(BaseTestPassword,
+                              test_util.InstancePasswordMixin):
     """Test that the password was set and posted to the metadata service
 
     This will attempt a WinRM login on the instance, which will use the
     password which was correctly set by the underlying cloud
     initialization software.
     """
-
-    @property
-    def password(self):
-        enc_password = self._recipe.metadata_provider.get_password()
-        private_keys = self._recipe.metadata_provider.get_ssh_privatekeys()
-        private_key = private_keys.values().pop()
-        with util.create_tempfile(private_key) as tmp:
-            return util.decrypt_password(
-                private_key=tmp,
-                password=enc_password)
 
     @test_util.requires_service('http')
     def test_password_set_posted(self):
