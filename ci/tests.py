@@ -80,6 +80,11 @@ class ScenarioMultipartAdvancedSmoke(BaseWindowsScenario):
     userdata = util.get_resource('windows/multipart_userdata_part_two')
 
 
+class ScenarioMultipartGzipAdvancedSmoke(ScenarioMultipartAdvancedSmoke):
+    userdata = util.gzip_data(
+        util.get_resource('windows/multipart_userdata_part_two'))
+
+
 class ScenarioLongHostnameSmoke(BaseWindowsScenario):
 
     test_classes = (smoke.TestLongHostname, )
