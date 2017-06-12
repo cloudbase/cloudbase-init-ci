@@ -28,6 +28,8 @@ import unittest
 import types
 import os
 import tempfile
+import StringIO
+import gzip
 
 import six
 
@@ -214,6 +216,17 @@ def run_once(func, state={}, errors={}):
 def get_resource(resource):
     """Get the given resource from the list of known resources."""
     return pkgutil.get_data('argus.resources', resource)
+
+
+def gzip_data(data):
+    """Get a string and return gzipped bytes of that data.
+
+    :param data: The data we want to compress.
+    """
+    buff = StringIO.StringIO()
+    with gzip.GzipFile(fileobj=buff, mode="w") as fd:
+        fd.write(data)
+    return buff.getvalue()
 
 
 class cached_property(object):  # pylint: disable=invalid-name
