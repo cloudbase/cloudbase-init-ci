@@ -54,8 +54,11 @@ class ScenarioMeta(type):
                             test_name)()
 
                 if hasattr(cls, test_name):
-                    test_name = 'test_%s_%s' % (test_class.__name__,
-                                                test_name)
+                    old_function = getattr(cls, test_name)
+                    new_function = delegator
+                    if not util.check_function_eq(old_function, new_function):
+                        test_name = 'test_%s_%s' % (test_class.__name__,
+                                                    test_name)
 
                 # Create a new function from the delegator with the
                 # correct name, since tools such as nose test runner,
