@@ -1,0 +1,58 @@
+Content-Type: multipart/mixed; boundary="===============1598784645116016685=="
+MIME-Version: 1.0
+
+--===============1598784645116016685==
+Content-Type: text/cloud-config; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="cloud-config"
+
+c2V0X3RpbWV6b25lOiBBc2lhL1RiaWxpc2kKCg==
+
+--===============1598784645116016685==
+Content-Type: text/cloud-config; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="cloud-config"
+
+d3JpdGVfZmlsZXM6Ci0gICBlbmNvZGluZzogYjY0CiAgICBjb250ZW50OiBOREk9CiAgICBwYXRoOiBDOlxcYjY0CiAgICBwZXJtaXNzaW9uczogJzA2NDQnCi0gICBlbmNvZGluZzogYmFzZTY0CiAgICBjb250ZW50OiBOREk9CiAgICBwYXRoOiBDOlxcYjY0XzEKICAgIHBlcm1pc3Npb25zOiAnMDY0NCcKLSAgIGVuY29kaW5nOiBnemlwCiAgICBjb250ZW50OiAhIWJpbmFyeSB8CiAgICAgICAgSDRzSUFHVWZvRlFDL3pNeEFnQ0lzQ1F5QWdBQUFBPT0KICAgIHBhdGg6IEM6XFxnemlwCiAgICBwZXJtaXNzaW9uczogJzA2NDQnCi0gICBlbmNvZGluZzogZ3oKICAgIGNvbnRlbnQ6ICEhYmluYXJ5IHwKICAgICAgICBINHNJQUdVZm9GUUMvek14QWdDSXNDUXlBZ0FBQUE9PQogICAgcGF0aDogQzpcXGd6aXBfMQogICAgcGVybWlzc2lvbnM6ICcwNjQ0JwotICAgZW5jb2Rpbmc6IGd6K2Jhc2U2NAogICAgY29udGVudDogSDRzSUFHVWZvRlFDL3pNeEFnQ0lzQ1F5QWdBQUFBPT0KICAgIHBhdGg6IEM6XFxnemlwX2Jhc2U2NAogICAgcGVybWlzc2lvbnM6ICcwNjQ0JwotICAgZW5jb2Rpbmc6IGd6aXArYmFzZTY0CiAgICBjb250ZW50OiBINHNJQUdVZm9GUUMvek14QWdDSXNDUXlBZ0FBQUE9PQogICAgcGF0aDogQzpcXGd6aXBfYmFzZTY0XzEKICAgIHBlcm1pc3Npb25zOiAnMDY0NCcKLSAgIGVuY29kaW5nOiBneitiNjQKICAgIGNvbnRlbnQ6IEg0c0lBR1Vmb0ZRQy96TXhBZ0NJc0NReUFnQUFBQT09CiAgICBwYXRoOiBDOlxcZ3ppcF9iYXNlNjRfMgogICAgcGVybWlzc2lvbnM6ICcwNjQ0Jwo=
+
+--===============1598784645116016685==
+Content-Type: text/x-cfninitdata; charset="utf-8"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="cfn-userdata"
+
+I3BzMV9zeXNuYXRpdmUKCmZ1bmN0aW9uIENyZWF0ZS1GaWxlICgkcGF0aCkgewogICAgJGZpbGVfcGF0aCA9ICRwYXRoICsgIlxoZWF0X2ZpbGUudHh0IgogICAgTmV3LUl0ZW0gJGZpbGVfcGF0aCAtdHlwZSBmaWxlIC1FcnJvckFjdGlvbiBJZ25vcmUKfQoKQ3JlYXRlLUZpbGUgLXBhdGggJGVudjpTeXN0ZW1Ecml2ZQo=
+
+--===============1598784645116016685==
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="create_file.ps1"
+
+I3BzMV9zeXNuYXRpdmUKTmV3LUl0ZW0gJGVudjpTeXN0ZW1Ecml2ZVxwb3dlcnNoZWxsX211bHRpcGFydC50eHQgLXR5cGUgZmlsZSAtRXJyb3JBY3Rpb24gSWdub3JlCg==
+
+--===============1598784645116016685==
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="create_file_x86.ps1"
+
+I3BzMV94ODYKTmV3LUl0ZW0gJGVudjpTeXN0ZW1Ecml2ZVxwb3dlcnNoZWxsX211bHRpcGFydF94ODYudHh0IC10eXBlIGZpbGUgLUVycm9yQWN0aW9uIElnbm9yZQo=
+
+--===============1598784645116016685==
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="create_file.py"
+
+IyEvdXNyL2Jpbi9lbnYgcHl0aG9uCmltcG9ydCBvcwpob21lID0gb3MuZ2V0ZW52KCJTeXN0ZW1Ecml2ZSIpCnByaW50KGhvbWUpCmYgPSBvcGVuKGhvbWUrJ1xweXRob24udHh0JywgJ3cnKQpmLmNsb3NlKCkK
+
+--===============1598784645116016685==
+Content-Type: text/x-shellscript; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="create_file.cmd"
+
+cmVtIGNtZAp0eXBlIE5VTCA+ICVzeXN0ZW1kcml2ZSVcY21kLnR4dA==
