@@ -20,6 +20,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import shutil
 
 from argus.backends.tempest import manager
 from argus import config as argus_config
@@ -126,6 +127,9 @@ def _prepare_argument_parser():
                              "Cloudbase-Init patch.")
     parser.add_argument("-z", "--zip_patch", default="",
                         help="The zip patch to use when testing.")
+    parser.add_argument("-c", "--config_file", default=None,
+                        help="A config file that will be used when running"
+                             " a scenario.")
     parser.add_argument("-a", "--architecture", default="x64",
                         help="The OS architecture.")
     parser.add_argument("--use_arestor", dest="use_arestor",
@@ -134,12 +138,17 @@ def _prepare_argument_parser():
     return parser
 
 
-def _prepare_enviroment(local, directory, resources_link):
+def _prepare_enviroment(local, directory, resources_link, config_file):
     """Prepare the temp enviroment."""
     os.mkdir(os.path.join(directory, "ci"))
 
     testr_conf = os.path.join(directory, ".testr.conf")
     tests = os.path.join(directory, "ci", "tests.py")
+
+    # Create the etc/argus directory structure
+    config_file_directory = os.path.join(directory, "etc", "argus")
+    os.makedirs(config_file_directory)
+    config_file_path = os.path.join(config_file_directory, "argus.conf")
 
     if local:
         local = os.path.abspath(local)
@@ -149,6 +158,11 @@ def _prepare_enviroment(local, directory, resources_link):
         # Download the necessary items
         download_argus_resource(".testr.conf", testr_conf, resources_link)
         download_argus_resource("ci/tests.py", tests, resources_link)
+
+    if config_file:
+        if not os.path.isabs(config_file):
+            config_file = os.path.abspath(config_file)
+        shutil.copyfile(config_file, config_file_path)
 
     # Create a new repository
     subprocess.Popen(["testr", "init"], cwd=directory, close_fds=True).wait()
@@ -208,7 +222,8 @@ def main():
 
     print("Starting at {}".format(base_directory))
 
-    _prepare_enviroment(args.local, base_directory, args.resources)
+    _prepare_enviroment(args.local, base_directory, args.resources,
+                        args.config_file)
 
     _prepare_config(args.separate, args.resources,
                     args.flavor_ref, args.git_command,
