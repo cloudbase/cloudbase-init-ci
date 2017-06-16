@@ -71,6 +71,13 @@ SAN_POLICY_ONLINE_STR = 'OnlineAll'
 SAN_POLICY_OFFLINE_STR = 'OfflineAll'
 SAN_POLICY_OFFLINE_SHARED_STR = 'OfflineShared'
 
+_FUNCTION_EQUALITY_PROPERTIES = ["co_code", "co_names",
+                                 "co_nlocals", "co_stacksize",
+                                 "co_varnames"]
+_FUNCTION_EQUALITY_METHODS = [six.get_function_globals,
+                              six.get_function_defaults,
+                              six.get_function_closure]
+
 __all__ = (
     'decrypt_password',
     'get_logger',
@@ -91,6 +98,22 @@ def build_new_function(func, name):
     return types.FunctionType(code, func_globals,
                               name, func_defaults,
                               func_closure)
+
+
+def check_function_eq(func_a, func_b):
+    """Check if two functions have the same bytecode."""
+    code_a = six.get_function_code(func_a)
+    code_b = six.get_function_code(func_b)
+
+    # check the equality of the bytecode
+    code_equality = all([getattr(code_a, prop) == getattr(code_b, prop) for
+                         prop in _FUNCTION_EQUALITY_PROPERTIES])
+
+    # check the equality of the function
+    function_equality = all([func(func_b) == func(func_b) for func
+                             in _FUNCTION_EQUALITY_METHODS])
+
+    return all([code_equality, function_equality])
 
 
 DEFAULT_FORMAT = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
