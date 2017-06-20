@@ -56,3 +56,11 @@ Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="create_file.cmd"
 
 cmVtIGNtZAp0eXBlIE5VTCA+ICVzeXN0ZW1kcml2ZSVcY21kLnR4dA==
+
+--===============1598784645116016685==
+Content-Type: text/cloud-config; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="cloud-config"
+
+I3Rlc3RfdG9fY2hlY2tfaWZfY2xvdWRfY29uZmlnX2Nhbl9jb250YWluX2FfY29tbWVudA==
