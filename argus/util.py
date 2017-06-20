@@ -60,6 +60,7 @@ OPEN_NEBULA_SERVICE = 'opennebula'
 CLOUD_STACK_SERVICE = 'cloudstack'
 MAAS_SERVICE = 'maas'
 NO_SERVICE = 'noservice'
+PACKET_SERVICE = 'packet'
 
 DEFAULT_METADATA_URL = {
     HTTP_SERVICE: "http://169.254.169.254/",

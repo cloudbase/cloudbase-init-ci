@@ -265,3 +265,10 @@ class ScenarioNoService(BaseWindowsScenario):
     test_classes = (smoke.TestNoError,)
     recipe_type = recipe.CloudbaseinitRecipe
     service_type = util.NO_SERVICE
+
+
+class ScenarioPacket(BaseWindowsScenario):
+
+    test_classes = (smoke.TestNoError, )
+    service_type = util.PACKET_SERVICE
+    recipe_type = recipe.PacketRecipe

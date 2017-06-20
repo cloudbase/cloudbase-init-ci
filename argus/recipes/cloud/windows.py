@@ -831,3 +831,40 @@ class CloudbaseinitPasswordRecipe(CloudbaseinitWinrmRecipe):
         self._cbinit_conf.set_conf_value(
             name="user_password_length",
             value="3")
+
+
+class PacketRecipe(CloudbaseinitRecipe):
+
+    config_group = util.PACKET_SERVICE
+
+    def prepare_cbinit_config(self, service_type):
+        super(PacketRecipe, self).prepare_cbinit_config(
+            service_type)
+        self._cbinit_unattend_conf.set_conf_value(
+            name='https_allow_insecure', value='True', section="packet")
+        self._cbinit_unattend_conf.set_conf_value(
+            name="plugins",
+            value='cloudbaseinit.plugins.common.mtu.MTUPlugin,cloudbaseinit.'
+                  'plugins.windows.extendvolumes.ExtendVolumesPlugin')
+
+        self._cbinit_conf.set_conf_value(
+            name="activate_windows", value="False")
+        self._cbinit_conf.set_conf_value(
+            name="https_allow_insecure", value="True", section="packet")
+        self._cbinit_conf.set_conf_value(
+            name="netbios_host_name_compatibility", value="False")
+        self._cbinit_conf.append_conf_value(
+            name="metadata_report_provisioning_completed", value="True")
+        self._cbinit_conf.set_conf_value(
+            name="plugins",
+            value='cloudbaseinit.plugins.windows.extendvolumes.'
+                  'ExtendVolumesPlugin,'
+                  'cloudbaseinit.plugins.common.mtu.MTUPlugin,'
+                  'cloudbaseinit.plugins.windows.ntpclient.NTPClientPlugin,'
+                  'cloudbaseinit.plugins.common.sethostname.SetHostNamePlugin,'
+                  'cloudbaseinit.plugins.common.localscripts.'
+                  'LocalScriptsPlugin,'
+                  'cloudbaseinit.plugins.windows.createuser.CreateUserPlugin,'
+                  'cloudbaseinit.plugins.windows.licensing.'
+                  'WindowsLicensingPlugin,'
+                  'cloudbaseinit.plugins.common.userdata.UserDataPlugin')
