@@ -35,6 +35,7 @@ class TestCloudbaseInitOptions(unittest.TestCase):
             'argus.config.mock_ec2.MockEC2Options',
             'argus.config.mock_maas.MockMAASOptions',
             'argus.config.mock_openstack.MockOpenStackOptions',
+            'argus.config.local.LocalOptions',
         )
 
     @mock.patch('argus.config.ci.cfg.OptGroup')

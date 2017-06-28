@@ -18,6 +18,7 @@ import unittest
 from argus.backends.heat import heat_backend
 from argus.backends.tempest import cloud as tempest_cloud_backend
 from argus.backends.tempest import tempest_backend
+from argus.backends.local import local_backend
 from argus import config as argus_config
 from argus.introspection.cloud import windows as introspection
 from argus.recipes.cloud import windows as recipe
@@ -256,3 +257,11 @@ class ScenarioPasswordLength(BaseWindowsScenario):
 
     test_classes = (test_smoke.TestPasswordLength,)
     recipe_type = recipe.CloudbaseinitPasswordRecipe
+
+
+class ScenarioNoService(BaseWindowsScenario):
+
+    backend_type = local_backend.LocalBackend
+    test_classes = (smoke.TestNoError,)
+    recipe_type = recipe.CloudbaseinitRecipe
+    service_type = util.NO_SERVICE
