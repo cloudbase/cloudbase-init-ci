@@ -36,7 +36,7 @@ class ArgusHeatTeardown(ArgusError):
 
 
 class ArgusEnvironmentError(ArgusError):
-    """Base class for errors related to the argus environment."""
+    """Base class for errors related to the Argus environment."""
     pass
 
 

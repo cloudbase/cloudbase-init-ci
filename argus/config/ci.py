@@ -12,7 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-"""Config options available for the argus framework setup."""
+"""Config options available for the Argus framework setup."""
 
 from oslo_config import cfg
 
@@ -28,7 +28,7 @@ IO_UPPER_TIMEOUT = DEFAULT_UPPER_TIMEOUT * IO_UPPER_TIMEOUT_MULTIPLIER
 
 class ArgusOptions(conf_base.Options):
 
-    """Config options available for the argus framework setup."""
+    """Config options available for the Argus framework setup."""
 
     def __init__(self, config):
         super(ArgusOptions, self).__init__(config, group="argus")

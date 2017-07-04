@@ -318,7 +318,7 @@ class InstanceIntrospection(base.CloudInstanceIntrospection):
         return list(filter(None, stdout.splitlines()))
 
     def get_trim_state(self):
-        # Query the curent stat of DisableDeleteNotify
+        # Query the current state of DisableDeleteNotify
         # 1 - DeleteNotify is disabled
         # 0 - DeleteNotify is enabled
         command = "fsutil.exe behavior query disabledeletenotify"
