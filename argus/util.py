@@ -28,7 +28,10 @@ import unittest
 import types
 import os
 import tempfile
-import StringIO
+try:
+    from StringIO import StringIO
+except ImportError:
+    from io import StringIO
 import gzip
 
 import six
@@ -246,7 +249,7 @@ def gzip_data(data):
 
     :param data: The data we want to compress.
     """
-    buff = StringIO.StringIO()
+    buff = StringIO()
     with gzip.GzipFile(fileobj=buff, mode="w") as fd:
         fd.write(data)
     return buff.getvalue()
