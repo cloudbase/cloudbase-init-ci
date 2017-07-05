@@ -18,7 +18,7 @@ import ntpath
 import six
 
 try:
-    import StringIO
+    from StringIO import StringIO
 except ImportError:
     import io as StringIO
 
@@ -63,7 +63,7 @@ class BaseWindowsConfig(base.BaseConfig):
     @staticmethod
     def _get_base_conf(config_name):
         """Return a ConfigParser object with default values."""
-        base_conf = StringIO.StringIO(
+        base_conf = StringIO(
             util.get_resource(config_name))
         conf = six.moves.configparser.ConfigParser()
 
@@ -96,7 +96,7 @@ class BaseWindowsConfig(base.BaseConfig):
         if self._client.manager.is_file(file_path):
             self._client.manager.remove(file_path)
 
-        buff = StringIO.StringIO()
+        buff = StringIO()
         self.conf.write(buff)
         buff.seek(0)
         data = buff.read()

@@ -55,7 +55,7 @@ class BaseWindowsConfig(unittest.TestCase):
 
     @mock.patch('six.moves.configparser.ConfigParser')
     @mock.patch('argus.util.get_resource')
-    @mock.patch('StringIO.StringIO')
+    @mock.patch('argus.config_generator.windows.base.StringIO')
     def _test_get_base_conf(self, mock_string_io, mock_get_resource,
                             mock_configparser, py_version):
         mock_string_io.return_value = mock.sentinel
@@ -87,7 +87,7 @@ class BaseWindowsConfig(unittest.TestCase):
 
     @mock.patch('argus.config_generator.windows.base.'
                 'BaseWindowsConfig.conf')
-    @mock.patch('StringIO.StringIO')
+    @mock.patch('argus.config_generator.windows.base.StringIO')
     @mock.patch('ntpath.join')
     def _test_apply_config(self, mock_join, mock_string_io, _, is_file):
         mock_join.return_value = mock.sentinel
