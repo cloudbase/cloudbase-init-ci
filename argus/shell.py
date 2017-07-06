@@ -14,23 +14,22 @@
 #    under the License.
 
 from __future__ import print_function
-from os_testr import subunit2html
-from six.moves import urllib_parse as urlparse
 
 import argparse
 import os
-import requests
 import shutil
-import six
 import subprocess
 import sys
 import tempfile
+import requests
+import six
+from six.moves import urllib_parse as urlparse
 
 from argus.backends.tempest import manager
 from argus import config as argus_config
 from argus.config import ci
 from argus import exceptions
-
+from os_testr import subunit2html
 
 CONFIG = argus_config.CONFIG
 
