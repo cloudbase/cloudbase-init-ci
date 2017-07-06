@@ -73,7 +73,7 @@ def requires_service(service_type='http'):
 
 
 def decrypt_password(password, private_key):
-    """Decript the password using the private key.
+    """Decrypt the password using the private key.
 
     :param password: The password we want to decrypt
     :param private_ley: The private key to use

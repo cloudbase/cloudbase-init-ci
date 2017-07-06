@@ -156,7 +156,7 @@ class CloudstackMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
     @cherrypy.expose
     def latest(self, data_type, operation=None):
         # Too complicated and overkill to use cherrypy.Dispatcher.
-        # This should be as as simple as possible.
+        # This should be as simple as possible.
         return self._dispatch_method(data_type)(operation)
 
     def meta_data(self, operation):
@@ -215,7 +215,7 @@ class CloudstackPasswordManagerApp(BaseServiceApp):
 
 
 class MaasMetadataServiceApp(MetadataServiceAppMixin, BaseServiceApp):
-    """Metadata application for MaaS service."""
+    """Metadata application for MAAS service."""
 
     @staticmethod
     def _verify_headers():

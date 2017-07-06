@@ -61,7 +61,7 @@ class WindowsActionManager(base.BaseActionManager):
 
     def get_agent_command(self, agent_action,
                           agent_path=None, **kwargs):
-        """Command builder for the argus utilitary agent.
+        """Command builder for the Argus utilitary agent.
 
         Returns a command string formed by the given action and its
         required arguments.
@@ -136,7 +136,7 @@ class WindowsActionManager(base.BaseActionManager):
     def _execute_resource_script(self, resource_location, parameters,
                                  script_type,
                                  upper_timeout=CONFIG.argus.upper_timeout):
-        """Run a resource script with with the specific parameters."""
+        """Run a resource script with the specific parameters."""
         LOG.debug("Executing resource script %s with this parameters %s",
                   resource_location, parameters)
 
@@ -566,7 +566,7 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
 
     @staticmethod
     def _get_resource_path(resource):
-        """Get resource path from argus resources."""
+        """Get resource path from Argus resources."""
         resource_path = os.path.join(
             os.path.abspath(os.path.dirname(__file__)),
             "..", "resources", "windows", "nano_server",
@@ -614,7 +614,7 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
             conf.set_conf_value("stop_service_on_exit", False)
 
     def get_installation_script(self):
-        """Get instalation script for CloudbaseInit."""
+        """Get installation script for CloudbaseInit."""
         self.download_resource("windows/nano_server/installCBinit.ps1",
                                self._INSTALL_SCRIPT)
 
@@ -733,7 +733,7 @@ class WindowsNanoActionManager(WindowsSever2016ActionManager):
             self._client.run_remote_cmd("Restart-Computer", util.POWERSHELL)
         except (IOError, winrm_exceptions.WinRMTransportError,
                 winrm_exceptions.InvalidCredentialsError):
-            # NOTE(mmicu): When we reboot the machine it is possible to
+            # NOTE(mmicu): When we reboot the machine, it is possible to
             # have connectivity issues.
             # This fixes errors that stop scenarios from getting
             # created on different windows images.

@@ -14,23 +14,23 @@
 #    under the License.
 
 from __future__ import print_function
+from os_testr import subunit2html
+from six.moves import urllib_parse as urlparse
 
 import argparse
 import os
+import requests
+import shutil
+import six
 import subprocess
 import sys
 import tempfile
-import shutil
 
 from argus.backends.tempest import manager
 from argus import config as argus_config
 from argus.config import ci
 from argus import exceptions
 
-import requests
-import six
-from six.moves import urllib_parse as urlparse
-from os_testr import subunit2html
 
 CONFIG = argus_config.CONFIG
 
@@ -54,10 +54,10 @@ def _download_resource(url, location):
 
 
 def download_argus_resource(resource_path, location, resources_link):
-    """Download an argus Resource.
+    """Download an Argus Resource.
 
     :param resource_path: Path of the resource relative to the
-                         argus `resources` directory
+                         Argus `resources` directory
     :param location: Where to save the resource
     """
     base_url = resources_link.rsplit("/", 1)[0]
@@ -115,11 +115,11 @@ def _prepare_argument_parser():
     parser.add_argument("-t", "--tests", default="",
                         help="The tests you want to run.")
     parser.add_argument("-r", "--resources", default=ci.RESOURCES_LINK,
-                        help="URL to argus resources.")
+                        help="URL to Argus resources.")
     parser.add_argument("-p", "--parallel", type=int,
                         help="many processes to use in parallel.")
     parser.add_argument("-l", "--local",
-                        help="Local git repository with all the argus files.")
+                        help="Local git repository with all the Argus files.")
     parser.add_argument("-s", "--separate", action="store_true",
                         help="Make sepatate log files for each scenario.")
     parser.add_argument("-g", "--git_command", default="",
@@ -138,8 +138,8 @@ def _prepare_argument_parser():
     return parser
 
 
-def _prepare_enviroment(local, directory, resources_link, config_file):
-    """Prepare the temp enviroment."""
+def _prepare_environment(local, directory, resources_link, config_file):
+    """Prepare the temp environment."""
     os.mkdir(os.path.join(directory, "ci"))
 
     testr_conf = os.path.join(directory, ".testr.conf")
@@ -171,7 +171,7 @@ def _prepare_enviroment(local, directory, resources_link, config_file):
 def _prepare_config(separate, resources, flavor_ref,
                     git_command, zip_patch,
                     directory, image_ref, architecture, use_arestor):
-    """Prepare the argus config file."""
+    """Prepare the Argus config file."""
 
     conf = six.moves.configparser.SafeConfigParser()
     conf.add_section("argus")
@@ -222,8 +222,8 @@ def main():
 
     print("Starting at {}".format(base_directory))
 
-    _prepare_enviroment(args.local, base_directory, args.resources,
-                        args.config_file)
+    _prepare_environment(args.local, base_directory, args.resources,
+                         args.config_file)
 
     _prepare_config(args.separate, args.resources,
                     args.flavor_ref, args.git_command,
