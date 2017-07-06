@@ -1,8 +1,8 @@
-How to create images for argus - a short recipe
+How to create images for Argus - a short recipe
 ===============================================
 
 
-In order to work properly, argus needs specialized images, tailored for its needs.
+In order to work properly, Argus needs specialized images, tailored for its needs.
 
 The current document tries to describe what steps are necessary for
 creating a proper image.
@@ -12,7 +12,7 @@ https://github.com/PCManticore/windows-openstack-imaging-tools,
 instead of the original one, https://github.com/cloudbase/windows-openstack-imaging-tools,
 which I was unable to make it work for our scenarios.
 
-For Microsoft Nano Server there are other stepts, look at the bottom.
+For Microsoft Nano Server there are other steps, look at the bottom.
 
 
 1. First, grab an ISO with the OS you want to create an image for.
@@ -104,7 +104,7 @@ Microsoft Nano Server
 ==================
 
 1. You need to create a new Nano Server image, you can follow these steps 
-https://github.com/cloudbase/cloudbase-init-offline-install.Take care to specify
+https://github.com/cloudbase/cloudbase-init-offline-install. Take care to specify
 that you don't want to install cloudbase-init ``-AddCloudbaseInit:$false``. 
 You need to do this on a Windows host
 
@@ -114,15 +114,14 @@ You also need to create an image for KVM (the script will install the proper Vir
 3. Allow ping , SMB and create the CiAdmin User
    Mount the vhd and create this folder:
    ``C:\Windows\Setup\Scripts``
-   Add there the ``PostInstall.ps1`` and ``SetupComplet.cmd`` that you can find in this repo.
+   Add there the ``PostInstall.ps1`` and ``SetupComplete.cmd`` that you can find in docs/resources.
 
 4. Install Git 
 
-  You need to download in a windows machine Git for Windows Portable from 
+  You need to download in a Windows machine Git for Windows Portable from
   https://git-scm.com/download/win, install it on that machine.
 
   Copy ``PortableGit`` on the same vhd in ``C:\Program Files\PortableGit``.
 
 5. Now you can upload it using glance.
-
 
