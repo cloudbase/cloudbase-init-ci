@@ -42,6 +42,7 @@ LOG = argus_log.LOG
 CONFIG = argus_config.CONFIG
 CODEPAGE_UTF8 = 65001
 THREADS = 1
+BUFFER_SIZE = 1024
 
 
 def _encode(data):
@@ -51,7 +52,7 @@ def _encode(data):
     return encoded
 
 
-def _base64_read_file(filepath, size=2048):
+def _base64_read_file(filepath, size=BUFFER_SIZE):
     with open(filepath, 'rb') as stream:
         reader = functools.partial(stream.read, size)
         for data in iter(reader, b''):
@@ -188,24 +189,24 @@ class WinRemoteClient(base.BaseClient):
 
         The remote destination is the file name where the content
         of file-path will be written.
+
+        .. warning::
+           This will transfer binary data.
         """
-        # TODO(mmicu): This powershell dance is a little complicated,
-        # find a simpler way to send a file over a remote server,
-        # without relying on OpenStack infra.
-        get_string_cmd = ("[System.Text.Encoding]::UTF8.GetString("
-                          "[System.Convert]::FromBase64String('{}'))")
+        decode_command = ("([System.Convert]::FromBase64String('{}'))")
+        write_command = ("Add-Content -Encoding Byte -Value {content}"
+                         " -Path '{remote_destination}'")
         commands = []
         data = StringIO.StringIO(data)
         data.seek(0)
-        content = data.read(1024)
+        content = data.read(BUFFER_SIZE)
         while content:
-            remote_command = (
-                "{content} >> '{remote_destination}'"
-                .format(content=get_string_cmd.format(_encode(content)),
-                        remote_destination=remote_destination))
+            remote_command = write_command.format(
+                content=decode_command.format(_encode(content)),
+                remote_destination=remote_destination)
 
             commands.append(remote_command)
-            content = data.read(1024)
+            content = data.read(BUFFER_SIZE)
         self._run_commands(commands, commands_type=util.POWERSHELL,
                            upper_timeout=CONFIG.argus.io_upper_timeout)
 
