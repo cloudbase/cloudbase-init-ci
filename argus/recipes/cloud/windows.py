@@ -321,7 +321,7 @@ class CloudbaseinitRecipe(base.BaseCloudbaseinitRecipe):
         metadata_url = self.metadata_provider.get_url(service_type)
         LOG.info("Injecting metadata URL %s option in conf file.",
                  metadata_url)
-        if service_type:
+        if service_type and metadata_url:
             for conf in (self._cbinit_conf, self._cbinit_unattend_conf):
                 conf.set_conf_value(
                     name="metadata_base_url", value=metadata_url,

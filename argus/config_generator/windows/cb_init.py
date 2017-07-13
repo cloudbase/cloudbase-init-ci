@@ -34,7 +34,8 @@ class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
         util.EC2_SERVICE: "ec2service.EC2Service",
         util.OPEN_NEBULA_SERVICE: "opennebulaservice.OpenNebulaService",
         util.CLOUD_STACK_SERVICE: "cloudstack.CloudStack",
-        util.MAAS_SERVICE: "maasservice.MaaSHttpService"
+        util.MAAS_SERVICE: "maasservice.MaaSHttpService",
+        util.NO_SERVICE: "",
     }
 
     def __init__(self, client):
@@ -93,7 +94,9 @@ class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
             This can be HTTP, ConfigDrive, EC2, OpenNebula,
             CloudStack or MAAS.
         """
-        return '.'.join([util.SERVICES_PREFIX, self.SERVICES[service_type]])
+        if self.SERVICES.get(service_type):
+            return '.'.join([util.SERVICES_PREFIX,
+                             self.SERVICES[service_type]])
 
     def set_service_type(self, service_type):
         """Set the service type config.
@@ -113,7 +116,7 @@ class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
             service_type = [service_type]
 
         service_type = [self._get_service(serv) for serv in service_type]
-        conf_value = ",".join(service_type)
+        conf_value = ",".join(serv for serv in service_type if serv)
         self.set_conf_value("metadata_services", conf_value)
 
     def apply_config(self, path):

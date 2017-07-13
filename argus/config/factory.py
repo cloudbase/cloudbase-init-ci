@@ -21,6 +21,7 @@ _OPT_PATHS = (
     'argus.config.mock_maas.MockMAASOptions',
     'argus.config.mock_openstack.MockOpenStackOptions',
     'argus.config.arestor.ArestorOptions',
+    'argus.config.local.LocalOptions',
 )
 
 
