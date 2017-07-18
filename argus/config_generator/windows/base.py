@@ -102,5 +102,4 @@ class BaseWindowsConfig(base.BaseConfig):
         data = buff.read()
 
         LOG.debug("Writing data in file '%s'.", file_path)
-        for line in data.splitlines():
-            self._client.write_file(data=line, remote_destination=file_path)
+        self._client.write_file(data=data, remote_destination=file_path)
