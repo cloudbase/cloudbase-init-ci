@@ -90,34 +90,34 @@ class BaseWindowsConfig(unittest.TestCase):
     @mock.patch('argus.config_generator.windows.base.StringIO')
     @mock.patch('ntpath.join')
     def _test_apply_config(self, mock_join, mock_string_io, _, is_file):
-        mock_join.return_value = mock.sentinel
+        mock_join.return_value = mock.sentinel.FULL_PATH
         mock_manager = mock.Mock()
         mock_manager.is_file.return_value = is_file
         mock_buff = mock.Mock()
         mock_data = mock.Mock()
-        mock_data.splitlines.return_value = [mock.Mock] * 5
         mock_buff.read.return_value = mock_data
         mock_string_io.return_value = mock_buff
         mock_client = mock.Mock()
         mock_client.mock_manager = mock_manager
         self._cbinit_config._client = mock_client
-        self._cbinit_config.config_name = mock.sentinel
+        self._cbinit_config.config_name = mock.sentinel.FILE_NAME
 
         self._cbinit_config.apply_config(mock.sentinel)
 
-        mock_join.assert_called_once_with(mock.sentinel, mock.sentinel)
+        mock_join.assert_called_once_with(mock.sentinel,
+                                          mock.sentinel.FILE_NAME)
         self._cbinit_config._client.manager.is_file.assert_called_once_with(
-            mock.sentinel)
+            mock.sentinel.FULL_PATH)
         if is_file:
             self._cbinit_config._client.manager.remove.assert_called_once_with(
-                mock.sentinel)
+                mock.sentinel.FULL_PATH)
         mock_string_io.assert_called_once_with()
         self._cbinit_config.conf.write.assert_called_once_with(
             mock_string_io.return_value)
         mock_buff.seek.assert_called_once_with(0)
         mock_buff.read.assert_called_once_with()
-        mock_data.splitlines.assert_called_once_with()
-        self.assertEqual(self._cbinit_config._client.write_file.call_count, 5)
+        self._cbinit_config._client.write_file.assert_called_once_with(
+            data=mock_data, remote_destination=mock.sentinel.FULL_PATH)
 
     def test_apply_config_is_file(self):
         self._test_apply_config(is_file=True)
