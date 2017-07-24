@@ -36,6 +36,7 @@ class BasePopulatedCBInitConfig(base.BaseWindowsConfig):
         util.CLOUD_STACK_SERVICE: "cloudstack.CloudStack",
         util.MAAS_SERVICE: "maasservice.MaaSHttpService",
         util.NO_SERVICE: "",
+        util.PACKET_SERVICE: "packet.PacketService"
     }
 
     def __init__(self, client):
